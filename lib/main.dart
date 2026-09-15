@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+
+import 'app.dart';
+import 'core/config/app_config.dart';
+import 'core/network/access_token_store.dart';
+import 'core/network/api_client.dart';
+import 'core/storage/secure_credential_store.dart';
+import 'features/auth/auth_api.dart';
+import 'features/auth/auth_controller.dart';
+import 'features/calendar/calendar_api.dart';
+import 'features/calendar/calendar_controller.dart';
+import 'features/event_details/event_details_api.dart';
+import 'features/event_registration/event_registration_api.dart';
+import 'features/notifications/local_notification_service.dart';
+import 'features/notifications/notification_navigation_controller.dart';
+
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final config = AppConfig.fromEnvironment();
+  final accessTokenStore = AccessTokenStore();
+  final credentialStore = SecureCredentialStore();
+  final apiClient = ApiClient(config, accessTokenStore);
+  final authApi = AuthApi(apiClient);
+  final calendarApi = CalendarApi(apiClient);
+  final calendarController = CalendarController(calendarApi);
+  final eventDetailsApi = EventDetailsApi(apiClient);
+  final eventRegistrationApi = EventRegistrationApi(apiClient);
+  final notificationNavigationController = NotificationNavigationController();
+
+  final localNotificationService = LocalNotificationService(
+    FlutterLocalNotificationsPlugin(),
+    notificationNavigationController,
+  );
+
+  await localNotificationService.initialize();
+
+  final authController = AuthController(
+    credentialStore,
+    authApi,
+    accessTokenStore,
+  );
+
+  await authController.restoreSession();
+
+  apiClient.setRefreshSessionHandler(authController.refreshSession);
+
+  runApp(
+    AlteKamererApp(
+      authController: authController,
+      calendarController: calendarController,
+      eventDetailsService: eventDetailsApi,
+      eventRegistrationService: eventRegistrationApi,
+      notificationNavigationController: notificationNavigationController,
+    ),
+  );
+}

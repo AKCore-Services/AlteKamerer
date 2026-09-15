@@ -1,0 +1,56 @@
+# OS / editor files
+.DS_Store
+*.swp
+*.swo
+*.iml
+*.ipr
+*.iws
+.idea/
+.history/
+.atom/
+
+# Dart / Flutter generated state
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+coverage/
+doc/api/
+.widget_preview/
+
+# Flutter generated build metadata
+**/ios/Flutter/.last_build_id
+
+# Symbolication / obfuscation output
+app.*.symbols
+app.*.map.json
+
+# Android generated state and build output
+android/.gradle/
+android/.cxx/
+android/captures/
+android/app/debug/
+android/app/profile/
+android/app/release/
+
+# Local Android SDK configuration
+android/local.properties
+
+# Generated plugin registration
+**/GeneratedPluginRegistrant.java
+
+# Android signing secrets
+android/key.properties
+**/*.keystore
+**/*.jks
+
+# Generated migration/tool state
+.swiftpm/
+migrate_working_dir/
+
+# Python helper cache
+__pycache__/
+*.pyc

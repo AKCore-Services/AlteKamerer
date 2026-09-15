@@ -1,0 +1,88 @@
+name: AlteKamerer release
+
+on:
+  push:
+    tags:
+      - 'altekamerer-v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build AlteKamerer release
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/ubk8751/flutter-android-ci@sha256:00e8703d227d3cccbd927c327f652df4f76f867e1d18562def11ba327f164b00
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Verify release toolchain
+        run: |
+          command -v flutter
+          command -v java
+          command -v curl
+          command -v jq
+          command -v base64
+
+      - name: Restore release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ALTEKAMERER_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$KEYSTORE_BASE64" \
+            | base64 --decode \
+            > android/altekamerer-release.jks
+
+      - name: Configure release signing
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.ALTEKAMERER_KEYSTORE_PASSWORD }}
+        run: |
+          cat > android/key.properties <<EOF_INNER
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=altekamerer
+          storeFile=../altekamerer-release.jks
+          EOF_INNER
+
+      - name: Verify release version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#altekamerer-v}"
+
+          APP_VERSION="$(
+            sed -n 's/^version:[[:space:]]*\([^+]*\).*/\1/p' \
+              pubspec.yaml
+          )"
+
+          if [ "$TAG_VERSION" != "$APP_VERSION" ]; then
+            echo "Tag version $TAG_VERSION does not match app version $APP_VERSION." >&2
+            exit 1
+          fi
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Prepare release asset
+        run: |
+          VERSION="${GITHUB_REF_NAME#altekamerer-v}"
+
+          cp \
+            build/app/outputs/flutter-apk/app-release.apk \
+            "AlteKamerer-${VERSION}.apk"
+
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "RELEASE_APK=AlteKamerer-${VERSION}.apk" >> "$GITHUB_ENV"
+
+      - name: Verify release APK exists
+        run: |
+          test -f "$RELEASE_APK"
+          ls -lh "$RELEASE_APK"
+
+      - name: Upload release APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AlteKamerer-${{ env.RELEASE_VERSION }}
+          path: ${{ env.RELEASE_APK }}
+          if-no-files-found: error
