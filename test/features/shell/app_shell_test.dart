@@ -11,6 +11,7 @@ import 'package:altekamerer/features/event_details/event_details_screen.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_screen.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
+import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +21,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
     final eventDetailsService = _FakeEventDetailsService();
     final authController = AuthController(
       _FakeCredentialStore(),
@@ -36,6 +38,7 @@ void main() {
           eventDetailsService: eventDetailsService,
           eventRegistrationService: eventRegistrationService,
           notificationNavigationController: NotificationNavigationController(),
+          notificationSync: notificationSync,
         ),
       ),
     );
@@ -56,6 +59,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
     final eventDetailsService = _FakeEventDetailsService();
     final registrationService = _FakeEventRegistrationService();
 
@@ -73,6 +77,7 @@ void main() {
           eventDetailsService: eventDetailsService,
           eventRegistrationService: registrationService,
           notificationNavigationController: NotificationNavigationController(),
+          notificationSync: notificationSync,
         ),
       ),
     );
@@ -107,12 +112,15 @@ void main() {
     expect(registrationService.requests.single.where, 'Direkt');
 
     expect(eventDetailsService.requestedEventIds, [42, 42]);
+
+    expect(notificationSync.syncCount, 2);
   });
 
   testWidgets('notification target opens matching event details', (
     WidgetTester tester,
   ) async {
     final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
     final eventDetailsService = _FakeEventDetailsService();
     final registrationService = _FakeEventRegistrationService();
     final notificationNavigationController = NotificationNavigationController();
@@ -131,6 +139,7 @@ void main() {
           eventDetailsService: eventDetailsService,
           eventRegistrationService: registrationService,
           notificationNavigationController: notificationNavigationController,
+          notificationSync: notificationSync,
         ),
       ),
     );
@@ -152,6 +161,8 @@ void main() {
       ..openEvent(84);
 
     final eventDetailsService = _FakeEventDetailsService();
+    final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
 
     await tester.pumpWidget(
       MaterialApp(
@@ -161,10 +172,11 @@ void main() {
             _FakeAuthService(),
             AccessTokenStore(),
           ),
-          calendarController: CalendarController(_FakeCalendarService()),
+          calendarController: calendarController,
           eventDetailsService: eventDetailsService,
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: notificationNavigationController,
+          notificationSync: notificationSync,
         ),
       ),
     );
@@ -281,5 +293,25 @@ class _FakeEventRegistrationService implements EventRegistrationService {
   ) async {
     eventIds.add(eventId);
     requests.add(request);
+  }
+}
+
+class _FakeNotificationSync implements NotificationSync {
+  _FakeNotificationSync(this._calendarController);
+
+  final CalendarController _calendarController;
+
+  int syncCount = 0;
+  int clearCount = 0;
+
+  @override
+  Future<void> sync() async {
+    syncCount++;
+    await _calendarController.load();
+  }
+
+  @override
+  Future<void> clear() async {
+    clearCount++;
   }
 }

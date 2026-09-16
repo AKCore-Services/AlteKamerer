@@ -12,6 +12,7 @@ import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
+import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +30,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -51,6 +53,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -78,6 +81,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -104,6 +108,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -142,6 +147,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -178,6 +184,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -209,6 +216,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
       ),
     );
 
@@ -220,6 +228,59 @@ void main() {
     expect(auth.logoutCalls, ['rotated-refresh']);
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(AppShell), findsNothing);
+  });
+
+  testWidgets('failed session refresh clears scheduled notifications', (
+    WidgetTester tester,
+  ) async {
+    final auth = FakeAuthService(
+      loginResult: const AuthTokens(
+        accessToken: 'access',
+        refreshToken: 'refresh',
+      ),
+      refreshError: const ApiException(
+        statusCode: 401,
+        message: 'Invalid refresh token.',
+      ),
+    );
+
+    final controller = _createController(authService: auth);
+    final notificationSync = _FakeNotificationSync();
+
+    await controller.restoreSession();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: controller,
+        calendarController: _createCalendarController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: notificationSync,
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+
+    await controller.login(username: 'member', password: 'password');
+
+    await tester.pump();
+
+    expect(find.byType(AppShell), findsOneWidget);
+
+    final clearCountBeforeRefresh = notificationSync.clearCount;
+
+    final refreshed = await controller.refreshSession();
+
+    await tester.pump();
+
+    expect(refreshed, isFalse);
+    expect(controller.status, AuthStatus.unauthenticated);
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(AppShell), findsNothing);
+    expect(notificationSync.clearCount, clearCountBeforeRefresh + 1);
   });
 
   testWidgets(
@@ -244,6 +305,7 @@ void main() {
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: notificationNavigationController,
+          notificationSync: _FakeNotificationSync(),
         ),
       );
 
@@ -382,4 +444,16 @@ class _FakeEventRegistrationService implements EventRegistrationService {
     int eventId,
     EventRegistrationRequest request,
   ) async {}
+}
+
+class _FakeNotificationSync implements NotificationSync {
+  int clearCount = 0;
+
+  @override
+  Future<void> sync() async {}
+
+  @override
+  Future<void> clear() async {
+    clearCount++;
+  }
 }

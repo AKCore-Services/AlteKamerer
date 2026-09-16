@@ -166,6 +166,7 @@ class _TestApp extends StatelessWidget {
         body: CalendarScreen(
           controller: controller,
           onOpenEvent: onOpenEvent ?? (_) {},
+          onRefresh: controller.load,
         ),
       ),
     );

@@ -12,6 +12,7 @@ import '../event_registration/event_registration_api.dart';
 import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
 import '../notifications/notification_navigation_controller.dart';
+import '../notifications/notification_sync_service.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -21,6 +22,7 @@ class AppShell extends StatefulWidget {
     required this.eventDetailsService,
     required this.eventRegistrationService,
     required this.notificationNavigationController,
+    required this.notificationSync,
   });
 
   final AuthController authController;
@@ -28,6 +30,7 @@ class AppShell extends StatefulWidget {
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
   final NotificationNavigationController notificationNavigationController;
+  final NotificationSync notificationSync;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -42,7 +45,7 @@ class _AppShellState extends State<AppShell> {
       _handleNotificationNavigation,
     );
 
-    widget.calendarController.load();
+    widget.notificationSync.sync();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openPendingNotification();
@@ -81,6 +84,7 @@ class _AppShellState extends State<AppShell> {
         child: CalendarScreen(
           controller: widget.calendarController,
           onOpenEvent: _openEvent,
+          onRefresh: widget.notificationSync.sync,
         ),
       ),
     );
@@ -152,6 +156,7 @@ class _AppShellState extends State<AppShell> {
 
     if (saved == true) {
       await eventDetailsController.load(event.id);
+      await widget.notificationSync.sync();
     }
   }
 }
