@@ -11,10 +11,12 @@ class CalendarScreen extends StatelessWidget {
     super.key,
     required this.controller,
     required this.onOpenEvent,
+    required this.onRefresh,
   });
 
   final CalendarController controller;
   final ValueChanged<CalendarEvent> onOpenEvent;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class CalendarScreen extends StatelessWidget {
           CalendarStatus.error => AkErrorView(
             title: 'Kunde inte hämta kalendern',
             message: 'AlteKamerer kunde inte hämta kommande aktiviteter från AKCore.',
-            onRetry: controller.load,
+            onRetry: onRefresh,
           ),
           CalendarStatus.loaded => _buildLoaded(context),
         };
@@ -40,7 +42,7 @@ class CalendarScreen extends StatelessWidget {
     }
 
     return RefreshIndicator(
-      onRefresh: controller.load,
+      onRefresh: onRefresh,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [

@@ -11,13 +11,20 @@ import 'features/calendar/calendar_api.dart';
 import 'features/calendar/calendar_controller.dart';
 import 'features/event_details/event_details_api.dart';
 import 'features/event_registration/event_registration_api.dart';
+import 'features/me/me_api.dart';
 import 'features/notifications/local_notification_service.dart';
 import 'features/notifications/notification_navigation_controller.dart';
+import 'features/notifications/notification_planner.dart';
+import 'features/notifications/notification_sync_service.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:timezone/timezone.dart' as tz;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  tzdata.initializeTimeZones();
+  final stockholm = tz.getLocation('Europe/Stockholm');
 
   final config = AppConfig.fromEnvironment();
   final accessTokenStore = AccessTokenStore();
@@ -26,6 +33,7 @@ Future<void> main() async {
   final authApi = AuthApi(apiClient);
   final calendarApi = CalendarApi(apiClient);
   final calendarController = CalendarController(calendarApi);
+  final meApi = MeApi(apiClient);
   final eventDetailsApi = EventDetailsApi(apiClient);
   final eventRegistrationApi = EventRegistrationApi(apiClient);
   final notificationNavigationController = NotificationNavigationController();
@@ -33,6 +41,13 @@ Future<void> main() async {
   final localNotificationService = LocalNotificationService(
     FlutterLocalNotificationsPlugin(),
     notificationNavigationController,
+  );
+
+  final notificationSync = NotificationSyncService(
+    meApi,
+    calendarController,
+    NotificationPlanner(stockholm),
+    localNotificationService,
   );
 
   await localNotificationService.initialize();
@@ -54,6 +69,7 @@ Future<void> main() async {
       eventDetailsService: eventDetailsApi,
       eventRegistrationService: eventRegistrationApi,
       notificationNavigationController: notificationNavigationController,
+      notificationSync: notificationSync,
     ),
   );
 }
