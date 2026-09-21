@@ -58,10 +58,7 @@ void main() {
 
   group('relevance', () {
     test('orchestra member gets Rep but not Balettrep', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
@@ -70,16 +67,14 @@ void main() {
           event(id: 2, type: 'Balettrep'),
         ],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans.map((plan) => plan.eventId), [1]);
     });
 
     test('ballet member gets Balettrep but not Rep', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: balletMember,
@@ -88,16 +83,14 @@ void main() {
           event(id: 2, type: 'Balettrep'),
         ],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans.map((plan) => plan.eventId), [2]);
     });
 
     test('shared rehearsal types are relevant to members', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final events = [
         event(id: 1, type: 'Kårhusrep'),
@@ -110,46 +103,40 @@ void main() {
         me: orchestraMember,
         events: events,
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans.map((plan) => plan.eventId), [1, 2, 3, 4]);
     });
 
     test('attending signup makes other event type relevant', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event(type: 'Spelning', signupState: 'Direkt')],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans, hasLength(1));
     });
 
     test('Kan inte komma always suppresses notification', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event(type: 'Rep', signupState: 'Kan inte komma')],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans, isEmpty);
     });
 
     test('non-member receives no notifications', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       const nonMember = Me(
         displayName: 'Inte medlem',
@@ -162,6 +149,7 @@ void main() {
         me: nonMember,
         events: [event(type: 'Rep', signupState: 'Direkt')],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans, isEmpty);
@@ -169,32 +157,33 @@ void main() {
   });
 
   group('timing', () {
-    test('defaults schedule reminders 8 hours and 1 hour before event', () {
+    test('schedules each configured reminder before event', () {
       final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event(type: 'Rep')],
         now: DateTime.utc(2026, 9, 20, 6),
+        reminderOffsets: const [
+          Duration(hours: 5),
+          Duration(hours: 1),
+        ],
       );
 
       expect(plans, hasLength(2));
 
-      expect(plans[0].scheduledTime, DateTime.utc(2026, 9, 20, 8, 30));
-
+      expect(plans[0].scheduledTime, DateTime.utc(2026, 9, 20, 11, 30));
       expect(plans[1].scheduledTime, DateTime.utc(2026, 9, 20, 15, 30));
     });
 
     test('Hålan signup uses Hålan time', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event(signupState: 'Hålan')],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans.single.eventTime, DateTime.utc(2026, 9, 20, 16));
@@ -202,15 +191,13 @@ void main() {
     });
 
     test('Direkt signup uses normal arrival time', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [Duration(hours: 1)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event(signupState: 'Direkt')],
         now: DateTime.utc(2026, 9, 20, 8),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans.single.eventTime, DateTime.utc(2026, 9, 20, 16, 30));
@@ -222,7 +209,11 @@ void main() {
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event()],
-        now: DateTime.utc(2026, 9, 20, 10),
+        now: DateTime.utc(2026, 9, 20, 12),
+        reminderOffsets: const [
+          Duration(hours: 5),
+          Duration(hours: 1),
+        ],
       );
 
       expect(plans, hasLength(1));
@@ -238,21 +229,20 @@ void main() {
           event(halanTime: '00:00', thereTime: '00:00', startsTime: '00:00'),
         ],
         now: DateTime.utc(2026, 9, 20, 6),
+        reminderOffsets: const [Duration(hours: 1)],
       );
 
       expect(plans, isEmpty);
     });
 
     test('8 hour reminder remains 8 real hours before event across DST', () {
-      final planner = NotificationPlanner(
-        stockholm,
-        reminderOffsets: [const Duration(hours: 8)],
-      );
+      final planner = NotificationPlanner(stockholm);
 
       final plans = planner.buildPlans(
         me: orchestraMember,
         events: [event(date: '2026-10-25', thereTime: '10:00')],
         now: DateTime.utc(2026, 10, 24, 20),
+        reminderOffsets: const [Duration(hours: 8)],
       );
 
       expect(plans, hasLength(1));

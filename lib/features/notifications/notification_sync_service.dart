@@ -1,5 +1,6 @@
 import '../calendar/calendar_controller.dart';
 import '../me/me_api.dart';
+import '../settings/reminder_preferences.dart';
 import 'local_notification_service.dart';
 import 'notification_planner.dart';
 
@@ -14,7 +15,8 @@ class NotificationSyncService implements NotificationSync {
     this._meService,
     this._calendarController,
     this._planner,
-    this._notificationScheduler, {
+    this._notificationScheduler,
+    this._reminderPreferences, {
     DateTime Function()? now,
   }) : _now = now ?? (() => DateTime.now().toUtc());
 
@@ -22,6 +24,7 @@ class NotificationSyncService implements NotificationSync {
   final CalendarController _calendarController;
   final NotificationPlanner _planner;
   final LocalNotificationScheduler _notificationScheduler;
+  final ReminderPreferences _reminderPreferences;
   final DateTime Function() _now;
 
   @override
@@ -34,11 +37,13 @@ class NotificationSyncService implements NotificationSync {
 
     try {
       final me = await _meService.getMe();
+      final reminderOffsets = await _reminderPreferences.getReminderOffsets();
 
       final plans = _planner.buildPlans(
         me: me,
         events: _calendarController.events,
         now: _now(),
+        reminderOffsets: reminderOffsets,
       );
 
       await _notificationScheduler.reconcile(plans);

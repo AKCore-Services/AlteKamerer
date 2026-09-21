@@ -6,6 +6,7 @@ import '../event_details/event_details_api.dart';
 import '../event_registration/event_registration_api.dart';
 import '../notifications/notification_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
+import '../settings/reminder_preferences.dart';
 import '../shell/app_shell.dart';
 import 'auth_controller.dart';
 import 'login_screen.dart';
@@ -19,6 +20,7 @@ class AuthGate extends StatefulWidget {
     required this.eventRegistrationService,
     required this.notificationNavigationController,
     required this.notificationSync,
+    required this.reminderPreferences,
   });
 
   final AuthController authController;
@@ -27,6 +29,7 @@ class AuthGate extends StatefulWidget {
   final EventRegistrationService eventRegistrationService;
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
+  final ReminderPreferences reminderPreferences;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -92,6 +95,7 @@ class _AuthGateState extends State<AuthGate> {
             notificationNavigationController:
                 widget.notificationNavigationController,
             notificationSync: widget.notificationSync,
+            reminderPreferences: widget.reminderPreferences,
           ),
           AuthStatus.restoreFailed => Scaffold(
             body: SafeArea(

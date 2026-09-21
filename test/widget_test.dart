@@ -13,6 +13,7 @@ import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +32,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -54,6 +56,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -82,6 +85,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -109,6 +113,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -148,6 +153,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -185,6 +191,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -217,13 +224,21 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
     expect(find.byType(AppShell), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Logga ut'));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.text('Logga ut'), findsOneWidget);
+
+    await tester.tap(find.text('Logga ut'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(auth.logoutCalls, ['rotated-refresh']);
     expect(find.byType(LoginScreen), findsOneWidget);
@@ -257,6 +272,7 @@ void main() {
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: notificationSync,
+        reminderPreferences: _FakeReminderPreferences(),
       ),
     );
 
@@ -306,6 +322,7 @@ void main() {
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: notificationNavigationController,
           notificationSync: _FakeNotificationSync(),
+          reminderPreferences: _FakeReminderPreferences(),
         ),
       );
 
@@ -456,4 +473,14 @@ class _FakeNotificationSync implements NotificationSync {
   Future<void> clear() async {
     clearCount++;
   }
+}
+
+class _FakeReminderPreferences implements ReminderPreferences {
+  @override
+  Future<List<Duration>> getReminderOffsets() async {
+    return defaultReminderOffsets;
+  }
+
+  @override
+  Future<void> setReminderOffsets(List<Duration> offsets) async {}
 }

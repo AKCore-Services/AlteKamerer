@@ -12,6 +12,7 @@ import 'package:altekamerer/features/event_registration/event_registration_api.d
 import 'package:altekamerer/features/event_registration/event_registration_screen.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +40,7 @@ void main() {
           eventRegistrationService: eventRegistrationService,
           notificationNavigationController: NotificationNavigationController(),
           notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
         ),
       ),
     );
@@ -78,6 +80,7 @@ void main() {
           eventRegistrationService: registrationService,
           notificationNavigationController: NotificationNavigationController(),
           notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
         ),
       ),
     );
@@ -140,6 +143,7 @@ void main() {
           eventRegistrationService: registrationService,
           notificationNavigationController: notificationNavigationController,
           notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
         ),
       ),
     );
@@ -177,6 +181,7 @@ void main() {
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: notificationNavigationController,
           notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
         ),
       ),
     );
@@ -187,6 +192,54 @@ void main() {
     expect(eventDetailsService.requestedEventIds, [84]);
     expect(notificationNavigationController.pendingEventId, isNull);
   });
+
+  testWidgets('drawer switches between calendar and settings', (
+    WidgetTester tester,
+  ) async {
+    final calendarController = CalendarController(_FakeCalendarService());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AppShell(
+          authController: AuthController(
+            _FakeCredentialStore(),
+            _FakeAuthService(),
+            AccessTokenStore(),
+          ),
+          calendarController: calendarController,
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          notificationNavigationController: NotificationNavigationController(),
+          notificationSync: _FakeNotificationSync(calendarController),
+          reminderPreferences: _FakeReminderPreferences(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kårhusrep'), findsOneWidget);
+    expect(find.text('Påminnelser'), findsNothing);
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Inställningar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Påminnelser'), findsOneWidget);
+    expect(find.text('Kårhusrep'), findsNothing);
+
+    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kalender'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kårhusrep'), findsOneWidget);
+    expect(find.text('Påminnelser'), findsNothing);
+  });
+
 }
 
 class _FakeCalendarService implements CalendarService {
@@ -314,4 +367,14 @@ class _FakeNotificationSync implements NotificationSync {
   Future<void> clear() async {
     clearCount++;
   }
+}
+
+class _FakeReminderPreferences implements ReminderPreferences {
+  @override
+  Future<List<Duration>> getReminderOffsets() async {
+    return defaultReminderOffsets;
+  }
+
+  @override
+  Future<void> setReminderOffsets(List<Duration> offsets) async {}
 }

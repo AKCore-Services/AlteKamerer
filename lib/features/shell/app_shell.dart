@@ -13,6 +13,8 @@ import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
 import '../notifications/notification_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
+import '../settings/reminder_preferences.dart';
+import '../settings/reminder_settings_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -23,6 +25,7 @@ class AppShell extends StatefulWidget {
     required this.eventRegistrationService,
     required this.notificationNavigationController,
     required this.notificationSync,
+    required this.reminderPreferences,
   });
 
   final AuthController authController;
@@ -31,12 +34,20 @@ class AppShell extends StatefulWidget {
   final EventRegistrationService eventRegistrationService;
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
+  final ReminderPreferences reminderPreferences;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
+enum _ShellPage {
+  calendar,
+  settings,
+}
+
 class _AppShellState extends State<AppShell> {
+  _ShellPage _currentPage = _ShellPage.calendar;
+
   @override
   void initState() {
     super.initState();
@@ -64,30 +75,75 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Kalender'),
-        actions: [
-          IconButton(
-            tooltip: 'Logga ut',
-            onPressed: () async {
-              try {
-                await widget.authController.logout();
-              } catch (_) {
-                // Local credentials are cleared even if server logout fails.
-              }
-            },
-            icon: const Icon(Icons.logout),
+      appBar: AppBar(title: Text(_pageTitle)),
+      drawer: Drawer(
+        child: SafeArea(
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.calendar_month),
+                title: const Text('Kalender'),
+                selected: _currentPage == _ShellPage.calendar,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _currentPage = _ShellPage.calendar;
+                  });
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.settings),
+                title: const Text('Inställningar'),
+                selected: _currentPage == _ShellPage.settings,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _currentPage = _ShellPage.settings;
+                  });
+                },
+              ),
+              const Spacer(),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Logga ut'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+
+                  try {
+                    await widget.authController.logout();
+                  } catch (_) {
+                    // Local credentials are cleared even if server logout fails.
+                  }
+                },
+              ),
+            ],
           ),
-        ],
-      ),
-      body: SafeArea(
-        child: CalendarScreen(
-          controller: widget.calendarController,
-          onOpenEvent: _openEvent,
-          onRefresh: widget.notificationSync.sync,
         ),
       ),
+      body: SafeArea(child: _pageBody),
     );
+  }
+
+  String get _pageTitle {
+    return switch (_currentPage) {
+      _ShellPage.calendar => 'Kalender',
+      _ShellPage.settings => 'Inställningar',
+    };
+  }
+
+  Widget get _pageBody {
+    return switch (_currentPage) {
+      _ShellPage.calendar => CalendarScreen(
+        controller: widget.calendarController,
+        onOpenEvent: _openEvent,
+        onRefresh: widget.notificationSync.sync,
+      ),
+      _ShellPage.settings => ReminderSettingsScreen(
+        reminderPreferences: widget.reminderPreferences,
+        notificationSync: widget.notificationSync,
+      ),
+    };
   }
 
   void _handleNotificationNavigation() {

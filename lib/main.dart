@@ -16,8 +16,10 @@ import 'features/notifications/local_notification_service.dart';
 import 'features/notifications/notification_navigation_controller.dart';
 import 'features/notifications/notification_planner.dart';
 import 'features/notifications/notification_sync_service.dart';
+import 'features/settings/reminder_preferences.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -29,6 +31,10 @@ Future<void> main() async {
   final config = AppConfig.fromEnvironment();
   final accessTokenStore = AccessTokenStore();
   final credentialStore = SecureCredentialStore();
+  final sharedPreferences = await SharedPreferences.getInstance();
+  final reminderPreferences = SharedPreferencesReminderPreferences(
+    sharedPreferences,
+  );
   final apiClient = ApiClient(config, accessTokenStore);
   final authApi = AuthApi(apiClient);
   final calendarApi = CalendarApi(apiClient);
@@ -48,6 +54,7 @@ Future<void> main() async {
     calendarController,
     NotificationPlanner(stockholm),
     localNotificationService,
+    reminderPreferences,
   );
 
   await localNotificationService.initialize();
@@ -70,6 +77,7 @@ Future<void> main() async {
       eventRegistrationService: eventRegistrationApi,
       notificationNavigationController: notificationNavigationController,
       notificationSync: notificationSync,
+      reminderPreferences: reminderPreferences,
     ),
   );
 }

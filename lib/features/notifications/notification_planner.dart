@@ -4,21 +4,16 @@ import '../calendar/calendar_event.dart';
 import '../me/me.dart';
 import 'notification_plan.dart';
 
-const defaultReminderOffsets = [Duration(hours: 8), Duration(hours: 1)];
-
 class NotificationPlanner {
-  NotificationPlanner(
-    this.location, {
-    this.reminderOffsets = defaultReminderOffsets,
-  });
+  NotificationPlanner(this.location);
 
   final tz.Location location;
-  final List<Duration> reminderOffsets;
 
   List<NotificationPlan> buildPlans({
     required Me me,
     required List<CalendarEvent> events,
     required DateTime now,
+    required List<Duration> reminderOffsets,
   }) {
     if (!me.isMember) {
       return const [];

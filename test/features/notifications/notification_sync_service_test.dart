@@ -7,6 +7,7 @@ import 'package:altekamerer/features/notifications/local_notification_service.da
 import 'package:altekamerer/features/notifications/notification_plan.dart';
 import 'package:altekamerer/features/notifications/notification_planner.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
@@ -19,7 +20,7 @@ void main() {
     stockholm = tz.getLocation('Europe/Stockholm');
   });
 
-  test('sync refreshes calendar and reconciles notification plans', () async {
+  test('sync refreshes calendar and uses configured reminder offsets', () async {
     final calendarController = CalendarController(_FakeCalendarService());
     final scheduler = _FakeNotificationScheduler();
 
@@ -28,6 +29,10 @@ void main() {
       calendarController,
       NotificationPlanner(stockholm),
       scheduler,
+      _FakeReminderPreferences([
+        const Duration(hours: 5),
+        const Duration(hours: 1),
+      ]),
       now: () => DateTime.utc(2026, 9, 20, 6),
     );
 
@@ -38,9 +43,55 @@ void main() {
 
     expect(scheduler.reconciledPlans, hasLength(2));
     expect(scheduler.reconciledPlans.map((plan) => plan.reminderOffset), [
-      const Duration(hours: 8),
+      const Duration(hours: 5),
       const Duration(hours: 1),
     ]);
+  });
+
+  test('sync supports a configurable number of reminders', () async {
+    final calendarController = CalendarController(_FakeCalendarService());
+    final scheduler = _FakeNotificationScheduler();
+
+    final service = NotificationSyncService(
+      _FakeMeService(),
+      calendarController,
+      NotificationPlanner(stockholm),
+      scheduler,
+      _FakeReminderPreferences([
+        const Duration(hours: 6),
+        const Duration(hours: 2),
+        const Duration(minutes: 30),
+      ]),
+      now: () => DateTime.utc(2026, 9, 20, 6),
+    );
+
+    await service.sync();
+
+    expect(scheduler.reconciledPlans, hasLength(3));
+    expect(scheduler.reconciledPlans.map((plan) => plan.reminderOffset), [
+      const Duration(hours: 6),
+      const Duration(hours: 2),
+      const Duration(minutes: 30),
+    ]);
+  });
+
+  test('empty reminder configuration clears scheduled reminders', () async {
+    final calendarController = CalendarController(_FakeCalendarService());
+    final scheduler = _FakeNotificationScheduler();
+
+    final service = NotificationSyncService(
+      _FakeMeService(),
+      calendarController,
+      NotificationPlanner(stockholm),
+      scheduler,
+      _FakeReminderPreferences(const []),
+      now: () => DateTime.utc(2026, 9, 20, 6),
+    );
+
+    await service.sync();
+
+    expect(scheduler.reconcileCount, 1);
+    expect(scheduler.reconciledPlans, isEmpty);
   });
 
   test('clear delegates to local notification scheduler', () async {
@@ -51,6 +102,7 @@ void main() {
       CalendarController(_FakeCalendarService()),
       NotificationPlanner(stockholm),
       scheduler,
+      _FakeReminderPreferences(defaultReminderOffsets),
     );
 
     await service.clear();
@@ -66,6 +118,7 @@ void main() {
       CalendarController(_FailingCalendarService()),
       NotificationPlanner(stockholm),
       scheduler,
+      _FakeReminderPreferences(defaultReminderOffsets),
     );
 
     await service.sync();
@@ -117,6 +170,18 @@ class _FakeMeService implements MeService {
       availableInstruments: [],
     );
   }
+}
+
+class _FakeReminderPreferences implements ReminderPreferences {
+  _FakeReminderPreferences(this.offsets);
+
+  final List<Duration> offsets;
+
+  @override
+  Future<List<Duration>> getReminderOffsets() async => offsets;
+
+  @override
+  Future<void> setReminderOffsets(List<Duration> offsets) async {}
 }
 
 class _FakeNotificationScheduler implements LocalNotificationScheduler {
