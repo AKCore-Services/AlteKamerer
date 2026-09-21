@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate:
-    name: AlteKamerer
+    name: Tests and analysis
     runs-on: ubuntu-latest
 
     container:
@@ -34,6 +34,28 @@ jobs:
 
       - name: Validate AlteKamerer
         run: ./scripts/validate-ci.sh
+
+  debug-apk:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/ubk8751/flutter-android-ci@sha256:00e8703d227d3cccbd927c327f652df4f76f867e1d18562def11ba327f164b00
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Restore Flutter and Gradle caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            /root/.pub-cache
+            /root/.gradle/caches
+            /root/.gradle/wrapper
+          key: mobile-${{ runner.os }}-${{ hashFiles('pubspec.lock', 'android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            mobile-${{ runner.os }}-
 
       - name: Build Android APK
         run: flutter build apk --debug
