@@ -122,6 +122,7 @@ Applikationen använder bland annat:
 - `http`
 - `flutter_secure_storage`
 - `flutter_local_notifications`
+- `shared_preferences`
 - `cupertino_icons`
 
 För utveckling används bland annat:
@@ -276,15 +277,17 @@ Releaseflödet:
 
 1. återställer release-signeringen från CI-hemligheter;
 2. verifierar att taggens version stämmer med `pubspec.yaml`;
-3. bygger Android-applikationens release-APK;
+3. bygger Android-applikationens signerade release-APK;
 4. döper om den till `AlteKamerer-X.Y.Z.apk`;
-5. laddar upp APK-filen som CI-artifact.
+5. laddar upp APK-filen till motsvarande GitHub Release.
 
 För version 1.0.0 blir filnamnet:
 
 ```text
 AlteKamerer-1.0.0.apk
 ```
+
+Releasebygget är separat från den vanliga valideringen på `main`.
 
 ## Utvecklingsflöde
 
@@ -302,22 +305,33 @@ Repo-valideringen definieras i:
 .github/workflows/validation.yml
 ```
 
-Pull requests och pushar till `main` kör AlteKamerers validering.
+Pull requests och pushar till `main` kör två separata jobb.
 
-Valideringen kör:
+### Tester och analys
 
-```text
-AlteKamerer mobile
-```
-
-Mobilvalideringen kör:
+Valideringsjobbet kör projektets valideringsskript:
 
 ```text
-flutter pub get
-flutter analyze
-flutter test
-flutter build apk --debug
+./scripts/validate-ci.sh
 ```
+
+Det omfattar bland annat Flutter-tester, statisk analys och övriga
+repo-kontroller.
+
+### Debug-APK
+
+Ett separat CI-jobb bygger:
+
+```text
+build/app/outputs/flutter-apk/app-debug.apk
+```
+
+och publicerar den som en GitHub Actions-artifact.
+
+Debug-APK-bygget och test-/analysjobbet körs separat.
+
+Signerade releasebyggen hanteras av det separata taggstyrda
+releaseflödet.
 
 AKCore-backenden och dess tester valideras separat i AKCore-repot.
 
@@ -371,6 +385,7 @@ lib/features/calendar
 lib/features/event_details
 lib/features/event_registration
 lib/features/notifications
+lib/features/settings
 lib/features/shell
 ```
 

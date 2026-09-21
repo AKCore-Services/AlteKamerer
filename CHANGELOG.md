@@ -4,7 +4,7 @@ Alla betydande AlteKamerer-releaser dokumenteras här.
 
 ## 1.0.0
 
-Första Android-releasen av AlteKamerer, mobilapplikationen för AKCore.
+Första stabila Android-releasen av AlteKamerer, mobilapplikationen för AKCore.
 
 ### Autentisering
 
@@ -26,6 +26,7 @@ Första Android-releasen av AlteKamerer, mobilapplikationen för AKCore.
 - Autentiserad AKCore-kalender.
 - Kalendersynlighet baserad på AKCores befintliga medlemssemantik.
 - Mobil kalenderpresentation med AKCores visuella identitet.
+- Navigering från kalenderposter till aktivitetsdetaljer.
 
 ### Aktiviteter
 
@@ -38,14 +39,15 @@ Första Android-releasen av AlteKamerer, mobilapplikationen för AKCore.
 - Anmälan genom mobilapplikationen.
 - Stöd för `Hålan`, `Direkt` och `Kan inte komma`.
 - Anmälningsbeteendet följer AKCores befintliga regler.
-- Dubblettanmälningar förhindras.
-- Inaktiverade och passerade aktiviteter hanteras.
+- Dubblettanmälningar förhindras mellan mobilapplikationen och webbplatsen.
+- Inaktiverade och passerade aktiviteter hanteras enligt AKCores regler.
 - Ändringar sparas i samma AKCore-data som webbplatsen använder.
+- Ändringar som görs i appen och på webbplatsen visas i båda klienterna.
 
 ### Notiser
 
 - Registrering av mobila enheter.
-- Notisrelevans samma dag baserad på medlems- och aktivitetsdata.
+- Notisrelevans baserad på medlems-, aktivitets- och anmälningsdata.
 - Relevans för orkesterrep, balettrep och övriga stödda reptyper.
 - Relevans för aktiviteter som medlemmen är anmäld till.
 - `Kan inte komma` fungerar som uttryckligt avstående från notiser för
@@ -53,14 +55,21 @@ Första Android-releasen av AlteKamerer, mobilapplikationen för AKCore.
 - Spårning av notisleveranser.
 - Backend-integration med Firebase Cloud Messaging.
 - Navigering från notis till motsvarande aktivitet.
+- Förvalda påminnelser 5 timmar och 1 timme före aktivitet.
+- Inställningar för valfria påminnelsetider.
+- Stöd för flera eller inga påminnelser.
+- Notisinställningar sparas lokalt och ändringar synkroniserar schemalagda
+  notiser direkt.
 
 ### Android-applikation
 
 - Flutter-applikation för Android.
 - AKCores logotyp, färger, terminologi och visuella identitet.
+- Adaptiv Android-appikon som följer launcher-enhetens ikonmask.
 - Säker lagring av autentiseringsuppgifter.
-- Gränssnitt för kalender, aktivitet, anmälan och notiser.
-- Stöd för att bygga Android-APK.
+- Gränssnitt för kalender, aktivitet, anmälan, notiser och inställningar.
+- Navigeringsmeny för kalender, inställningar och utloggning.
+- Stöd för debug- och signerade release-APK:er.
 
 ### Mobilt API
 
@@ -81,7 +90,24 @@ AKCore-backenden och databasen som källa till sanning.
 - Flutter-tester och statisk analys.
 - AKCore-integrationstester för det mobila API:t.
 - Formateringskontroller för repot.
-- Generering av debug-APK i CI.
+- Separata CI-jobb för validering och debug-APK.
 - Taggstyrda signerade Android-releasebyggen.
 - Versionskontroll mellan release-taggar och `pubspec.yaml`.
-- Versionsmärkta release-APK-artifacts.
+- Versionsmärkta APK-filer.
+- Automatisk uppladdning av signerad APK till motsvarande GitHub Release.
+
+### Releasevalidering
+
+Version 1.0.0 validerades mot en faktisk AKCore-miljö med bland annat:
+
+- installation av release-APK;
+- giltig och ogiltig inloggning;
+- beständig session och utloggning;
+- kalender och aktivitetsdetaljer;
+- samtliga stödda anmälningsalternativ;
+- synkronisering mellan webbplats och app;
+- relevanta aktivitets- och repnotiser;
+- notisundantag för `Kan inte komma`;
+- navigering från notis till aktivitet;
+- regression av befintlig AKCore-webbplats;
+- signerad Android-release via CI.
