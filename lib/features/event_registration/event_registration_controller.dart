@@ -100,9 +100,7 @@ class EventRegistrationController extends ChangeNotifier {
     final where = _where;
 
     if (where == null || where.isEmpty) {
-      _error = const EventRegistrationValidationError(
-        'Du måste välja hur du kommer.',
-      );
+      _error = const EventRegistrationValidationError();
       _status = EventRegistrationStatus.error;
       notifyListeners();
       return false;
@@ -145,10 +143,5 @@ class EventRegistrationController extends ChangeNotifier {
 }
 
 class EventRegistrationValidationError implements Exception {
-  const EventRegistrationValidationError(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
+  const EventRegistrationValidationError();
 }

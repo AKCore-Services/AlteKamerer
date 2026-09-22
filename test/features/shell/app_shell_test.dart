@@ -12,8 +12,11 @@ import 'package:altekamerer/features/event_registration/event_registration_api.d
 import 'package:altekamerer/features/event_registration/event_registration_screen.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/locale_controller.dart';
+import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
+import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -33,6 +36,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AppShell(
           authController: authController,
           calendarController: calendarController,
@@ -41,6 +47,7 @@ void main() {
           notificationNavigationController: NotificationNavigationController(),
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
         ),
       ),
     );
@@ -73,6 +80,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AppShell(
           authController: authController,
           calendarController: calendarController,
@@ -81,6 +91,7 @@ void main() {
           notificationNavigationController: NotificationNavigationController(),
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
         ),
       ),
     );
@@ -136,6 +147,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AppShell(
           authController: authController,
           calendarController: calendarController,
@@ -144,6 +158,7 @@ void main() {
           notificationNavigationController: notificationNavigationController,
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
         ),
       ),
     );
@@ -170,6 +185,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AppShell(
           authController: AuthController(
             _FakeCredentialStore(),
@@ -182,6 +200,7 @@ void main() {
           notificationNavigationController: notificationNavigationController,
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
         ),
       ),
     );
@@ -200,6 +219,9 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: AppShell(
           authController: AuthController(
             _FakeCredentialStore(),
@@ -212,6 +234,7 @@ void main() {
           notificationNavigationController: NotificationNavigationController(),
           notificationSync: _FakeNotificationSync(calendarController),
           reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
         ),
       ),
     );
@@ -221,7 +244,7 @@ void main() {
     expect(find.text('Kårhusrep'), findsOneWidget);
     expect(find.text('Påminnelser'), findsNothing);
 
-    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Inställningar'));
@@ -230,7 +253,7 @@ void main() {
     expect(find.text('Påminnelser'), findsOneWidget);
     expect(find.text('Kårhusrep'), findsNothing);
 
-    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Kalender'));
@@ -239,7 +262,6 @@ void main() {
     expect(find.text('Kårhusrep'), findsOneWidget);
     expect(find.text('Påminnelser'), findsNothing);
   });
-
 }
 
 class _FakeCalendarService implements CalendarService {
@@ -366,6 +388,24 @@ class _FakeNotificationSync implements NotificationSync {
   @override
   Future<void> clear() async {
     clearCount++;
+  }
+}
+
+LocaleController _createLocaleController() {
+  return LocaleController(_FakeLocalePreferences());
+}
+
+class _FakeLocalePreferences implements LocalePreferences {
+  AppLocalePreference _preference = AppLocalePreference.system;
+
+  @override
+  Future<AppLocalePreference> getLocalePreference() async {
+    return _preference;
+  }
+
+  @override
+  Future<void> setLocalePreference(AppLocalePreference preference) async {
+    _preference = preference;
   }
 }
 

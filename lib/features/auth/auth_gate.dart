@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/ak_status_view.dart';
+import '../../l10n/app_localizations.dart';
 import '../calendar/calendar_controller.dart';
 import '../event_details/event_details_api.dart';
 import '../event_registration/event_registration_api.dart';
 import '../notifications/notification_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
+import '../settings/locale_controller.dart';
 import '../settings/reminder_preferences.dart';
 import '../shell/app_shell.dart';
 import 'auth_controller.dart';
@@ -21,6 +23,7 @@ class AuthGate extends StatefulWidget {
     required this.notificationNavigationController,
     required this.notificationSync,
     required this.reminderPreferences,
+    required this.localeController,
   });
 
   final AuthController authController;
@@ -30,6 +33,7 @@ class AuthGate extends StatefulWidget {
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
+  final LocaleController localeController;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -80,6 +84,8 @@ class _AuthGateState extends State<AuthGate> {
     return ListenableBuilder(
       listenable: widget.authController,
       builder: (context, child) {
+        final l10n = AppLocalizations.of(context);
+
         return switch (widget.authController.status) {
           AuthStatus.loading => const Scaffold(
             body: SafeArea(child: AkLoadingView()),
@@ -96,12 +102,13 @@ class _AuthGateState extends State<AuthGate> {
                 widget.notificationNavigationController,
             notificationSync: widget.notificationSync,
             reminderPreferences: widget.reminderPreferences,
+            localeController: widget.localeController,
           ),
           AuthStatus.restoreFailed => Scaffold(
             body: SafeArea(
               child: AkErrorView(
-                title: 'Kunde inte ansluta',
-                message: 'AlteKamerer kunde inte kontrollera din inloggning mot AKCore.',
+                title: l10n.connectionFailed,
+                message: l10n.sessionCheckFailed,
                 onRetry: () {
                   widget.authController.restoreSession();
                 },

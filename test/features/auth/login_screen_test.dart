@@ -5,6 +5,7 @@ import 'package:altekamerer/core/theme/app_theme.dart';
 import 'package:altekamerer/features/auth/auth_api.dart';
 import 'package:altekamerer/features/auth/auth_controller.dart';
 import 'package:altekamerer/features/auth/login_screen.dart';
+import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -79,7 +80,13 @@ void main() {
 }
 
 Widget _testApp(Widget child) {
-  return MaterialApp(theme: AppTheme.dark, home: child);
+  return MaterialApp(
+    theme: AppTheme.dark,
+    locale: const Locale('sv'),
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    home: child,
+  );
 }
 
 AuthController _createController(FakeAuthService auth) {

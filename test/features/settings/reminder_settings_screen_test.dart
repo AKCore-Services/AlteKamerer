@@ -1,10 +1,41 @@
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/locale_controller.dart';
+import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_settings_screen.dart';
+import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('changing language resynchronizes notifications', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final notificationSync = _FakeNotificationSync();
+    final localeController = _createLocaleController(
+      AppLocalePreference.swedish,
+    );
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      notificationSync: notificationSync,
+      localeController: localeController,
+    );
+
+    final languageSelector = tester
+        .widget<DropdownButtonFormField<AppLocalePreference>>(
+          find.byType(DropdownButtonFormField<AppLocalePreference>),
+        );
+
+    languageSelector.onChanged!(AppLocalePreference.english);
+    await tester.pumpAndSettle();
+
+    expect(localeController.preference, AppLocalePreference.english);
+    expect(notificationSync.syncCount, 1);
+  });
+
   testWidgets('loads configured reminders', (WidgetTester tester) async {
     final preferences = _FakeReminderPreferences([
       const Duration(hours: 5),
@@ -92,9 +123,7 @@ void main() {
     expect(notificationSync.syncCount, 1);
   });
 
-  testWidgets('rejects duplicate reminder times', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('rejects duplicate reminder times', (WidgetTester tester) async {
     final preferences = _FakeReminderPreferences([
       const Duration(hours: 1),
       const Duration(minutes: 60),
@@ -111,9 +140,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text(
-        'Två påminnelser kan inte ha samma tid före aktiviteten.',
-      ),
+      find.text('Två påminnelser kan inte ha samma tid före aktiviteten.'),
       findsOneWidget,
     );
     expect(preferences.setCount, 0);
@@ -121,9 +148,7 @@ void main() {
   });
 
   testWidgets('rejects zero reminder time', (WidgetTester tester) async {
-    final preferences = _FakeReminderPreferences([
-      const Duration(hours: 1),
-    ]);
+    final preferences = _FakeReminderPreferences([const Duration(hours: 1)]);
     final notificationSync = _FakeNotificationSync();
 
     await _pumpScreen(
@@ -139,9 +164,7 @@ void main() {
     await tester.pump();
 
     expect(
-      find.text(
-        'Alla påminnelser måste ha en tid som är större än 0.',
-      ),
+      find.text('Alla påminnelser måste ha en tid som är större än 0.'),
       findsOneWidget,
     );
     expect(preferences.setCount, 0);
@@ -153,19 +176,32 @@ Future<void> _pumpScreen(
   WidgetTester tester, {
   required _FakeReminderPreferences preferences,
   _FakeNotificationSync? notificationSync,
+  LocaleController? localeController,
 }) async {
+  final controller = localeController ?? _createLocaleController();
+
   await tester.pumpWidget(
     MaterialApp(
+      locale: const Locale('sv'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: ReminderSettingsScreen(
           reminderPreferences: preferences,
           notificationSync: notificationSync ?? _FakeNotificationSync(),
+          localeController: controller,
         ),
       ),
     ),
   );
 
   await tester.pumpAndSettle();
+}
+
+LocaleController _createLocaleController([
+  AppLocalePreference preference = AppLocalePreference.system,
+]) {
+  return LocaleController(_FakeLocalePreferences(preference));
 }
 
 class _FakeReminderPreferences implements ReminderPreferences {
@@ -185,6 +221,22 @@ class _FakeReminderPreferences implements ReminderPreferences {
   Future<void> setReminderOffsets(List<Duration> offsets) async {
     setCount++;
     savedOffsets = List.of(offsets);
+  }
+}
+
+class _FakeLocalePreferences implements LocalePreferences {
+  _FakeLocalePreferences(this.preference);
+
+  AppLocalePreference preference;
+
+  @override
+  Future<AppLocalePreference> getLocalePreference() async {
+    return preference;
+  }
+
+  @override
+  Future<void> setLocalePreference(AppLocalePreference preference) async {
+    this.preference = preference;
   }
 }
 

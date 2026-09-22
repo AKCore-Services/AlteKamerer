@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'ak_brand_logo.dart';
 
 class AkLoadingView extends StatelessWidget {
@@ -35,6 +37,7 @@ class AkErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Center(
       child: Padding(
@@ -59,10 +62,7 @@ class AkErrorView extends StatelessWidget {
               ),
               if (onRetry != null) ...[
                 const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: onRetry,
-                  child: const Text('Försök igen'),
-                ),
+                FilledButton(onPressed: onRetry, child: Text(l10n.retry)),
               ],
             ],
           ),

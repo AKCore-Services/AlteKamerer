@@ -14,7 +14,9 @@ import '../event_registration/event_registration_screen.dart';
 import '../notifications/notification_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/reminder_preferences.dart';
+import '../settings/locale_controller.dart';
 import '../settings/reminder_settings_screen.dart';
+import '../../l10n/app_localizations.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({
@@ -26,6 +28,7 @@ class AppShell extends StatefulWidget {
     required this.notificationNavigationController,
     required this.notificationSync,
     required this.reminderPreferences,
+    required this.localeController,
   });
 
   final AuthController authController;
@@ -35,15 +38,13 @@ class AppShell extends StatefulWidget {
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
+  final LocaleController localeController;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
-enum _ShellPage {
-  calendar,
-  settings,
-}
+enum _ShellPage { calendar, settings }
 
 class _AppShellState extends State<AppShell> {
   _ShellPage _currentPage = _ShellPage.calendar;
@@ -74,15 +75,16 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(_pageTitle)),
+      appBar: AppBar(title: Text(_pageTitle(l10n))),
       drawer: Drawer(
         child: SafeArea(
           child: Column(
             children: [
               ListTile(
                 leading: const Icon(Icons.calendar_month),
-                title: const Text('Kalender'),
+                title: Text(l10n.calendar),
                 selected: _currentPage == _ShellPage.calendar,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -93,7 +95,7 @@ class _AppShellState extends State<AppShell> {
               ),
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('Inställningar'),
+                title: Text(l10n.settings),
                 selected: _currentPage == _ShellPage.settings,
                 onTap: () {
                   Navigator.of(context).pop();
@@ -106,7 +108,7 @@ class _AppShellState extends State<AppShell> {
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.logout),
-                title: const Text('Logga ut'),
+                title: Text(l10n.logOut),
                 onTap: () async {
                   Navigator.of(context).pop();
 
@@ -125,10 +127,10 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  String get _pageTitle {
+  String _pageTitle(AppLocalizations l10n) {
     return switch (_currentPage) {
-      _ShellPage.calendar => 'Kalender',
-      _ShellPage.settings => 'Inställningar',
+      _ShellPage.calendar => l10n.calendar,
+      _ShellPage.settings => l10n.settings,
     };
   }
 
@@ -142,6 +144,7 @@ class _AppShellState extends State<AppShell> {
       _ShellPage.settings => ReminderSettingsScreen(
         reminderPreferences: widget.reminderPreferences,
         notificationSync: widget.notificationSync,
+        localeController: widget.localeController,
       ),
     };
   }

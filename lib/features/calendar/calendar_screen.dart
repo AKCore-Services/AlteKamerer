@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
+import '../../l10n/app_localizations.dart';
 import 'calendar_controller.dart';
 import 'calendar_event.dart';
 import 'calendar_event_row.dart';
@@ -23,11 +24,13 @@ class CalendarScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, child) {
+        final l10n = AppLocalizations.of(context);
+
         return switch (controller.status) {
           CalendarStatus.loading => const AkLoadingView(),
           CalendarStatus.error => AkErrorView(
-            title: 'Kunde inte hämta kalendern',
-            message: 'AlteKamerer kunde inte hämta kommande aktiviteter från AKCore.',
+            title: l10n.calendarLoadFailed,
+            message: l10n.calendarLoadFailedMessage,
             onRetry: onRefresh,
           ),
           CalendarStatus.loaded => _buildLoaded(context),
@@ -80,6 +83,7 @@ class _CalendarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.labelMedium
         ?.copyWith(fontWeight: FontWeight.w600);
 
@@ -87,10 +91,10 @@ class _CalendarHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          SizedBox(width: 54, child: Text('Datum', style: style)),
-          SizedBox(width: 54, child: Text('Tid', style: style)),
-          SizedBox(width: 92, child: Text('Typ', style: style)),
-          Expanded(child: Text('Plats', style: style)),
+          SizedBox(width: 54, child: Text(l10n.calendarDate, style: style)),
+          SizedBox(width: 54, child: Text(l10n.calendarTime, style: style)),
+          SizedBox(width: 92, child: Text(l10n.calendarType, style: style)),
+          Expanded(child: Text(l10n.calendarPlace, style: style)),
           const SizedBox(width: 32),
         ],
       ),
@@ -103,6 +107,8 @@ class _EmptyCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -112,13 +118,13 @@ class _EmptyCalendar extends StatelessWidget {
             const Icon(Icons.event_available, size: 48),
             const SizedBox(height: 16),
             Text(
-              'Inga kommande aktiviteter',
+              l10n.noUpcomingActivities,
               style: Theme.of(context).textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Det finns inga aktiviteter i kalendern just nu.',
+              l10n.emptyCalendar,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

@@ -1,7 +1,11 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../l10n/app_localizations.dart';
+import '../settings/locale_controller.dart';
+import '../settings/locale_preferences.dart';
 import 'notification_event_payload.dart';
 import 'notification_navigation_controller.dart';
 import 'notification_plan.dart';
@@ -13,15 +17,21 @@ abstract interface class LocalNotificationScheduler {
 }
 
 class LocalNotificationService implements LocalNotificationScheduler {
-  LocalNotificationService(this._plugin, this._navigationController);
+  LocalNotificationService(
+    this._plugin,
+    this._navigationController,
+    this._localeController, {
+    Locale Function()? systemLocale,
+  }) : _systemLocale =
+           systemLocale ??
+           (() => WidgetsBinding.instance.platformDispatcher.locale);
 
   static const _channelId = 'event-reminders';
-  static const _channelName = 'Aktivitetspåminnelser';
-  static const _channelDescription =
-      'Påminnelser inför aktiviteter i AlteKamereren';
 
   final FlutterLocalNotificationsPlugin _plugin;
   final NotificationNavigationController _navigationController;
+  final LocaleController _localeController;
+  final Locale Function() _systemLocale;
 
   late final tz.Location _stockholm;
   bool _permissionRequested = false;
@@ -39,6 +49,8 @@ class LocalNotificationService implements LocalNotificationScheduler {
       onDidReceiveNotificationResponse: _handleResponse,
     );
 
+    await _ensureNotificationChannel();
+
     final launchDetails = await _plugin.getNotificationAppLaunchDetails();
 
     if (launchDetails?.didNotificationLaunchApp ?? false) {
@@ -48,6 +60,8 @@ class LocalNotificationService implements LocalNotificationScheduler {
 
   @override
   Future<void> reconcile(List<NotificationPlan> plans) async {
+    await _ensureNotificationChannel();
+
     if (plans.isNotEmpty && !_permissionRequested) {
       _permissionRequested = true;
 
@@ -71,12 +85,32 @@ class LocalNotificationService implements LocalNotificationScheduler {
     await _plugin.cancelAll();
   }
 
+  Future<void> _ensureNotificationChannel() async {
+    final l10n = _localizations();
+
+    final android = _plugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    await android?.createNotificationChannel(
+      AndroidNotificationChannel(
+        _channelId,
+        l10n.notificationChannelName,
+        description: l10n.notificationChannelDescription,
+        importance: Importance.high,
+      ),
+    );
+  }
+
   Future<void> _schedule(NotificationPlan plan) async {
-    const details = NotificationDetails(
+    final l10n = _localizations();
+
+    final details = NotificationDetails(
       android: AndroidNotificationDetails(
         _channelId,
-        _channelName,
-        channelDescription: _channelDescription,
+        l10n.notificationChannelName,
+        channelDescription: l10n.notificationChannelDescription,
         importance: Importance.high,
         priority: Priority.high,
       ),
@@ -100,19 +134,50 @@ class LocalNotificationService implements LocalNotificationScheduler {
   }
 
   String _bodyFor(NotificationPlan plan) {
+    final l10n = _localizations();
     final minutes = plan.reminderOffset.inMinutes;
 
     if (minutes % 60 == 0) {
       final hours = minutes ~/ 60;
 
       if (hours == 1) {
-        return 'Börjar om 1 timme';
+        return l10n.notificationStartsInOneHour;
       }
 
-      return 'Börjar om $hours timmar';
+      return l10n.notificationStartsInHours(hours);
     }
 
-    return 'Börjar om $minutes minuter';
+    return l10n.notificationStartsInMinutes(minutes);
+  }
+
+  AppLocalizations _localizations() {
+    return lookupAppLocalizations(_resolvedLocale());
+  }
+
+  Locale _resolvedLocale() {
+    return switch (_localeController.preference) {
+      AppLocalePreference.swedish => const Locale('sv'),
+      AppLocalePreference.english => const Locale('en'),
+      AppLocalePreference.system =>
+        _systemLocale().languageCode == 'sv'
+            ? const Locale('sv')
+            : const Locale('en'),
+    };
+  }
+
+  @visibleForTesting
+  String bodyForPlan(NotificationPlan plan) {
+    return _bodyFor(plan);
+  }
+
+  @visibleForTesting
+  String get channelName {
+    return _localizations().notificationChannelName;
+  }
+
+  @visibleForTesting
+  String get channelDescription {
+    return _localizations().notificationChannelDescription;
   }
 
   void _handleResponse(NotificationResponse? response) {

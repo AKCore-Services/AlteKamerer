@@ -4,6 +4,7 @@ import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
 import 'package:altekamerer/features/calendar/calendar_screen.dart';
+import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -162,6 +163,9 @@ class _TestApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: const Locale('sv'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
         body: CalendarScreen(
           controller: controller,

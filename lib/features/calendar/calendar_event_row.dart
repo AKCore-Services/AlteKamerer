@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 import 'calendar_event.dart';
 
 class CalendarEventRow extends StatelessWidget {
@@ -75,30 +77,36 @@ class _RegistrationIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (event.isAttending) {
       return Tooltip(
-        message: 'Anmäld: ${event.signupState}',
+        message:
+            '${l10n.akUpcomingSignedUp}: '
+            '${_signupStateLabel(l10n, event.signupState)}',
         child: Semantics(
-          label: 'Anmäld och kommer',
-          child: Icon(Icons.check_circle, color: Colors.green),
+          label: l10n.registeredAttending,
+          child: const Icon(Icons.check_circle, color: Colors.green),
         ),
       );
     }
 
     if (event.isRegisteredNotAttending) {
       return Tooltip(
-        message: 'Anmäld: Kan inte komma',
+        message:
+            '${l10n.akUpcomingSignedUp}: '
+            '${_signupStateLabel(l10n, event.signupState)}',
         child: Semantics(
-          label: 'Anmäld men kommer inte',
+          label: l10n.registeredNotAttending,
           child: Icon(Icons.cancel, color: Theme.of(context).colorScheme.error),
         ),
       );
     }
 
     return Tooltip(
-      message: 'Inte anmäld',
+      message: l10n.notRegistered,
       child: Semantics(
-        label: 'Inte anmäld',
+        label: l10n.notRegistered,
         child: Icon(
           Icons.radio_button_unchecked,
           color: Theme.of(context).colorScheme.secondary,
@@ -106,4 +114,14 @@ class _RegistrationIndicator extends StatelessWidget {
       ),
     );
   }
+}
+
+String _signupStateLabel(AppLocalizations l10n, String? signupState) {
+  return switch (signupState) {
+    'Hålan' => l10n.akSignupHalan,
+    'Direkt' => l10n.akSignupDirect,
+    'Kan inte komma' => l10n.akSignupCantCome,
+    null => '',
+    _ => signupState,
+  };
 }
