@@ -16,6 +16,8 @@ import 'features/notifications/local_notification_service.dart';
 import 'features/notifications/notification_navigation_controller.dart';
 import 'features/notifications/notification_planner.dart';
 import 'features/notifications/notification_sync_service.dart';
+import 'features/settings/locale_controller.dart';
+import 'features/settings/locale_preferences.dart';
 import 'features/settings/reminder_preferences.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -32,6 +34,12 @@ Future<void> main() async {
   final accessTokenStore = AccessTokenStore();
   final credentialStore = SecureCredentialStore();
   final sharedPreferences = await SharedPreferences.getInstance();
+  final localePreferences = SharedPreferencesLocalePreferences(
+    sharedPreferences,
+  );
+  final localeController = LocaleController(localePreferences);
+  await localeController.load();
+
   final reminderPreferences = SharedPreferencesReminderPreferences(
     sharedPreferences,
   );
@@ -47,6 +55,7 @@ Future<void> main() async {
   final localNotificationService = LocalNotificationService(
     FlutterLocalNotificationsPlugin(),
     notificationNavigationController,
+    localeController,
   );
 
   final notificationSync = NotificationSyncService(
@@ -78,6 +87,7 @@ Future<void> main() async {
       notificationNavigationController: notificationNavigationController,
       notificationSync: notificationSync,
       reminderPreferences: reminderPreferences,
+      localeController: localeController,
     ),
   );
 }

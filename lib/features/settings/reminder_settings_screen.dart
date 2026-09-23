@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
+import '../../l10n/app_localizations.dart';
 import '../notifications/notification_sync_service.dart';
+import 'locale_controller.dart';
+import 'locale_preferences.dart';
 import 'reminder_preferences.dart';
 
 class ReminderSettingsScreen extends StatefulWidget {
@@ -10,14 +13,15 @@ class ReminderSettingsScreen extends StatefulWidget {
     super.key,
     required this.reminderPreferences,
     required this.notificationSync,
+    required this.localeController,
   });
 
   final ReminderPreferences reminderPreferences;
   final NotificationSync notificationSync;
+  final LocaleController localeController;
 
   @override
-  State<ReminderSettingsScreen> createState() =>
-      _ReminderSettingsScreenState();
+  State<ReminderSettingsScreen> createState() => _ReminderSettingsScreenState();
 }
 
 class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
@@ -26,8 +30,8 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _loadFailed = false;
-  String? _validationMessage;
-  String? _statusMessage;
+  _ReminderValidation? _validation;
+  _ReminderSaveStatus? _saveStatus;
 
   @override
   void initState() {
@@ -57,9 +61,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
         return;
       }
 
-      _replaceReminders(
-        offsets.map(_ReminderEditor.fromDuration).toList(),
-      );
+      _replaceReminders(offsets.map(_ReminderEditor.fromDuration).toList());
 
       setState(() {
         _isLoading = false;
@@ -86,23 +88,21 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       ..addAll(reminders);
   }
 
+  void _clearMessages() {
+    _validation = null;
+    _saveStatus = null;
+  }
+
   void _addReminder() {
     setState(() {
-      _validationMessage = null;
-      _statusMessage = null;
-      _reminders.add(
-        _ReminderEditor(
-          amount: 1,
-          unit: _ReminderUnit.hours,
-        ),
-      );
+      _clearMessages();
+      _reminders.add(_ReminderEditor(amount: 1, unit: _ReminderUnit.hours));
     });
   }
 
   void _removeReminder(int index) {
     setState(() {
-      _validationMessage = null;
-      _statusMessage = null;
+      _clearMessages();
       _reminders.removeAt(index).dispose();
     });
   }
@@ -115,9 +115,8 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
       if (amount == null || amount <= 0) {
         setState(() {
-          _validationMessage =
-              'Alla påminnelser måste ha en tid som är större än 0.';
-          _statusMessage = null;
+          _validation = _ReminderValidation.positiveTimeRequired;
+          _saveStatus = null;
         });
         return;
       }
@@ -129,17 +128,15 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
     if (uniqueMinutes.length != offsets.length) {
       setState(() {
-        _validationMessage =
-            'Två påminnelser kan inte ha samma tid före aktiviteten.';
-        _statusMessage = null;
+        _validation = _ReminderValidation.duplicateTime;
+        _saveStatus = null;
       });
       return;
     }
 
     setState(() {
       _isSaving = true;
-      _validationMessage = null;
-      _statusMessage = null;
+      _clearMessages();
     });
 
     try {
@@ -152,7 +149,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
       setState(() {
         _isSaving = false;
-        _statusMessage = 'Påminnelser sparade.';
+        _saveStatus = _ReminderSaveStatus.saved;
       });
     } catch (_) {
       if (!mounted) {
@@ -161,24 +158,39 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
       setState(() {
         _isSaving = false;
-        _statusMessage = 'Påminnelserna kunde inte sparas. Försök igen.';
+        _saveStatus = _ReminderSaveStatus.failed;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (_isLoading) {
       return const AkLoadingView();
     }
 
     if (_loadFailed) {
       return AkErrorView(
-        title: 'Kunde inte läsa inställningarna',
-        message: 'Påminnelseinställningarna kunde inte läsas.',
+        title: l10n.settingsLoadFailed,
+        message: l10n.reminderSettingsLoadFailed,
         onRetry: _load,
       );
     }
+
+    final validationMessage = switch (_validation) {
+      _ReminderValidation.positiveTimeRequired =>
+        l10n.reminderPositiveTimeRequired,
+      _ReminderValidation.duplicateTime => l10n.duplicateReminderTime,
+      null => null,
+    };
+
+    final statusMessage = switch (_saveStatus) {
+      _ReminderSaveStatus.saved => l10n.remindersSaved,
+      _ReminderSaveStatus.failed => l10n.remindersSaveFailed,
+      null => null,
+    };
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -188,19 +200,61 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Påminnelser',
+                l10n.language,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 8),
               Text(
-                'Välj hur lång tid före en aktivitet du vill bli påmind.',
+                l10n.languageDescription,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<AppLocalePreference>(
+                initialValue: widget.localeController.preference,
+                decoration: InputDecoration(labelText: l10n.language),
+                items: [
+                  DropdownMenuItem(
+                    value: AppLocalePreference.system,
+                    child: Text(l10n.systemDefault),
+                  ),
+                  DropdownMenuItem(
+                    value: AppLocalePreference.swedish,
+                    child: Text(l10n.swedish),
+                  ),
+                  DropdownMenuItem(
+                    value: AppLocalePreference.english,
+                    child: Text(l10n.english),
+                  ),
+                ],
+                onChanged: (preference) async {
+                  if (preference == null) {
+                    return;
+                  }
+
+                  await widget.localeController.setPreference(preference);
+                  await widget.notificationSync.sync();
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        AkSurfaceCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.reminders,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.remindersDescription,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               if (_reminders.isEmpty) ...[
                 const SizedBox(height: 16),
-                const Text(
-                  'Inga påminnelser är aktiverade.',
-                ),
+                Text(l10n.noRemindersEnabled),
               ],
               for (var index = 0; index < _reminders.length; index++) ...[
                 const SizedBox(height: 16),
@@ -209,10 +263,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                   reminder: _reminders[index],
                   enabled: !_isSaving,
                   onChanged: () {
-                    setState(() {
-                      _validationMessage = null;
-                      _statusMessage = null;
-                    });
+                    setState(_clearMessages);
                   },
                   onRemove: () => _removeReminder(index),
                 ),
@@ -221,23 +272,21 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
               OutlinedButton.icon(
                 onPressed: _isSaving ? null : _addReminder,
                 icon: const Icon(Icons.add),
-                label: const Text('Lägg till påminnelse'),
+                label: Text(l10n.addReminder),
               ),
             ],
           ),
         ),
-        if (_validationMessage != null) ...[
+        if (validationMessage != null) ...[
           const SizedBox(height: 16),
           Text(
-            _validationMessage!,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.error,
-            ),
+            validationMessage,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ],
-        if (_statusMessage != null) ...[
+        if (statusMessage != null) ...[
           const SizedBox(height: 16),
-          Text(_statusMessage!),
+          Text(statusMessage),
         ],
         const SizedBox(height: 16),
         FilledButton(
@@ -248,7 +297,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                   height: 24,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Spara inställningar'),
+              : Text(l10n.saveSettings),
         ),
       ],
     );
@@ -271,6 +320,8 @@ class _ReminderRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -279,7 +330,7 @@ class _ReminderRow extends StatelessWidget {
             controller: reminder.controller,
             enabled: enabled,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(labelText: 'Tid före'),
+            decoration: InputDecoration(labelText: l10n.reminderTimeBefore),
             onChanged: (_) => onChanged(),
           ),
         ),
@@ -287,15 +338,15 @@ class _ReminderRow extends StatelessWidget {
         Expanded(
           child: DropdownButtonFormField<_ReminderUnit>(
             initialValue: reminder.unit,
-            decoration: const InputDecoration(labelText: 'Enhet'),
-            items: const [
+            decoration: InputDecoration(labelText: l10n.unit),
+            items: [
               DropdownMenuItem(
                 value: _ReminderUnit.minutes,
-                child: Text('Minuter'),
+                child: Text(l10n.akCountdownMinutes),
               ),
               DropdownMenuItem(
                 value: _ReminderUnit.hours,
-                child: Text('Timmar'),
+                child: Text(l10n.akCountdownHours),
               ),
             ],
             onChanged: enabled
@@ -311,7 +362,7 @@ class _ReminderRow extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: 'Ta bort påminnelse',
+          tooltip: l10n.removeReminder,
           onPressed: enabled ? onRemove : null,
           icon: const Icon(Icons.delete_outline),
         ),
@@ -321,10 +372,8 @@ class _ReminderRow extends StatelessWidget {
 }
 
 class _ReminderEditor {
-  _ReminderEditor({
-    required int amount,
-    required this.unit,
-  }) : controller = TextEditingController(text: amount.toString());
+  _ReminderEditor({required int amount, required this.unit})
+    : controller = TextEditingController(text: amount.toString());
 
   factory _ReminderEditor.fromDuration(Duration duration) {
     if (duration.inMinutes % 60 == 0) {
@@ -359,3 +408,7 @@ enum _ReminderUnit {
     };
   }
 }
+
+enum _ReminderValidation { positiveTimeRequired, duplicateTime }
+
+enum _ReminderSaveStatus { saved, failed }

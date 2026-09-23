@@ -4,6 +4,7 @@ import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_details/event_details_controller.dart';
 import 'package:altekamerer/features/event_details/event_details_screen.dart';
+import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -96,7 +97,7 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('Du är inte anmäld.'), findsOneWidget);
+    expect(find.text('Inte anmäld'), findsOneWidget);
     expect(find.text('Anmäl dig'), findsOneWidget);
 
     await tester.ensureVisible(find.text('Anmäl dig'));
@@ -196,6 +197,9 @@ class _TestApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: const Locale('sv'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: EventDetailsScreen(
         eventId: 42,
         controller: controller,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/network/api_exception.dart';
 import '../../core/theme/ak_surface_card.dart';
+import '../../l10n/app_localizations.dart';
 import 'event_registration_controller.dart';
 
 class EventRegistrationScreen extends StatefulWidget {
@@ -32,8 +33,10 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Anmälan')),
+      appBar: AppBar(title: Text(l10n.eventRegistration)),
       body: SafeArea(
         child: ListenableBuilder(
           listenable: widget.controller,
@@ -46,25 +49,27 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Kommer till',
+                        l10n.akSignupComingTo,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: widget.controller.where,
-                        decoration: const InputDecoration(labelText: 'Anmälan'),
-                        items: const [
+                        decoration: InputDecoration(
+                          labelText: l10n.eventRegistration,
+                        ),
+                        items: [
                           DropdownMenuItem(
                             value: 'Hålan',
-                            child: Text('Hålan'),
+                            child: Text(l10n.akSignupHalan),
                           ),
                           DropdownMenuItem(
                             value: 'Direkt',
-                            child: Text('Direkt'),
+                            child: Text(l10n.akSignupDirect),
                           ),
                           DropdownMenuItem(
                             value: 'Kan inte komma',
-                            child: Text('Kan inte komma'),
+                            child: Text(l10n.akSignupCantCome),
                           ),
                         ],
                         onChanged: widget.controller.isSaving
@@ -74,7 +79,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                       const SizedBox(height: 16),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Har bil'),
+                        title: Text(l10n.hasCar),
                         value: widget.controller.car,
                         onChanged: widget.controller.isSaving
                             ? null
@@ -82,7 +87,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                       ),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Tar med instrument själv'),
+                        title: Text(l10n.bringsOwnInstrument),
                         value: widget.controller.instrument,
                         onChanged: widget.controller.isSaving
                             ? null
@@ -95,8 +100,8 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
                           initialValue: widget.controller.selectedInstrument,
-                          decoration: const InputDecoration(
-                            labelText: 'Instrument',
+                          decoration: InputDecoration(
+                            labelText: l10n.akSignupInstrument,
                           ),
                           items: widget.controller.availableInstruments
                               .map(
@@ -116,8 +121,8 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         controller: _commentController,
                         enabled: !widget.controller.isSaving,
                         maxLines: 4,
-                        decoration: const InputDecoration(
-                          labelText: 'Kommentar',
+                        decoration: InputDecoration(
+                          labelText: l10n.akSignupComment,
                           alignLabelWithHint: true,
                         ),
                         onChanged: widget.controller.setComment,
@@ -129,7 +134,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                     EventRegistrationStatus.error) ...[
                   const SizedBox(height: 16),
                   Text(
-                    _errorMessage(widget.controller.error),
+                    _errorMessage(l10n, widget.controller.error),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.error,
                     ),
@@ -154,7 +159,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                           height: 24,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('Spara anmälan'),
+                      : Text(l10n.saveRegistration),
                 ),
               ],
             );
@@ -164,21 +169,21 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
     );
   }
 
-  String _errorMessage(Object? error) {
+  String _errorMessage(AppLocalizations l10n, Object? error) {
     if (error is EventRegistrationValidationError) {
-      return error.message;
+      return l10n.selectArrivalRequired;
     }
 
     if (error is ApiException) {
       if (error.statusCode == 400) {
-        return 'Anmälan kunde inte sparas. Kontrollera uppgifterna och försök igen.';
+        return l10n.registrationSaveInvalid;
       }
 
       if (error.statusCode == 404) {
-        return 'Aktiviteten finns inte längre.';
+        return l10n.activityNoLongerExists;
       }
     }
 
-    return 'Anmälan kunde inte sparas. Försök igen.';
+    return l10n.registrationSaveFailed;
   }
 }

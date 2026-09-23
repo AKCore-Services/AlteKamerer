@@ -13,12 +13,175 @@ import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/locale_controller.dart';
+import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('explicit Swedish preference renders Swedish UI', (
+    WidgetTester tester,
+  ) async {
+    final authController = _createController();
+    final localeController = await _createLocaleController(
+      AppLocalePreference.swedish,
+    );
+
+    await authController.restoreSession();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: authController,
+        calendarController: _createCalendarController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
+        localeController: localeController,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Logga in'), findsWidgets);
+    expect(find.text('Log in'), findsNothing);
+  });
+
+  testWidgets('explicit English preference renders English UI', (
+    WidgetTester tester,
+  ) async {
+    final authController = _createController();
+    final localeController = await _createLocaleController(
+      AppLocalePreference.english,
+    );
+
+    await authController.restoreSession();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: authController,
+        calendarController: _createCalendarController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
+        localeController: localeController,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Log in'), findsWidgets);
+    expect(find.text('Logga in'), findsNothing);
+  });
+
+  testWidgets('changing locale preference updates running app immediately', (
+    WidgetTester tester,
+  ) async {
+    final authController = _createController();
+    final localeController = await _createLocaleController(
+      AppLocalePreference.swedish,
+    );
+
+    await authController.restoreSession();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: authController,
+        calendarController: _createCalendarController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
+        localeController: localeController,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Logga in'), findsWidgets);
+
+    await localeController.setPreference(AppLocalePreference.english);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Log in'), findsWidgets);
+    expect(find.text('Logga in'), findsNothing);
+  });
+
+  testWidgets('system preference follows Swedish system locale', (
+    WidgetTester tester,
+  ) async {
+    final binding = TestWidgetsFlutterBinding.ensureInitialized();
+    binding.platformDispatcher.localesTestValue = const [Locale('sv')];
+
+    addTearDown(binding.platformDispatcher.clearLocalesTestValue);
+
+    final authController = _createController();
+    final localeController = await _createLocaleController(
+      AppLocalePreference.system,
+    );
+
+    await authController.restoreSession();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: authController,
+        calendarController: _createCalendarController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
+        localeController: localeController,
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Logga in'), findsWidgets);
+    expect(find.text('Log in'), findsNothing);
+  });
+
+  testWidgets(
+    'system preference falls back to English for unsupported locale',
+    (WidgetTester tester) async {
+      final binding = TestWidgetsFlutterBinding.ensureInitialized();
+      binding.platformDispatcher.localesTestValue = const [Locale('de')];
+
+      addTearDown(binding.platformDispatcher.clearLocalesTestValue);
+
+      final authController = _createController();
+      final localeController = await _createLocaleController(
+        AppLocalePreference.system,
+      );
+
+      await authController.restoreSession();
+
+      await tester.pumpWidget(
+        AlteKamererApp(
+          authController: authController,
+          calendarController: _createCalendarController(),
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          notificationNavigationController: NotificationNavigationController(),
+          notificationSync: _FakeNotificationSync(),
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: localeController,
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Log in'), findsWidgets);
+      expect(find.text('Logga in'), findsNothing);
+    },
+  );
+
   testWidgets('loading state does not expose login or app shell', (
     WidgetTester tester,
   ) async {
@@ -33,6 +196,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -57,6 +221,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -86,6 +251,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -114,6 +280,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -154,6 +321,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -192,6 +360,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -225,12 +394,13 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
     expect(find.byType(AppShell), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Open navigation menu'));
+    await tester.tap(find.byIcon(Icons.menu));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
 
@@ -273,6 +443,7 @@ void main() {
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: notificationSync,
         reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
       ),
     );
 
@@ -323,6 +494,7 @@ void main() {
           notificationNavigationController: notificationNavigationController,
           notificationSync: _FakeNotificationSync(),
           reminderPreferences: _FakeReminderPreferences(),
+          localeController: await _createLocaleController(),
         ),
       );
 
@@ -338,6 +510,16 @@ void main() {
       expect(notificationNavigationController.pendingEventId, isNull);
     },
   );
+}
+
+Future<LocaleController> _createLocaleController([
+  AppLocalePreference preference = AppLocalePreference.swedish,
+]) async {
+  final controller = LocaleController(_FakeLocalePreferences(preference));
+
+  await controller.load();
+
+  return controller;
 }
 
 CalendarController _createCalendarController() {
@@ -483,4 +665,20 @@ class _FakeReminderPreferences implements ReminderPreferences {
 
   @override
   Future<void> setReminderOffsets(List<Duration> offsets) async {}
+}
+
+class _FakeLocalePreferences implements LocalePreferences {
+  _FakeLocalePreferences([this._preference = AppLocalePreference.system]);
+
+  AppLocalePreference _preference;
+
+  @override
+  Future<AppLocalePreference> getLocalePreference() async {
+    return _preference;
+  }
+
+  @override
+  Future<void> setLocalePreference(AppLocalePreference preference) async {
+    _preference = preference;
+  }
 }

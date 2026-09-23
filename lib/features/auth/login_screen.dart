@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/theme/ak_brand_logo.dart';
 import '../../core/theme/ak_surface_card.dart';
+import '../../l10n/app_localizations.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -30,6 +31,8 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
+
     if (_isSubmitting || !_formKey.currentState!.validate()) {
       return;
     }
@@ -51,8 +54,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       setState(() {
         _errorMessage = exception.statusCode == 401
-            ? 'Fel användarnamn eller lösenord.'
-            : 'Kunde inte logga in. Försök igen.';
+            ? l10n.invalidCredentials
+            : l10n.loginFailed;
       });
     } catch (_) {
       if (!mounted) {
@@ -60,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       setState(() {
-        _errorMessage = 'Kunde inte ansluta till AKCore. Försök igen.';
+        _errorMessage = l10n.akCoreConnectionFailed;
       });
     } finally {
       if (mounted) {
@@ -74,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -94,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 28),
                       Text(
-                        'Logga in',
+                        l10n.akLoginLogIn,
                         style: textTheme.headlineSmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
@@ -102,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Logga in med ditt befintliga AK-konto.',
+                        l10n.loginDescription,
                         style: textTheme.bodyLarge,
                         textAlign: TextAlign.center,
                       ),
@@ -113,13 +117,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         autofillHints: const [AutofillHints.username],
                         keyboardType: TextInputType.text,
                         textInputAction: TextInputAction.next,
-                        decoration: const InputDecoration(
-                          labelText: 'Användarnamn',
-                          prefixIcon: Icon(Icons.person_outline),
+                        decoration: InputDecoration(
+                          labelText: l10n.akCommonUserName,
+                          prefixIcon: const Icon(Icons.person_outline),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Ange ditt användarnamn.';
+                            return l10n.usernameRequired;
                           }
 
                           return null;
@@ -132,13 +136,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         autofillHints: const [AutofillHints.password],
                         obscureText: true,
                         textInputAction: TextInputAction.done,
-                        decoration: const InputDecoration(
-                          labelText: 'Lösenord',
-                          prefixIcon: Icon(Icons.lock_outline),
+                        decoration: InputDecoration(
+                          labelText: l10n.akCommonPassword,
+                          prefixIcon: const Icon(Icons.lock_outline),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Ange ditt lösenord.';
+                            return l10n.passwordRequired;
                           }
 
                           return null;
@@ -175,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 )
                               : const Icon(Icons.login),
                           label: Text(
-                            _isSubmitting ? 'Loggar in…' : 'Logga in',
+                            _isSubmitting ? l10n.loggingIn : l10n.akLoginLogIn,
                           ),
                         ),
                       ),
