@@ -629,6 +629,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarPlace => 'Place';
 
   @override
+  String get calendarViewUpcoming => 'Upcoming';
+
+  @override
+  String get calendarViewToday => 'Today';
+
+  @override
+  String get calendarViewWeek => 'Week';
+
+  @override
+  String get calendarViewMonth => 'Month';
+
+  @override
+  String get calendarCurrentPeriod => 'Today';
+
+  @override
+  String get calendarNoActivitiesInView => 'No activities in this view';
+
+  @override
+  String get calendarPreviousWeek => 'Previous week';
+
+  @override
+  String get calendarNextWeek => 'Next week';
+
+  @override
+  String get calendarPreviousMonth => 'Previous month';
+
+  @override
+  String get calendarNextMonth => 'Next month';
+
+  @override
   String get noUpcomingActivities => 'No upcoming activities';
 
   @override

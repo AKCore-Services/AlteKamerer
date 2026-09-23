@@ -82,6 +82,14 @@ class EventDetails {
   final EventRegistrationSelection registration;
   final List<EventAttendee> attendees;
 
+  String get effectiveThereTime {
+    if (type == 'Rep' || type == 'Balettrep') {
+      return halanTime;
+    }
+
+    return thereTime;
+  }
+
   bool get isRegistered => signupState != null && signupState!.isNotEmpty;
 
   bool get isAttending {

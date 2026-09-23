@@ -98,11 +98,11 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   label: l10n.akSignupHalan,
                   value: event.halanTime,
                 ),
-              if (event.thereTime.isNotEmpty)
+              if (event.effectiveThereTime.isNotEmpty)
                 _DetailRow(
                   icon: Icons.schedule,
                   label: l10n.eventOnSite,
-                  value: event.thereTime,
+                  value: event.effectiveThereTime,
                 ),
               if (event.startsTime.isNotEmpty)
                 _DetailRow(

@@ -186,6 +186,22 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('Rep shows Hålan time instead of zero on-site time', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventDetailsController(
+      FakeEventDetailsService(
+        event: _event(type: 'Rep', halanTime: '18:00', thereTime: '00:00'),
+      ),
+    );
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    expect(find.text('18:00'), findsWidgets);
+    expect(find.text('00:00'), findsNothing);
+  });
 }
 
 class _TestApp extends StatelessWidget {
@@ -210,14 +226,17 @@ class _TestApp extends StatelessWidget {
 }
 
 EventDetails _event({
+  String type = 'Kårhusrep',
   String? signupState,
   String internalDescription = '',
+  String halanTime = '18:00',
+  String thereTime = '18:30',
   bool disabled = false,
   bool registrationAvailable = true,
 }) {
   return EventDetails(
     id: 42,
-    type: 'Kårhusrep',
+    type: type,
     name: 'Tisdagsrep',
     place: 'Kårhuset',
     description: 'Ordinarie repetition',
