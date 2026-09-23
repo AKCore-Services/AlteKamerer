@@ -1292,6 +1292,66 @@ abstract class AppLocalizations {
   /// **'Place'**
   String get calendarPlace;
 
+  /// No description provided for @calendarViewUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get calendarViewUpcoming;
+
+  /// No description provided for @calendarViewToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendarViewToday;
+
+  /// No description provided for @calendarViewWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get calendarViewWeek;
+
+  /// No description provided for @calendarViewMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get calendarViewMonth;
+
+  /// No description provided for @calendarCurrentPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendarCurrentPeriod;
+
+  /// No description provided for @calendarNoActivitiesInView.
+  ///
+  /// In en, this message translates to:
+  /// **'No activities in this view'**
+  String get calendarNoActivitiesInView;
+
+  /// No description provided for @calendarPreviousWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous week'**
+  String get calendarPreviousWeek;
+
+  /// No description provided for @calendarNextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get calendarNextWeek;
+
+  /// No description provided for @calendarPreviousMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous month'**
+  String get calendarPreviousMonth;
+
+  /// No description provided for @calendarNextMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Next month'**
+  String get calendarNextMonth;
+
   /// No description provided for @noUpcomingActivities.
   ///
   /// In en, this message translates to:

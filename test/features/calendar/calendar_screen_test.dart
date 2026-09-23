@@ -128,6 +128,109 @@ void main() {
     expect(find.byTooltip('Inte anmäld'), findsOneWidget);
   });
 
+  testWidgets('shows calendar view selector', (WidgetTester tester) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event()]),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.text('Kommande'), findsOneWidget);
+    expect(find.text('Idag'), findsOneWidget);
+    expect(find.text('Vecka'), findsOneWidget);
+    expect(find.text('Månad'), findsOneWidget);
+  });
+
+  testWidgets('today view renders only today events', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, place: 'Today place', date: '2026-09-15'),
+          _event(id: 2, place: 'Tomorrow place', date: '2026-09-16'),
+        ],
+      ),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.text('Idag'));
+    await tester.pump();
+
+    expect(find.text('Today place'), findsOneWidget);
+    expect(find.text('Tomorrow place'), findsNothing);
+  });
+
+  testWidgets('empty selected view keeps controls visible', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event(date: '2026-09-16')]),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.text('Idag'));
+    await tester.pump();
+
+    expect(find.text('Inga aktiviteter i den här vyn'), findsOneWidget);
+    expect(find.text('Kommande'), findsOneWidget);
+    expect(find.text('Idag'), findsOneWidget);
+  });
+
+  testWidgets('week view shows period navigation', (WidgetTester tester) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event()]),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.text('Vecka'));
+    await tester.pump();
+
+    expect(find.byIcon(Icons.chevron_left), findsOneWidget);
+    expect(find.byIcon(Icons.chevron_right), findsOneWidget);
+    expect(find.text('Idag'), findsWidgets);
+  });
+
+  testWidgets('month view navigation changes visible month', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, place: 'September place', date: '2026-09-30'),
+          _event(id: 2, place: 'October place', date: '2026-10-01'),
+        ],
+      ),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.text('Månad'));
+    await tester.pump();
+
+    expect(find.text('September place'), findsOneWidget);
+    expect(find.text('October place'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.chevron_right));
+    await tester.pump();
+
+    expect(find.text('September place'), findsNothing);
+    expect(find.text('October place'), findsOneWidget);
+  });
+
   testWidgets('tapping event reports selected calendar event', (
     WidgetTester tester,
   ) async {
@@ -178,18 +281,20 @@ class _TestApp extends StatelessWidget {
 }
 
 CalendarEvent _event({
+  int id = 1,
   String type = 'Kårhusrep',
   String place = 'Kårhuset',
   String? signupState,
+  String date = '2026-09-15',
 }) {
   return CalendarEvent(
-    id: 1,
+    id: id,
     type: type,
     name: 'Event',
     place: place,
     description: '',
     internalDescription: '',
-    date: '2026-09-15',
+    date: date,
     halanTime: '18:00',
     thereTime: '18:30',
     startsTime: '19:00',

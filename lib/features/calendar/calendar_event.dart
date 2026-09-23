@@ -61,8 +61,8 @@ class CalendarEvent {
       return halanTime;
     }
 
-    if (thereTime.isNotEmpty) {
-      return thereTime;
+    if (effectiveThereTime.isNotEmpty) {
+      return effectiveThereTime;
     }
 
     if (halanTime.isNotEmpty) {
@@ -70,6 +70,14 @@ class CalendarEvent {
     }
 
     return startsTime;
+  }
+
+  String get effectiveThereTime {
+    if (type == 'Rep' || type == 'Balettrep') {
+      return halanTime;
+    }
+
+    return thereTime;
   }
 
   bool get isRegistered => signupState != null && signupState!.isNotEmpty;

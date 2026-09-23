@@ -28,19 +28,39 @@ void main() {
     expect(controller.event, isNull);
     expect(controller.error, isNotNull);
   });
+
+  test('Rep uses Hålan time as effective on-site time', () {
+    final event = _event(type: 'Rep', halanTime: '18:00', thereTime: '00:00');
+
+    expect(event.effectiveThereTime, '18:00');
+  });
+
+  test('normal event keeps explicit on-site time', () {
+    final event = _event(
+      type: 'Spelning',
+      halanTime: '18:00',
+      thereTime: '18:30',
+    );
+
+    expect(event.effectiveThereTime, '18:30');
+  });
 }
 
-EventDetails _event() {
-  return const EventDetails(
+EventDetails _event({
+  String type = 'Rep',
+  String halanTime = '18:00',
+  String thereTime = '18:30',
+}) {
+  return EventDetails(
     id: 42,
-    type: 'Rep',
+    type: type,
     name: 'Tisdagsrep',
     place: 'Kårhuset',
     description: 'Ordinarie repetition',
     internalDescription: '',
     date: '2026-09-15',
-    halanTime: '18:00',
-    thereTime: '18:30',
+    halanTime: halanTime,
+    thereTime: thereTime,
     startsTime: '19:00',
     playDuration: '120',
     stand: '',
@@ -49,7 +69,7 @@ EventDetails _event() {
     notComing: 3,
     disabled: false,
     registrationAvailable: true,
-    registration: EventRegistrationSelection(
+    registration: const EventRegistrationSelection(
       where: 'Hålan',
       car: false,
       instrument: true,
@@ -57,7 +77,7 @@ EventDetails _event() {
       selectedInstrument: 'Flöjt',
       availableInstruments: ['Flöjt'],
     ),
-    attendees: [
+    attendees: const [
       EventAttendee(
         personName: 'Test Member',
         where: 'Hålan',

@@ -629,6 +629,36 @@ class AppLocalizationsSv extends AppLocalizations {
   String get calendarPlace => 'Plats';
 
   @override
+  String get calendarViewUpcoming => 'Kommande';
+
+  @override
+  String get calendarViewToday => 'Idag';
+
+  @override
+  String get calendarViewWeek => 'Vecka';
+
+  @override
+  String get calendarViewMonth => 'Månad';
+
+  @override
+  String get calendarCurrentPeriod => 'Idag';
+
+  @override
+  String get calendarNoActivitiesInView => 'Inga aktiviteter i den här vyn';
+
+  @override
+  String get calendarPreviousWeek => 'Föregående vecka';
+
+  @override
+  String get calendarNextWeek => 'Nästa vecka';
+
+  @override
+  String get calendarPreviousMonth => 'Föregående månad';
+
+  @override
+  String get calendarNextMonth => 'Nästa månad';
+
+  @override
   String get noUpcomingActivities => 'Inga kommande aktiviteter';
 
   @override
