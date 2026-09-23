@@ -87,4 +87,36 @@ class CalendarEvent {
   }
 
   bool get isRegisteredNotAttending => signupState == 'Kan inte komma';
+
+  static const rehearsalTypes = {
+    'Rep',
+    'Kårhusrep',
+    'Balettrep',
+    'Athenrep',
+    'Samlingsrep',
+    'Fikarep',
+  };
+
+  bool get isRehearsal => rehearsalTypes.contains(type);
+
+  bool get isPerformance => type == 'Spelning';
+
+  bool get isSocialEvent => type == 'Fest';
+
+  bool isRelevantTo({required bool isBallet}) {
+    if (signupState == 'Kan inte komma') {
+      return false;
+    }
+
+    if (signupState == 'Hålan' || signupState == 'Direkt') {
+      return true;
+    }
+
+    return switch (type) {
+      'Rep' => !isBallet,
+      'Balettrep' => isBallet,
+      'Kårhusrep' || 'Athenrep' || 'Samlingsrep' || 'Fikarep' => true,
+      _ => false,
+    };
+  }
 }

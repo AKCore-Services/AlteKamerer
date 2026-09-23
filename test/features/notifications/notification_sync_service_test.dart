@@ -20,32 +20,53 @@ void main() {
     stockholm = tz.getLocation('Europe/Stockholm');
   });
 
-  test('sync refreshes calendar and uses configured reminder offsets', () async {
+  test(
+    'sync refreshes calendar and uses configured reminder offsets',
+    () async {
+      final calendarController = CalendarController(_FakeCalendarService());
+      final scheduler = _FakeNotificationScheduler();
+
+      final service = NotificationSyncService(
+        _FakeMeService(),
+        calendarController,
+        NotificationPlanner(stockholm),
+        scheduler,
+        _FakeReminderPreferences([
+          const Duration(hours: 5),
+          const Duration(hours: 1),
+        ]),
+        now: () => DateTime.utc(2026, 9, 20, 6),
+      );
+
+      await service.sync();
+
+      expect(calendarController.status, CalendarStatus.loaded);
+      expect(calendarController.events, hasLength(1));
+
+      expect(scheduler.reconciledPlans, hasLength(2));
+      expect(scheduler.reconciledPlans.map((plan) => plan.reminderOffset), [
+        const Duration(hours: 5),
+        const Duration(hours: 1),
+      ]);
+    },
+  );
+
+  test('sync updates calendar member context from current member', () async {
     final calendarController = CalendarController(_FakeCalendarService());
     final scheduler = _FakeNotificationScheduler();
 
     final service = NotificationSyncService(
-      _FakeMeService(),
+      _FakeMeService(isBallet: true),
       calendarController,
       NotificationPlanner(stockholm),
       scheduler,
-      _FakeReminderPreferences([
-        const Duration(hours: 5),
-        const Duration(hours: 1),
-      ]),
+      _FakeReminderPreferences(defaultReminderOffsets),
       now: () => DateTime.utc(2026, 9, 20, 6),
     );
 
     await service.sync();
 
-    expect(calendarController.status, CalendarStatus.loaded);
-    expect(calendarController.events, hasLength(1));
-
-    expect(scheduler.reconciledPlans, hasLength(2));
-    expect(scheduler.reconciledPlans.map((plan) => plan.reminderOffset), [
-      const Duration(hours: 5),
-      const Duration(hours: 1),
-    ]);
+    expect(calendarController.isBallet, isTrue);
   });
 
   test('sync supports a configurable number of reminders', () async {
@@ -161,13 +182,17 @@ class _FailingCalendarService implements CalendarService {
 }
 
 class _FakeMeService implements MeService {
+  _FakeMeService({this.isBallet = false});
+
+  final bool isBallet;
+
   @override
   Future<Me> getMe() async {
-    return const Me(
+    return Me(
       displayName: 'Test',
       isMember: true,
-      isBallet: false,
-      availableInstruments: [],
+      isBallet: isBallet,
+      availableInstruments: const [],
     );
   }
 }

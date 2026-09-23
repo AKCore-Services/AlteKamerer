@@ -287,6 +287,131 @@ void main() {
 
     expect(event.displayTime, '09:35');
   });
+
+  test('rehearsal filter uses AKCore rehearsal event types', () async {
+    final rehearsals = [
+      _event(id: 1, type: 'Rep'),
+      _event(id: 2, type: 'Kårhusrep'),
+      _event(id: 3, type: 'Balettrep'),
+      _event(id: 4, type: 'Athenrep'),
+      _event(id: 5, type: 'Samlingsrep'),
+      _event(id: 6, type: 'Fikarep'),
+    ];
+    final performance = _event(id: 7, type: 'Spelning');
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [...rehearsals, performance]),
+    );
+
+    await controller.load();
+    controller.setFilter(CalendarFilter.rehearsals);
+
+    expect(controller.visibleEvents, rehearsals);
+  });
+
+  test('performance filter exposes only Spelning', () async {
+    final performance = _event(id: 1, type: 'Spelning');
+    final other = _event(id: 2, type: 'Evenemang');
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [performance, other]),
+    );
+
+    await controller.load();
+    controller.setFilter(CalendarFilter.performances);
+
+    expect(controller.visibleEvents, [performance]);
+  });
+
+  test('social filter exposes Fest but not generic Evenemang', () async {
+    final fest = _event(id: 1, type: 'Fest');
+    final evenemang = _event(id: 2, type: 'Evenemang');
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [fest, evenemang]),
+    );
+
+    await controller.load();
+    controller.setFilter(CalendarFilter.social);
+
+    expect(controller.visibleEvents, [fest]);
+  });
+
+  test(
+    'registered filter includes attending and not-attending registrations',
+    () async {
+      final halan = _event(id: 1, signupState: 'Hålan');
+      final direct = _event(id: 2, signupState: 'Direkt');
+      final cannotCome = _event(id: 3, signupState: 'Kan inte komma');
+      final unregistered = _event(id: 4);
+
+      final controller = CalendarController(
+        FakeCalendarService(events: [halan, direct, cannotCome, unregistered]),
+      );
+
+      await controller.load();
+      controller.setFilter(CalendarFilter.registered);
+
+      expect(controller.visibleEvents, [halan, direct, cannotCome]);
+    },
+  );
+
+  test('relevant filter mirrors AKCore orchestra-member relevance', () async {
+    final rep = _event(id: 1, type: 'Rep');
+    final balletRep = _event(id: 2, type: 'Balettrep');
+    final sharedRep = _event(id: 3, type: 'Kårhusrep');
+    final registered = _event(id: 4, type: 'Spelning', signupState: 'Direkt');
+    final declined = _event(id: 5, type: 'Rep', signupState: 'Kan inte komma');
+
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [rep, balletRep, sharedRep, registered, declined],
+      ),
+    );
+
+    await controller.load();
+    controller.setMemberContext(isBallet: false);
+    controller.setFilter(CalendarFilter.relevant);
+
+    expect(controller.visibleEvents, [rep, sharedRep, registered]);
+  });
+
+  test('relevant filter mirrors AKCore ballet-member relevance', () async {
+    final rep = _event(id: 1, type: 'Rep');
+    final balletRep = _event(id: 2, type: 'Balettrep');
+    final sharedRep = _event(id: 3, type: 'Fikarep');
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [rep, balletRep, sharedRep]),
+    );
+
+    await controller.load();
+    controller.setMemberContext(isBallet: true);
+    controller.setFilter(CalendarFilter.relevant);
+
+    expect(controller.visibleEvents, [balletRep, sharedRep]);
+  });
+
+  test(
+    'event type filter composes with date view and semantic filter',
+    () async {
+      final todayRep = _event(id: 1, type: 'Rep', date: '2026-09-15');
+      final todayKarRep = _event(id: 2, type: 'Kårhusrep', date: '2026-09-15');
+      final tomorrowRep = _event(id: 3, type: 'Rep', date: '2026-09-16');
+
+      final controller = CalendarController(
+        FakeCalendarService(events: [todayRep, todayKarRep, tomorrowRep]),
+        now: () => DateTime(2026, 9, 15),
+      );
+
+      await controller.load();
+      controller.setView(CalendarView.today);
+      controller.setFilter(CalendarFilter.rehearsals);
+      controller.setEventTypeFilter('Rep');
+
+      expect(controller.visibleEvents, [todayRep]);
+    },
+  );
 }
 
 CalendarEvent _event({

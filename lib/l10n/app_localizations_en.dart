@@ -659,6 +659,60 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarNextMonth => 'Next month';
 
   @override
+  String get calendarFilter => 'Filter';
+
+  @override
+  String get calendarFilterAll => 'All';
+
+  @override
+  String get calendarFilterRehearsals => 'Rehearsals';
+
+  @override
+  String get calendarFilterPerformances => 'Performances';
+
+  @override
+  String get calendarFilterSocial => 'Parties';
+
+  @override
+  String get calendarFilterRegistered => 'Registered';
+
+  @override
+  String get calendarFilterRelevant => 'Relevant';
+
+  @override
+  String get calendarEventTypeFilter => 'Activity type';
+
+  @override
+  String get calendarAllEventTypes => 'All activity types';
+
+  @override
+  String get calendarEventTypeSpelning => 'Performance';
+
+  @override
+  String get calendarEventTypeRep => 'Orchestra rehearsal';
+
+  @override
+  String get calendarEventTypeKarhusrep => 'Student union building rehearsal';
+
+  @override
+  String get calendarEventTypeBalettrep => 'Ballet rehearsal';
+
+  @override
+  String get calendarEventTypeAthenrep => 'Athen rehearsal';
+
+  @override
+  String get calendarEventTypeSamlingsrep => 'Collective rehearsal';
+
+  @override
+  String get calendarEventTypeFikarep => 'Fika rehearsal';
+
+  @override
+  String get calendarEventTypeFest => 'Party';
+
+  @override
+  String get calendarEventTypeEvenemang => 'Event';
+
+  @override
   String get noUpcomingActivities => 'No upcoming activities';
 
   @override

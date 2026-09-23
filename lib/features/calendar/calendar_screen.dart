@@ -52,6 +52,8 @@ class CalendarScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           _CalendarViewSelector(controller: controller),
+          const SizedBox(height: 12),
+          _CalendarFilters(controller: controller),
           if (controller.view == CalendarView.week ||
               controller.view == CalendarView.month) ...[
             const SizedBox(height: 12),
@@ -120,6 +122,140 @@ class _CalendarViewSelector extends StatelessWidget {
         onSelectionChanged: (selection) {
           controller.setView(selection.single);
         },
+      ),
+    );
+  }
+}
+
+class _CalendarFilters extends StatelessWidget {
+  const _CalendarFilters({required this.controller});
+
+  final CalendarController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final semanticFilter = _FilterDropdown<CalendarFilter>(
+          key: const ValueKey('calendar-semantic-filter'),
+          label: l10n.calendarFilter,
+          value: controller.filter,
+          items: CalendarFilter.values
+              .map(
+                (filter) => DropdownMenuItem(
+                  value: filter,
+                  enabled:
+                      filter != CalendarFilter.relevant ||
+                      controller.isBallet != null,
+                  child: Text(_filterLabel(l10n, filter)),
+                ),
+              )
+              .toList(),
+          onChanged: (filter) {
+            if (filter != null) {
+              controller.setFilter(filter);
+            }
+          },
+        );
+
+        final eventTypeFilter = _FilterDropdown<String?>(
+          key: const ValueKey('calendar-event-type-filter'),
+          label: l10n.calendarEventTypeFilter,
+          value: controller.eventTypeFilter,
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text(l10n.calendarAllEventTypes),
+            ),
+            for (final type in controller.availableEventTypes)
+              DropdownMenuItem<String?>(
+                value: type,
+                child: Text(_eventTypeLabel(l10n, type)),
+              ),
+          ],
+          onChanged: controller.setEventTypeFilter,
+        );
+
+        if (constraints.maxWidth >= 600) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: semanticFilter),
+              const SizedBox(width: 12),
+              Expanded(child: eventTypeFilter),
+            ],
+          );
+        }
+
+        return Column(
+          children: [
+            semanticFilter,
+            const SizedBox(height: 12),
+            eventTypeFilter,
+          ],
+        );
+      },
+    );
+  }
+
+  String _filterLabel(AppLocalizations l10n, CalendarFilter filter) {
+    return switch (filter) {
+      CalendarFilter.all => l10n.calendarFilterAll,
+      CalendarFilter.rehearsals => l10n.calendarFilterRehearsals,
+      CalendarFilter.performances => l10n.calendarFilterPerformances,
+      CalendarFilter.social => l10n.calendarFilterSocial,
+      CalendarFilter.registered => l10n.calendarFilterRegistered,
+      CalendarFilter.relevant => l10n.calendarFilterRelevant,
+    };
+  }
+
+  String _eventTypeLabel(AppLocalizations l10n, String type) {
+    return switch (type) {
+      'Spelning' => l10n.calendarEventTypeSpelning,
+      'Rep' => l10n.calendarEventTypeRep,
+      'Kårhusrep' => l10n.calendarEventTypeKarhusrep,
+      'Balettrep' => l10n.calendarEventTypeBalettrep,
+      'Athenrep' => l10n.calendarEventTypeAthenrep,
+      'Samlingsrep' => l10n.calendarEventTypeSamlingsrep,
+      'Fikarep' => l10n.calendarEventTypeFikarep,
+      'Fest' => l10n.calendarEventTypeFest,
+      'Evenemang' => l10n.calendarEventTypeEvenemang,
+      _ => type,
+    };
+  }
+}
+
+class _FilterDropdown<T> extends StatelessWidget {
+  const _FilterDropdown({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final String label;
+  final T value;
+  final List<DropdownMenuItem<T>> items;
+  final ValueChanged<T?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          value: value,
+          isExpanded: true,
+          items: items,
+          onChanged: onChanged,
+        ),
       ),
     );
   }

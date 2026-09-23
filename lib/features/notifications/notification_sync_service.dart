@@ -37,6 +37,9 @@ class NotificationSyncService implements NotificationSync {
 
     try {
       final me = await _meService.getMe();
+
+      _calendarController.setMemberContext(isBallet: me.isBallet);
+
       final reminderOffsets = await _reminderPreferences.getReminderOffsets();
 
       final plans = _planner.buildPlans(

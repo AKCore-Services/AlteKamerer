@@ -58,23 +58,7 @@ class NotificationPlanner {
   }
 
   bool _isRelevant(Me me, CalendarEvent event) {
-    if (event.signupState == 'Kan inte komma') {
-      return false;
-    }
-
-    if (event.signupState == 'Hålan' || event.signupState == 'Direkt') {
-      return true;
-    }
-
-    return switch (event.type) {
-      'Rep' => !me.isBallet,
-      'Balettrep' => me.isBallet,
-      'Kårhusrep' => true,
-      'Athenrep' => true,
-      'Samlingsrep' => true,
-      'Fikarep' => true,
-      _ => false,
-    };
+    return event.isRelevantTo(isBallet: me.isBallet);
   }
 
   tz.TZDateTime? _eventTime(CalendarEvent event, tz.Location location) {
