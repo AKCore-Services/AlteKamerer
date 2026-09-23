@@ -218,6 +218,8 @@
   "calendarFilterRelevant": "Relevant",
   "calendarEventTypeFilter": "Activity type",
   "calendarAllEventTypes": "All activity types",
+  "calendarSearch": "Search calendar",
+  "calendarSearchHint": "Name, location, description, or type",
   "calendarEventTypeSpelning": "Performance",
   "calendarEventTypeRep": "Orchestra rehearsal",
   "calendarEventTypeKarhusrep": "Student union building rehearsal",

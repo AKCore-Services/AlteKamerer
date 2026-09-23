@@ -53,6 +53,8 @@ class CalendarScreen extends StatelessWidget {
         children: [
           _CalendarViewSelector(controller: controller),
           const SizedBox(height: 12),
+          _CalendarSearch(controller: controller),
+          const SizedBox(height: 12),
           _CalendarFilters(controller: controller),
           if (controller.view == CalendarView.week ||
               controller.view == CalendarView.month) ...[
@@ -123,6 +125,29 @@ class _CalendarViewSelector extends StatelessWidget {
           controller.setView(selection.single);
         },
       ),
+    );
+  }
+}
+
+class _CalendarSearch extends StatelessWidget {
+  const _CalendarSearch({required this.controller});
+
+  final CalendarController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return TextField(
+      key: const ValueKey('calendar-search-field'),
+      decoration: InputDecoration(
+        labelText: l10n.calendarSearch,
+        hintText: l10n.calendarSearchHint,
+        prefixIcon: const Icon(Icons.search),
+        border: const OutlineInputBorder(),
+      ),
+      textInputAction: TextInputAction.search,
+      onChanged: controller.setSearchQuery,
     );
   }
 }

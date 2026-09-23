@@ -1406,6 +1406,18 @@ abstract class AppLocalizations {
   /// **'All activity types'**
   String get calendarAllEventTypes;
 
+  /// No description provided for @calendarSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search calendar'**
+  String get calendarSearch;
+
+  /// No description provided for @calendarSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, location, description, or type'**
+  String get calendarSearchHint;
+
   /// No description provided for @calendarEventTypeSpelning.
   ///
   /// In en, this message translates to:

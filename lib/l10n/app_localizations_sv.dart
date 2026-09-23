@@ -686,6 +686,12 @@ class AppLocalizationsSv extends AppLocalizations {
   String get calendarAllEventTypes => 'Alla aktivitetstyper';
 
   @override
+  String get calendarSearch => 'Sök i kalendern';
+
+  @override
+  String get calendarSearchHint => 'Namn, plats, beskrivning eller typ';
+
+  @override
   String get calendarEventTypeSpelning => 'Spelning';
 
   @override

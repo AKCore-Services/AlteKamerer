@@ -412,11 +412,134 @@ void main() {
       expect(controller.visibleEvents, [todayRep]);
     },
   );
+
+  test('search matches event name, location, description, and type', () async {
+    final nameMatch = _event(id: 1, name: 'Autumn Concert');
+    final placeMatch = _event(id: 2, place: 'Stora salen');
+    final descriptionMatch = _event(
+      id: 3,
+      description: 'Bring your red folder',
+    );
+    final typeMatch = _event(id: 4, type: 'Spelning');
+    final noMatch = _event(id: 5, name: 'Unrelated activity');
+
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [nameMatch, placeMatch, descriptionMatch, typeMatch, noMatch],
+      ),
+    );
+
+    await controller.load();
+
+    controller.setSearchQuery('Autumn');
+    expect(controller.visibleEvents, [nameMatch]);
+
+    controller.setSearchQuery('Stora');
+    expect(controller.visibleEvents, [placeMatch]);
+
+    controller.setSearchQuery('red folder');
+    expect(controller.visibleEvents, [descriptionMatch]);
+
+    controller.setSearchQuery('Spelning');
+    expect(controller.visibleEvents, [typeMatch]);
+  });
+
+  test(
+    'search is case-insensitive and ignores surrounding whitespace',
+    () async {
+      final match = _event(id: 1, name: 'HÖSTKONSERT');
+      final other = _event(id: 2, name: 'Repetition');
+
+      final controller = CalendarController(
+        FakeCalendarService(events: [match, other]),
+      );
+
+      await controller.load();
+      controller.setSearchQuery('  höstkonsert  ');
+
+      expect(controller.visibleEvents, [match]);
+    },
+  );
+
+  test('empty search query does not filter calendar events', () async {
+    final first = _event(id: 1);
+    final second = _event(id: 2);
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [first, second]),
+    );
+
+    await controller.load();
+
+    controller.setSearchQuery('something');
+    expect(controller.visibleEvents, isEmpty);
+
+    controller.setSearchQuery('   ');
+    expect(controller.visibleEvents, [first, second]);
+  });
+
+  test('search composes with date, semantic, and event type filters', () async {
+    final matching = _event(
+      id: 1,
+      type: 'Rep',
+      name: 'Monday orchestra',
+      date: '2026-09-15',
+    );
+    final wrongSearch = _event(
+      id: 2,
+      type: 'Rep',
+      name: 'Tuesday orchestra',
+      date: '2026-09-15',
+    );
+    final wrongType = _event(
+      id: 3,
+      type: 'Kårhusrep',
+      name: 'Monday orchestra',
+      date: '2026-09-15',
+    );
+    final wrongDate = _event(
+      id: 4,
+      type: 'Rep',
+      name: 'Monday orchestra',
+      date: '2026-09-16',
+    );
+
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [matching, wrongSearch, wrongType, wrongDate],
+      ),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+
+    controller.setView(CalendarView.today);
+    controller.setFilter(CalendarFilter.rehearsals);
+    controller.setEventTypeFilter('Rep');
+    controller.setSearchQuery('Monday');
+
+    expect(controller.visibleEvents, [matching]);
+  });
+
+  test('search does not include internal description', () async {
+    final event = _event(id: 1, internalDescription: 'secret-search-value');
+
+    final controller = CalendarController(FakeCalendarService(events: [event]));
+
+    await controller.load();
+    controller.setSearchQuery('secret-search-value');
+
+    expect(controller.visibleEvents, isEmpty);
+  });
 }
 
 CalendarEvent _event({
   int id = 1,
   String type = 'Rep',
+  String name = 'Rep',
+  String place = 'Kårhuset',
+  String description = '',
+  String internalDescription = '',
   String? signupState,
   String date = '2026-09-15',
   String halanTime = '18:00',
@@ -426,10 +549,10 @@ CalendarEvent _event({
   return CalendarEvent(
     id: id,
     type: type,
-    name: 'Rep',
-    place: 'Kårhuset',
-    description: '',
-    internalDescription: '',
+    name: name,
+    place: place,
+    description: description,
+    internalDescription: internalDescription,
     date: date,
     halanTime: halanTime,
     thereTime: thereTime,
