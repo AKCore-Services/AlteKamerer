@@ -231,6 +231,142 @@ void main() {
     expect(find.text('October place'), findsOneWidget);
   });
 
+  testWidgets('shows semantic and event type calendar filters', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, type: 'Rep'),
+          _event(id: 2, type: 'Spelning'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(
+      find.byKey(const ValueKey('calendar-semantic-filter')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('calendar-event-type-filter')),
+      findsOneWidget,
+    );
+
+    expect(find.text('Filter'), findsOneWidget);
+    expect(find.text('Aktivitetstyp'), findsOneWidget);
+  });
+
+  testWidgets('semantic rehearsal filter changes visible events', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, type: 'Rep', place: 'Rep place'),
+          _event(id: 2, type: 'Spelning', place: 'Gig place'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Repetitioner').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rep place'), findsOneWidget);
+    expect(find.text('Gig place'), findsNothing);
+  });
+
+  testWidgets('exact event type filter composes with semantic filter', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, type: 'Rep', place: 'Orchestra place'),
+          _event(id: 2, type: 'Kårhusrep', place: 'Kårhus place'),
+          _event(id: 3, type: 'Spelning', place: 'Gig place'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Repetitioner').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('calendar-event-type-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kårhusrep').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Orchestra place'), findsNothing);
+    expect(find.text('Kårhus place'), findsOneWidget);
+    expect(find.text('Gig place'), findsNothing);
+  });
+
+  testWidgets('relevant filter follows member context', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, type: 'Rep', place: 'Orchestra place'),
+          _event(id: 2, type: 'Balettrep', place: 'Ballet place'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    controller.setMemberContext(isBallet: true);
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Relevanta').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Orchestra place'), findsNothing);
+    expect(find.text('Ballet place'), findsOneWidget);
+  });
+
+  testWidgets('relevant filter is disabled until member context is available', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event(id: 1, type: 'Rep')]),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.pumpAndSettle();
+
+    final relevantItem = tester.widget<DropdownMenuItem<CalendarFilter>>(
+      find
+          .ancestor(
+            of: find.text('Relevanta').last,
+            matching: find.byType(DropdownMenuItem<CalendarFilter>),
+          )
+          .first,
+    );
+
+    expect(relevantItem.enabled, isFalse);
+  });
+
   testWidgets('tapping event reports selected calendar event', (
     WidgetTester tester,
   ) async {

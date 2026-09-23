@@ -7,6 +7,15 @@ enum CalendarStatus { loading, loaded, error }
 
 enum CalendarView { upcoming, today, week, month }
 
+enum CalendarFilter {
+  all,
+  rehearsals,
+  performances,
+  social,
+  registered,
+  relevant,
+}
+
 class CalendarController extends ChangeNotifier {
   CalendarController(this._calendarService, {DateTime Function()? now})
     : _now = now ?? DateTime.now;
@@ -19,7 +28,21 @@ class CalendarController extends ChangeNotifier {
   Object? _error;
 
   CalendarView _view = CalendarView.upcoming;
+  CalendarFilter get filter => _filter;
+
+  String? get eventTypeFilter => _eventTypeFilter;
+
+  bool? get isBallet => _isBallet;
+
+  List<String> get availableEventTypes {
+    final types = _events.map((event) => event.type).toSet().toList()..sort();
+    return types;
+  }
+
   DateTime? _focusedDate;
+  CalendarFilter _filter = CalendarFilter.all;
+  String? _eventTypeFilter;
+  bool? _isBallet;
 
   CalendarStatus get status => _status;
 
@@ -35,12 +58,17 @@ class CalendarController extends ChangeNotifier {
   }
 
   List<CalendarEvent> get visibleEvents {
-    return switch (_view) {
+    final dateFilteredEvents = switch (_view) {
       CalendarView.upcoming => _events,
-      CalendarView.today => _events.where(_isToday).toList(),
-      CalendarView.week => _events.where(_isInFocusedWeek).toList(),
-      CalendarView.month => _events.where(_isInFocusedMonth).toList(),
+      CalendarView.today => _events.where(_isToday),
+      CalendarView.week => _events.where(_isInFocusedWeek),
+      CalendarView.month => _events.where(_isInFocusedMonth),
     };
+
+    return dateFilteredEvents
+        .where(_matchesFilter)
+        .where(_matchesEventType)
+        .toList();
   }
 
   void setView(CalendarView view) {
@@ -54,6 +82,33 @@ class CalendarController extends ChangeNotifier {
       _focusedDate ??= _today;
     }
 
+    notifyListeners();
+  }
+
+  void setFilter(CalendarFilter filter) {
+    if (_filter == filter) {
+      return;
+    }
+
+    _filter = filter;
+    notifyListeners();
+  }
+
+  void setEventTypeFilter(String? type) {
+    if (_eventTypeFilter == type) {
+      return;
+    }
+
+    _eventTypeFilter = type;
+    notifyListeners();
+  }
+
+  void setMemberContext({required bool isBallet}) {
+    if (_isBallet == isBallet) {
+      return;
+    }
+
+    _isBallet = isBallet;
     notifyListeners();
   }
 
@@ -181,5 +236,23 @@ class CalendarController extends ChangeNotifier {
     }
 
     return DateTime(value.year, value.month, value.day);
+  }
+
+  bool _matchesFilter(CalendarEvent event) {
+    return switch (_filter) {
+      CalendarFilter.all => true,
+      CalendarFilter.rehearsals => event.isRehearsal,
+      CalendarFilter.performances => event.isPerformance,
+      CalendarFilter.social => event.isSocialEvent,
+      CalendarFilter.registered => event.isRegistered,
+      CalendarFilter.relevant =>
+        _isBallet != null && event.isRelevantTo(isBallet: _isBallet!),
+    };
+  }
+
+  bool _matchesEventType(CalendarEvent event) {
+    final type = _eventTypeFilter;
+
+    return type == null || event.type == type;
   }
 }

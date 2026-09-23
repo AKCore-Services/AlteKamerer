@@ -659,6 +659,60 @@ class AppLocalizationsSv extends AppLocalizations {
   String get calendarNextMonth => 'Nästa månad';
 
   @override
+  String get calendarFilter => 'Filter';
+
+  @override
+  String get calendarFilterAll => 'Alla';
+
+  @override
+  String get calendarFilterRehearsals => 'Repetitioner';
+
+  @override
+  String get calendarFilterPerformances => 'Spelningar';
+
+  @override
+  String get calendarFilterSocial => 'Fester';
+
+  @override
+  String get calendarFilterRegistered => 'Anmälda';
+
+  @override
+  String get calendarFilterRelevant => 'Relevanta';
+
+  @override
+  String get calendarEventTypeFilter => 'Aktivitetstyp';
+
+  @override
+  String get calendarAllEventTypes => 'Alla aktivitetstyper';
+
+  @override
+  String get calendarEventTypeSpelning => 'Spelning';
+
+  @override
+  String get calendarEventTypeRep => 'Orkesterrep';
+
+  @override
+  String get calendarEventTypeKarhusrep => 'Kårhusrep';
+
+  @override
+  String get calendarEventTypeBalettrep => 'Balettrep';
+
+  @override
+  String get calendarEventTypeAthenrep => 'Athenrep';
+
+  @override
+  String get calendarEventTypeSamlingsrep => 'Gemensamt rep';
+
+  @override
+  String get calendarEventTypeFikarep => 'Fikarep';
+
+  @override
+  String get calendarEventTypeFest => 'Fest';
+
+  @override
+  String get calendarEventTypeEvenemang => 'Evenemang';
+
+  @override
   String get noUpcomingActivities => 'Inga kommande aktiviteter';
 
   @override

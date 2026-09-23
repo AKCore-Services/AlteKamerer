@@ -1352,6 +1352,114 @@ abstract class AppLocalizations {
   /// **'Next month'**
   String get calendarNextMonth;
 
+  /// No description provided for @calendarFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get calendarFilter;
+
+  /// No description provided for @calendarFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get calendarFilterAll;
+
+  /// No description provided for @calendarFilterRehearsals.
+  ///
+  /// In en, this message translates to:
+  /// **'Rehearsals'**
+  String get calendarFilterRehearsals;
+
+  /// No description provided for @calendarFilterPerformances.
+  ///
+  /// In en, this message translates to:
+  /// **'Performances'**
+  String get calendarFilterPerformances;
+
+  /// No description provided for @calendarFilterSocial.
+  ///
+  /// In en, this message translates to:
+  /// **'Parties'**
+  String get calendarFilterSocial;
+
+  /// No description provided for @calendarFilterRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Registered'**
+  String get calendarFilterRegistered;
+
+  /// No description provided for @calendarFilterRelevant.
+  ///
+  /// In en, this message translates to:
+  /// **'Relevant'**
+  String get calendarFilterRelevant;
+
+  /// No description provided for @calendarEventTypeFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity type'**
+  String get calendarEventTypeFilter;
+
+  /// No description provided for @calendarAllEventTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'All activity types'**
+  String get calendarAllEventTypes;
+
+  /// No description provided for @calendarEventTypeSpelning.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance'**
+  String get calendarEventTypeSpelning;
+
+  /// No description provided for @calendarEventTypeRep.
+  ///
+  /// In en, this message translates to:
+  /// **'Orchestra rehearsal'**
+  String get calendarEventTypeRep;
+
+  /// No description provided for @calendarEventTypeKarhusrep.
+  ///
+  /// In en, this message translates to:
+  /// **'Student union building rehearsal'**
+  String get calendarEventTypeKarhusrep;
+
+  /// No description provided for @calendarEventTypeBalettrep.
+  ///
+  /// In en, this message translates to:
+  /// **'Ballet rehearsal'**
+  String get calendarEventTypeBalettrep;
+
+  /// No description provided for @calendarEventTypeAthenrep.
+  ///
+  /// In en, this message translates to:
+  /// **'Athen rehearsal'**
+  String get calendarEventTypeAthenrep;
+
+  /// No description provided for @calendarEventTypeSamlingsrep.
+  ///
+  /// In en, this message translates to:
+  /// **'Collective rehearsal'**
+  String get calendarEventTypeSamlingsrep;
+
+  /// No description provided for @calendarEventTypeFikarep.
+  ///
+  /// In en, this message translates to:
+  /// **'Fika rehearsal'**
+  String get calendarEventTypeFikarep;
+
+  /// No description provided for @calendarEventTypeFest.
+  ///
+  /// In en, this message translates to:
+  /// **'Party'**
+  String get calendarEventTypeFest;
+
+  /// No description provided for @calendarEventTypeEvenemang.
+  ///
+  /// In en, this message translates to:
+  /// **'Event'**
+  String get calendarEventTypeEvenemang;
+
   /// No description provided for @noUpcomingActivities.
   ///
   /// In en, this message translates to:
