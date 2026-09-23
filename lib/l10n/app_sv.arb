@@ -218,6 +218,8 @@
   "calendarFilterRelevant": "Relevanta",
   "calendarEventTypeFilter": "Aktivitetstyp",
   "calendarAllEventTypes": "Alla aktivitetstyper",
+  "calendarSearch": "Sök i kalendern",
+  "calendarSearchHint": "Namn, plats, beskrivning eller typ",
   "calendarEventTypeSpelning": "Spelning",
   "calendarEventTypeRep": "Orkesterrep",
   "calendarEventTypeKarhusrep": "Kårhusrep",

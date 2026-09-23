@@ -686,6 +686,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarAllEventTypes => 'All activity types';
 
   @override
+  String get calendarSearch => 'Search calendar';
+
+  @override
+  String get calendarSearchHint => 'Name, location, description, or type';
+
+  @override
   String get calendarEventTypeSpelning => 'Performance';
 
   @override

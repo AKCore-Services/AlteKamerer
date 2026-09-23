@@ -31,6 +31,7 @@ class CalendarController extends ChangeNotifier {
   CalendarFilter get filter => _filter;
 
   String? get eventTypeFilter => _eventTypeFilter;
+  String get searchQuery => _searchQuery;
 
   bool? get isBallet => _isBallet;
 
@@ -42,6 +43,7 @@ class CalendarController extends ChangeNotifier {
   DateTime? _focusedDate;
   CalendarFilter _filter = CalendarFilter.all;
   String? _eventTypeFilter;
+  String _searchQuery = '';
   bool? _isBallet;
 
   CalendarStatus get status => _status;
@@ -68,6 +70,7 @@ class CalendarController extends ChangeNotifier {
     return dateFilteredEvents
         .where(_matchesFilter)
         .where(_matchesEventType)
+        .where(_matchesSearch)
         .toList();
   }
 
@@ -98,8 +101,16 @@ class CalendarController extends ChangeNotifier {
     if (_eventTypeFilter == type) {
       return;
     }
-
     _eventTypeFilter = type;
+    notifyListeners();
+  }
+
+  void setSearchQuery(String query) {
+    if (_searchQuery == query) {
+      return;
+    }
+
+    _searchQuery = query;
     notifyListeners();
   }
 
@@ -254,5 +265,18 @@ class CalendarController extends ChangeNotifier {
     final type = _eventTypeFilter;
 
     return type == null || event.type == type;
+  }
+
+  bool _matchesSearch(CalendarEvent event) {
+    final query = _searchQuery.trim().toLowerCase();
+
+    if (query.isEmpty) {
+      return true;
+    }
+
+    return event.name.toLowerCase().contains(query) ||
+        event.place.toLowerCase().contains(query) ||
+        event.description.toLowerCase().contains(query) ||
+        event.type.toLowerCase().contains(query);
   }
 }

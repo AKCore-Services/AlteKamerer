@@ -367,6 +367,83 @@ void main() {
     expect(relevantItem.enabled, isFalse);
   });
 
+  testWidgets('shows localized calendar search field', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event()]),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    final searchField = find.byKey(const ValueKey('calendar-search-field'));
+
+    expect(searchField, findsOneWidget);
+    expect(find.text('Sök i kalendern'), findsOneWidget);
+    expect(find.text('Namn, plats, beskrivning eller typ'), findsOneWidget);
+    expect(find.byIcon(Icons.search), findsOneWidget);
+  });
+
+  testWidgets('calendar search changes visible events', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, name: 'Höstkonsert', place: 'Stora salen'),
+          _event(id: 2, name: 'Veckorep', place: 'Kårhuset'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.text('Stora salen'), findsOneWidget);
+    expect(find.text('Kårhuset'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const ValueKey('calendar-search-field')),
+      'höst',
+    );
+    await tester.pump();
+
+    expect(controller.searchQuery, 'höst');
+    expect(find.text('Stora salen'), findsOneWidget);
+    expect(find.text('Kårhuset'), findsNothing);
+  });
+
+  testWidgets('clearing calendar search restores visible events', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, name: 'Concert', place: 'Concert place'),
+          _event(id: 2, name: 'Rehearsal', place: 'Rehearsal place'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    final searchField = find.byKey(const ValueKey('calendar-search-field'));
+
+    await tester.enterText(searchField, 'Concert');
+    await tester.pump();
+
+    expect(find.text('Concert place'), findsOneWidget);
+    expect(find.text('Rehearsal place'), findsNothing);
+
+    await tester.enterText(searchField, '');
+    await tester.pump();
+
+    expect(find.text('Concert place'), findsOneWidget);
+    expect(find.text('Rehearsal place'), findsOneWidget);
+  });
+
   testWidgets('tapping event reports selected calendar event', (
     WidgetTester tester,
   ) async {
@@ -419,16 +496,18 @@ class _TestApp extends StatelessWidget {
 CalendarEvent _event({
   int id = 1,
   String type = 'Kårhusrep',
+  String name = 'Event',
   String place = 'Kårhuset',
+  String description = '',
   String? signupState,
   String date = '2026-09-15',
 }) {
   return CalendarEvent(
     id: id,
     type: type,
-    name: 'Event',
+    name: name,
     place: place,
-    description: '',
+    description: description,
     internalDescription: '',
     date: date,
     halanTime: '18:00',
