@@ -84,6 +84,31 @@ void main() {
     expect(find.byTooltip('Anmäld: Direkt'), findsOneWidget);
   });
 
+  testWidgets('large text uses adaptive calendar event layout', (
+    WidgetTester tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(type: 'Spelning', place: 'Kungmarken', signupState: 'Direkt'),
+        ],
+      ),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.text('Datum'), findsNothing);
+    expect(find.text('Datum: 15/09', findRichText: true), findsOneWidget);
+    expect(find.text('Tid: 18:30', findRichText: true), findsOneWidget);
+    expect(find.text('Typ: Spelning', findRichText: true), findsOneWidget);
+    expect(find.text('Plats: Kungmarken', findRichText: true), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Hålan registration shows Hålan time and attending indicator', (
     WidgetTester tester,
   ) async {

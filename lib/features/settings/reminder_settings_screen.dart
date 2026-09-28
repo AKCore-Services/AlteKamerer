@@ -279,14 +279,17 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
         ),
         if (validationMessage != null) ...[
           const SizedBox(height: 16),
-          Text(
-            validationMessage,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          Semantics(
+            liveRegion: true,
+            child: Text(
+              validationMessage,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
         if (statusMessage != null) ...[
           const SizedBox(height: 16),
-          Text(statusMessage),
+          Semantics(liveRegion: true, child: Text(statusMessage)),
         ],
         const SizedBox(height: 16),
         FilledButton(

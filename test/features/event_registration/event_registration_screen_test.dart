@@ -221,7 +221,12 @@ void main() {
     await tester.tap(saveButton);
     await tester.pump();
 
-    expect(find.text('Du måste välja hur du kommer.'), findsOneWidget);
+    final errorText = find.text('Du måste välja hur du kommer.');
+
+    expect(errorText, findsOneWidget);
+
+    final semantics = tester.getSemantics(errorText);
+    expect(semantics.flagsCollection.isLiveRegion, isTrue);
   });
 
   testWidgets('shows backend error without closing screen', (

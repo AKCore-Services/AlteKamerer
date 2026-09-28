@@ -359,6 +359,10 @@ class _CalendarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+      return const SizedBox.shrink();
+    }
+
     final l10n = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.labelMedium
         ?.copyWith(fontWeight: FontWeight.w600);

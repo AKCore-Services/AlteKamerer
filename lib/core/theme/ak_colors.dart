@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 abstract final class AkColors {
   static const Color red = Color(0xFFB10000);
+  static const Color accessibleRed = Color(0xFFE86B6B);
+  static const Color accessibleBorderRed = Color(0xFFC74444);
   static const Color grey = Color(0xFF2D2727);
   static const Color white = Color(0xFFFFFFFF);
   static const Color lightGrey = Color(0xFFDDDDDD);
