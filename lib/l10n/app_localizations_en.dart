@@ -801,7 +801,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get hasCar => 'Has car';
 
   @override
-  String get bringsOwnInstrument => 'Bringing own instrument';
+  String get needsInstrumentTransport => 'Needs instrument transport';
 
   @override
   String get saveRegistration => 'Save registration';
@@ -819,6 +819,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get registrationSaveFailed =>
       'Registration could not be saved. Try again.';
+
+  @override
+  String get registrationAttending => 'Attending';
+
+  @override
+  String get registrationNotAttending => 'Not attending';
+
+  @override
+  String get registrationPracticalDetails => 'Practical details';
 
   @override
   String get reminders => 'Reminders';

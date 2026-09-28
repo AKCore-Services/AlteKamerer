@@ -1622,11 +1622,11 @@ abstract class AppLocalizations {
   /// **'Has car'**
   String get hasCar;
 
-  /// No description provided for @bringsOwnInstrument.
+  /// No description provided for @needsInstrumentTransport.
   ///
   /// In en, this message translates to:
-  /// **'Bringing own instrument'**
-  String get bringsOwnInstrument;
+  /// **'Needs instrument transport'**
+  String get needsInstrumentTransport;
 
   /// No description provided for @saveRegistration.
   ///
@@ -1657,6 +1657,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registration could not be saved. Try again.'**
   String get registrationSaveFailed;
+
+  /// No description provided for @registrationAttending.
+  ///
+  /// In en, this message translates to:
+  /// **'Attending'**
+  String get registrationAttending;
+
+  /// No description provided for @registrationNotAttending.
+  ///
+  /// In en, this message translates to:
+  /// **'Not attending'**
+  String get registrationNotAttending;
+
+  /// No description provided for @registrationPracticalDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Practical details'**
+  String get registrationPracticalDetails;
 
   /// No description provided for @reminders.
   ///

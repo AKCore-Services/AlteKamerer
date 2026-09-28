@@ -18,11 +18,28 @@ void main() {
 
     expect(controller.where, 'Direkt');
     expect(controller.car, isTrue);
-    expect(controller.instrument, isFalse);
+    expect(controller.needsInstrumentTransport, isTrue);
     expect(controller.comment, 'Kommer direkt');
     expect(controller.selectedInstrument, 'Flöjt');
     expect(controller.availableInstruments, ['Flöjt', 'Piccolo']);
     expect(controller.status, EventRegistrationStatus.idle);
+  });
+
+  test('instrument transport maps to inverse AKCore instrument value', () {
+    final controller = EventRegistrationController(
+      _FakeRegistrationService(),
+      _event(instrument: true),
+    );
+
+    expect(controller.needsInstrumentTransport, isFalse);
+
+    controller.setNeedsInstrumentTransport(true);
+
+    expect(controller.needsInstrumentTransport, isTrue);
+
+    controller.setNeedsInstrumentTransport(false);
+
+    expect(controller.needsInstrumentTransport, isFalse);
   });
 
   test('save submits current registration values', () async {
@@ -31,7 +48,7 @@ void main() {
 
     controller.setWhere('Hålan');
     controller.setCar(true);
-    controller.setInstrument(false);
+    controller.setNeedsInstrumentTransport(true);
     controller.setComment('Testkommentar');
     controller.setSelectedInstrument('Piccolo');
 

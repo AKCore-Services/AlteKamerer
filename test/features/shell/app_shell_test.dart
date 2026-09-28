@@ -110,16 +110,18 @@ void main() {
 
     expect(find.byType(EventRegistrationScreen), findsOneWidget);
 
-    final whereDropdown = find.byType(DropdownButtonFormField<String>).first;
+    await tester.tap(find.byKey(const ValueKey('registration-where-direct')));
+    await tester.pump();
 
-    await tester.tap(whereDropdown);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Direkt').last);
-    await tester.pumpAndSettle();
+    final saveButton = find.byKey(const ValueKey('registration-save-button'));
 
-    await tester.ensureVisible(find.text('Spara anmälan'));
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Spara anmälan'));
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(registrationService.eventIds, [42]);
@@ -128,6 +130,7 @@ void main() {
     expect(eventDetailsService.requestedEventIds, [42, 42]);
 
     expect(notificationSync.syncCount, 2);
+    expect(find.text('Anmälan uppdaterad'), findsOneWidget);
   });
 
   testWidgets('notification target opens matching event details', (

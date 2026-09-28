@@ -216,6 +216,18 @@ class _AppShellState extends State<AppShell> {
     if (saved == true) {
       await eventDetailsController.load(event.id);
       await widget.notificationSync.sync();
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).akServiceUpcomingSignupUpdated,
+          ),
+        ),
+      );
     }
   }
 }

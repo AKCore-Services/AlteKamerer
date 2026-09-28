@@ -29,13 +29,122 @@ void main() {
     expect(find.text('Direkt'), findsOneWidget);
     expect(find.text('Kommer direkt'), findsOneWidget);
     expect(find.text('Piccolo'), findsOneWidget);
+    expect(find.text('Behöver transport av instrument'), findsOneWidget);
 
     final switches = tester
         .widgetList<SwitchListTile>(find.byType(SwitchListTile))
         .toList();
 
     expect(switches[0].value, isTrue);
-    expect(switches[1].value, isFalse);
+    expect(switches[1].value, isTrue);
+  });
+
+  testWidgets('shows single instrument without dropdown', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventRegistrationController(
+      _FakeRegistrationService(),
+      _event(
+        selectedInstrument: 'Flöjt',
+        availableInstruments: const ['Flöjt'],
+      ),
+    );
+
+    await tester.pumpWidget(_TestApp(controller));
+
+    expect(
+      find.byKey(const ValueKey('registration-single-instrument')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('registration-instrument-dropdown')),
+      findsNothing,
+    );
+    expect(find.text('Flöjt'), findsOneWidget);
+  });
+
+  testWidgets('hides instrument selection when no instruments are available', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventRegistrationController(
+      _FakeRegistrationService(),
+      _event(selectedInstrument: null, availableInstruments: const []),
+    );
+
+    await tester.pumpWidget(_TestApp(controller));
+
+    expect(
+      find.byKey(const ValueKey('registration-single-instrument')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('registration-instrument-dropdown')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('shows direct registration choices with current state selected', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventRegistrationController(
+      _FakeRegistrationService(),
+      _event(where: 'Direkt'),
+    );
+
+    await tester.pumpWidget(_TestApp(controller));
+
+    expect(find.text('Kommer'), findsOneWidget);
+    expect(find.text('Kommer inte'), findsOneWidget);
+
+    final halan = tester.widget<ChoiceChip>(
+      find.descendant(
+        of: find.byKey(const ValueKey('registration-where-halan')),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    final direct = tester.widget<ChoiceChip>(
+      find.descendant(
+        of: find.byKey(const ValueKey('registration-where-direct')),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+    final cantCome = tester.widget<ChoiceChip>(
+      find.descendant(
+        of: find.byKey(const ValueKey('registration-where-cant-come')),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+
+    expect(halan.selected, isFalse);
+    expect(direct.selected, isTrue);
+    expect(cantCome.selected, isFalse);
+  });
+
+  testWidgets('changes registration state directly', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventRegistrationController(
+      _FakeRegistrationService(),
+      _event(where: 'Direkt'),
+    );
+
+    await tester.pumpWidget(_TestApp(controller));
+
+    await tester.tap(
+      find.byKey(const ValueKey('registration-where-cant-come')),
+    );
+    await tester.pump();
+
+    expect(controller.where, 'Kan inte komma');
+
+    final cantCome = tester.widget<ChoiceChip>(
+      find.descendant(
+        of: find.byKey(const ValueKey('registration-where-cant-come')),
+        matching: find.byType(ChoiceChip),
+      ),
+    );
+
+    expect(cantCome.selected, isTrue);
   });
 
   testWidgets('edits fields and submits registration', (
@@ -46,10 +155,8 @@ void main() {
 
     await tester.pumpWidget(_TestApp(controller));
 
-    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Hålan').last);
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('registration-where-halan')));
+    await tester.pump();
 
     await tester.tap(find.text('Har bil'));
     await tester.pump();
@@ -59,9 +166,9 @@ void main() {
       'Ny kommentar',
     );
 
-    final instrumentDropdown = find
-        .byType(DropdownButtonFormField<String>)
-        .at(1);
+    final instrumentDropdown = find.byKey(
+      const ValueKey('registration-instrument-dropdown'),
+    );
 
     await tester.ensureVisible(instrumentDropdown);
     await tester.pumpAndSettle();
@@ -72,7 +179,15 @@ void main() {
     await tester.tap(find.text('Piccolo').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Spara anmälan'));
+    final saveButton = find.byKey(const ValueKey('registration-save-button'));
+
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(service.requests, hasLength(1));
@@ -95,7 +210,15 @@ void main() {
 
     await tester.pumpWidget(_TestApp(controller));
 
-    await tester.tap(find.text('Spara anmälan'));
+    final saveButton = find.byKey(const ValueKey('registration-save-button'));
+
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
     await tester.pump();
 
     expect(find.text('Du måste välja hur du kommer.'), findsOneWidget);
@@ -113,7 +236,15 @@ void main() {
 
     await tester.pumpWidget(_TestApp(controller));
 
-    await tester.tap(find.text('Spara anmälan'));
+    final saveButton = find.byKey(const ValueKey('registration-save-button'));
+
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
     await tester.pump();
     await tester.pump();
 
@@ -137,7 +268,15 @@ void main() {
 
     await tester.pumpWidget(_TestApp(controller));
 
-    await tester.tap(find.text('Spara anmälan'));
+    final saveButton = find.byKey(const ValueKey('registration-save-button'));
+
+    await tester.scrollUntilVisible(
+      saveButton,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(saveButton);
     await tester.pump();
 
     expect(controller.status, EventRegistrationStatus.saving);
@@ -170,6 +309,7 @@ EventDetails _event({
   bool instrument = true,
   String comment = '',
   String? selectedInstrument = 'Flöjt',
+  List<String> availableInstruments = const ['Flöjt', 'Piccolo'],
 }) {
   return EventDetails(
     id: 42,
@@ -195,7 +335,7 @@ EventDetails _event({
       instrument: instrument,
       comment: comment,
       selectedInstrument: selectedInstrument,
-      availableInstruments: const ['Flöjt', 'Piccolo'],
+      availableInstruments: availableInstruments,
     ),
     attendees: const [],
   );
