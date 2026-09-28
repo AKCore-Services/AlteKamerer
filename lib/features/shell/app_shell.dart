@@ -76,54 +76,66 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(_pageTitle(l10n))),
-      drawer: Drawer(
-        child: SafeArea(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.calendar_month),
-                title: Text(l10n.calendar),
-                selected: _currentPage == _ShellPage.calendar,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _currentPage = _ShellPage.calendar;
-                  });
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.settings),
-                title: Text(l10n.settings),
-                selected: _currentPage == _ShellPage.settings,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  setState(() {
-                    _currentPage = _ShellPage.settings;
-                  });
-                },
-              ),
-              const Spacer(),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: Text(l10n.logOut),
-                onTap: () async {
-                  Navigator.of(context).pop();
+    return PopScope(
+      canPop: _currentPage == _ShellPage.calendar,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop || _currentPage == _ShellPage.calendar) {
+          return;
+        }
 
-                  try {
-                    await widget.authController.logout();
-                  } catch (_) {
-                    // Local credentials are cleared even if server logout fails.
-                  }
-                },
-              ),
-            ],
+        setState(() {
+          _currentPage = _ShellPage.calendar;
+        });
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(_pageTitle(l10n))),
+        drawer: Drawer(
+          child: SafeArea(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.calendar_month),
+                  title: Text(l10n.calendar),
+                  selected: _currentPage == _ShellPage.calendar,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _currentPage = _ShellPage.calendar;
+                    });
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: Text(l10n.settings),
+                  selected: _currentPage == _ShellPage.settings,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _currentPage = _ShellPage.settings;
+                    });
+                  },
+                ),
+                const Spacer(),
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.logout),
+                  title: Text(l10n.logOut),
+                  onTap: () async {
+                    Navigator.of(context).pop();
+
+                    try {
+                      await widget.authController.logout();
+                    } catch (_) {
+                      // Local credentials are cleared even if server logout fails.
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
+        body: SafeArea(child: _pageBody),
       ),
-      body: SafeArea(child: _pageBody),
     );
   }
 
