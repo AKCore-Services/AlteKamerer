@@ -195,10 +195,13 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 if (widget.controller.status ==
                     EventRegistrationStatus.error) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    _errorMessage(l10n, widget.controller.error),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.error,
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      _errorMessage(l10n, widget.controller.error),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                     ),
                   ),
                 ],

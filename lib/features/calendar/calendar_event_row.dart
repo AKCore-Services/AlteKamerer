@@ -14,44 +14,75 @@ class CalendarEventRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
+    final l10n = AppLocalizations.of(context);
+    final useLargeTextLayout = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 54,
-              child: Text(_formatDate(event.date), style: textTheme.bodyMedium),
-            ),
-            SizedBox(
-              width: 54,
-              child: Text(event.displayTime, style: textTheme.bodyMedium),
-            ),
-            SizedBox(
-              width: 92,
-              child: Text(
-                event.type,
-                style: textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+        child: useLargeTextLayout
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CalendarEventField(
+                    label: l10n.calendarDate,
+                    value: _formatDate(event.date),
+                  ),
+                  _CalendarEventField(
+                    label: l10n.calendarTime,
+                    value: event.displayTime,
+                  ),
+                  _CalendarEventField(
+                    label: l10n.calendarType,
+                    value: event.type,
+                  ),
+                  if (event.place.isNotEmpty)
+                    _CalendarEventField(
+                      label: l10n.calendarPlace,
+                      value: event.place,
+                    ),
+                  const SizedBox(height: 8),
+                  _RegistrationIndicator(event: event),
+                ],
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 54,
+                    child: Text(
+                      _formatDate(event.date),
+                      style: textTheme.bodyMedium,
+                    ),
+                  ),
+                  SizedBox(
+                    width: 54,
+                    child: Text(event.displayTime, style: textTheme.bodyMedium),
+                  ),
+                  SizedBox(
+                    width: 92,
+                    child: Text(
+                      event.type,
+                      style: textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      event.place,
+                      style: textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _RegistrationIndicator(event: event),
+                ],
               ),
-            ),
-            Expanded(
-              child: Text(
-                event.place,
-                style: textTheme.bodyMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 8),
-            _RegistrationIndicator(event: event),
-          ],
-        ),
       ),
     );
   }
@@ -67,6 +98,35 @@ class CalendarEventRow extends StatelessWidget {
     final month = date.month.toString().padLeft(2, '0');
 
     return '$day/$month';
+  }
+}
+
+class _CalendarEventField extends StatelessWidget {
+  const _CalendarEventField({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text.rich(
+        TextSpan(
+          children: [
+            TextSpan(
+              text: "$label: ",
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+            TextSpan(
+              text: value,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

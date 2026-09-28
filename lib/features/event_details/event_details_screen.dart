@@ -193,22 +193,41 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final useLargeTextLayout = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+
     return Padding(
       padding: const EdgeInsets.only(top: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 76,
-            child: Text(label, style: Theme.of(context).textTheme.labelLarge),
-          ),
-          Expanded(
-            child: Text(value, style: Theme.of(context).textTheme.bodyMedium),
-          ),
-        ],
-      ),
+      child: useLargeTextLayout
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(label, style: textTheme.labelLarge),
+                      const SizedBox(height: 4),
+                      Text(value, style: textTheme.bodyMedium),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 20),
+                const SizedBox(width: 12),
+                SizedBox(
+                  width: 76,
+                  child: Text(label, style: textTheme.labelLarge),
+                ),
+                Expanded(child: Text(value, style: textTheme.bodyMedium)),
+              ],
+            ),
     );
   }
 }

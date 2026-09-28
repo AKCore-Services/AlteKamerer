@@ -26,19 +26,19 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: AkColors.black,
       textTheme: baseTextTheme.copyWith(
         headlineLarge: baseTextTheme.headlineLarge?.copyWith(
-          color: AkColors.red,
+          color: AkColors.accessibleRed,
           fontWeight: FontWeight.w500,
         ),
         headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-          color: AkColors.red,
+          color: AkColors.accessibleRed,
           fontWeight: FontWeight.w500,
         ),
         headlineSmall: baseTextTheme.headlineSmall?.copyWith(
-          color: AkColors.red,
+          color: AkColors.accessibleRed,
           fontWeight: FontWeight.w500,
         ),
         titleLarge: baseTextTheme.titleLarge?.copyWith(
-          color: AkColors.red,
+          color: AkColors.accessibleRed,
           fontWeight: FontWeight.w500,
         ),
         titleMedium: baseTextTheme.titleMedium?.copyWith(
@@ -94,7 +94,7 @@ abstract final class AppTheme {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size.fromHeight(48),
           foregroundColor: AkColors.white,
-          side: const BorderSide(color: AkColors.red),
+          side: const BorderSide(color: AkColors.accessibleRed),
           textStyle: const TextStyle(fontWeight: FontWeight.w500),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -117,15 +117,15 @@ abstract final class AppTheme {
         hintStyle: const TextStyle(color: AkColors.lightGrey),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AkColors.deepRed),
+          borderSide: const BorderSide(color: AkColors.accessibleBorderRed),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AkColors.deepRed),
+          borderSide: const BorderSide(color: AkColors.accessibleBorderRed),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: AkColors.red, width: 2),
+          borderSide: const BorderSide(color: AkColors.accessibleRed, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
@@ -156,7 +156,7 @@ abstract final class AppTheme {
         }),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AkColors.red,
+        color: AkColors.accessibleRed,
         linearTrackColor: AkColors.grey,
       ),
       dividerColor: AkColors.deepRed,

@@ -182,7 +182,8 @@ class _AppShellState extends State<AppShell> {
     final controller = EventDetailsController(widget.eventDetailsService);
 
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      _AccessibleMaterialPageRoute<void>(
+        disableAnimations: MediaQuery.disableAnimationsOf(context),
         builder: (context) {
           return EventDetailsScreen(
             eventId: eventId,
@@ -206,7 +207,8 @@ class _AppShellState extends State<AppShell> {
     );
 
     final saved = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
+      _AccessibleMaterialPageRoute<bool>(
+        disableAnimations: MediaQuery.disableAnimationsOf(context),
         builder: (context) {
           return EventRegistrationScreen(controller: registrationController);
         },
@@ -229,5 +231,41 @@ class _AppShellState extends State<AppShell> {
         ),
       );
     }
+  }
+}
+
+class _AccessibleMaterialPageRoute<T> extends MaterialPageRoute<T> {
+  _AccessibleMaterialPageRoute({
+    required super.builder,
+    required this.disableAnimations,
+  });
+
+  final bool disableAnimations;
+
+  @override
+  Duration get transitionDuration =>
+      disableAnimations ? Duration.zero : super.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration =>
+      disableAnimations ? Duration.zero : super.reverseTransitionDuration;
+
+  @override
+  Widget buildTransitions(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (disableAnimations) {
+      return child;
+    }
+
+    return super.buildTransitions(
+      context,
+      animation,
+      secondaryAnimation,
+      child,
+    );
   }
 }

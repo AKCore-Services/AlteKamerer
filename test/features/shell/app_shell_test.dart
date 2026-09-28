@@ -64,6 +64,60 @@ void main() {
     expect(find.text('Tisdagsrep'), findsOneWidget);
   });
 
+  testWidgets('reduced motion removes event page transition', (
+    WidgetTester tester,
+  ) async {
+    final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
+    final eventDetailsService = _FakeEventDetailsService();
+
+    final authController = AuthController(
+      _FakeCredentialStore(),
+      _FakeAuthService(),
+      AccessTokenStore(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(800, 600),
+            disableAnimations: true,
+          ),
+          child: AppShell(
+            authController: authController,
+            calendarController: calendarController,
+            eventDetailsService: eventDetailsService,
+            eventRegistrationService: _FakeEventRegistrationService(),
+            notificationNavigationController:
+                NotificationNavigationController(),
+            notificationSync: notificationSync,
+            reminderPreferences: _FakeReminderPreferences(),
+            localeController: _createLocaleController(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kårhusrep'));
+    await tester.pump();
+
+    expect(find.byType(EventDetailsScreen), findsOneWidget);
+
+    final route = ModalRoute.of(
+      tester.element(find.byType(EventDetailsScreen)),
+    );
+
+    expect(route, isNotNull);
+    expect(route!.transitionDuration, Duration.zero);
+    expect(route.reverseTransitionDuration, Duration.zero);
+  });
+
   testWidgets('successful registration reloads event details', (
     WidgetTester tester,
   ) async {

@@ -101,7 +101,13 @@ void main() {
       const Duration(hours: 1),
     ]);
     expect(notificationSync.syncCount, 1);
-    expect(find.text('Påminnelser sparade.'), findsOneWidget);
+
+    final statusText = find.text('Påminnelser sparade.');
+
+    expect(statusText, findsOneWidget);
+
+    final semantics = tester.getSemantics(statusText);
+    expect(semantics.flagsCollection.isLiveRegion, isTrue);
   });
 
   testWidgets('saving empty configuration disables reminders', (

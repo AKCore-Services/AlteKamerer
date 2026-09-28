@@ -78,6 +78,26 @@ void main() {
     expect(find.text('12 kommer · 3 kommer inte'), findsOneWidget);
   });
 
+  testWidgets('large text reflows event detail rows', (
+    WidgetTester tester,
+  ) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    final controller = EventDetailsController(
+      FakeEventDetailsService(event: _event()),
+    );
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pump();
+
+    expect(find.text('Datum'), findsOneWidget);
+    expect(find.text('15/09/2026'), findsOneWidget);
+    expect(find.text('Plats'), findsOneWidget);
+    expect(find.text('Kårhuset'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('shows registration action when registration is available', (
     WidgetTester tester,
   ) async {
