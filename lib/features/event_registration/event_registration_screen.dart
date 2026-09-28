@@ -15,6 +15,34 @@ class EventRegistrationScreen extends StatefulWidget {
       _EventRegistrationScreenState();
 }
 
+class _RegistrationWhereChoice extends StatelessWidget {
+  const _RegistrationWhereChoice({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.enabled,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ChoiceChip(
+        label: SizedBox(width: double.infinity, child: Text(label)),
+        selected: selected,
+        onSelected: enabled ? (_) => onSelected() : null,
+        showCheckmark: true,
+      ),
+    );
+  }
+}
+
 class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
   late final TextEditingController _commentController;
 
@@ -53,32 +81,49 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        initialValue: widget.controller.where,
-                        decoration: InputDecoration(
-                          labelText: l10n.eventRegistration,
-                        ),
-                        items: [
-                          DropdownMenuItem(
-                            value: 'Hålan',
-                            child: Text(l10n.akSignupHalan),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Direkt',
-                            child: Text(l10n.akSignupDirect),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Kan inte komma',
-                            child: Text(l10n.akSignupCantCome),
-                          ),
-                        ],
-                        onChanged: widget.controller.isSaving
-                            ? null
-                            : widget.controller.setWhere,
+                      Text(
+                        l10n.registrationAttending,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      _RegistrationWhereChoice(
+                        key: const ValueKey('registration-where-halan'),
+                        label: l10n.akSignupHalan,
+                        selected: widget.controller.where == 'Hålan',
+                        enabled: !widget.controller.isSaving,
+                        onSelected: () => widget.controller.setWhere('Hålan'),
+                      ),
+                      const SizedBox(height: 8),
+                      _RegistrationWhereChoice(
+                        key: const ValueKey('registration-where-direct'),
+                        label: l10n.akSignupDirect,
+                        selected: widget.controller.where == 'Direkt',
+                        enabled: !widget.controller.isSaving,
+                        onSelected: () => widget.controller.setWhere('Direkt'),
                       ),
                       const SizedBox(height: 16),
+                      Text(
+                        l10n.registrationNotAttending,
+                        style: Theme.of(context).textTheme.labelLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      _RegistrationWhereChoice(
+                        key: const ValueKey('registration-where-cant-come'),
+                        label: l10n.akSignupCantCome,
+                        selected: widget.controller.where == 'Kan inte komma',
+                        enabled: !widget.controller.isSaving,
+                        onSelected: () =>
+                            widget.controller.setWhere('Kan inte komma'),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        l10n.registrationPracticalDetails,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
+                        secondary: const Icon(Icons.directions_car_outlined),
                         title: Text(l10n.hasCar),
                         value: widget.controller.car,
                         onChanged: widget.controller.isSaving
@@ -87,18 +132,33 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                       ),
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: Text(l10n.bringsOwnInstrument),
-                        value: widget.controller.instrument,
+                        secondary: const Icon(Icons.luggage_outlined),
+                        title: Text(l10n.needsInstrumentTransport),
+                        value: widget.controller.needsInstrumentTransport,
                         onChanged: widget.controller.isSaving
                             ? null
-                            : widget.controller.setInstrument,
+                            : widget.controller.setNeedsInstrumentTransport,
                       ),
-                      if (widget
-                          .controller
-                          .availableInstruments
-                          .isNotEmpty) ...[
+                      if (widget.controller.availableInstruments.length ==
+                          1) ...[
+                        const SizedBox(height: 8),
+                        InputDecorator(
+                          key: const ValueKey('registration-single-instrument'),
+                          decoration: InputDecoration(
+                            labelText: l10n.akSignupInstrument,
+                          ),
+                          child: Text(
+                            widget.controller.selectedInstrument ??
+                                widget.controller.availableInstruments.single,
+                          ),
+                        ),
+                      ] else if (widget.controller.availableInstruments.length >
+                          1) ...[
                         const SizedBox(height: 8),
                         DropdownButtonFormField<String>(
+                          key: const ValueKey(
+                            'registration-instrument-dropdown',
+                          ),
                           initialValue: widget.controller.selectedInstrument,
                           decoration: InputDecoration(
                             labelText: l10n.akSignupInstrument,
@@ -120,7 +180,9 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                       TextField(
                         controller: _commentController,
                         enabled: !widget.controller.isSaving,
-                        maxLines: 4,
+                        minLines: 3,
+                        maxLines: 6,
+                        textInputAction: TextInputAction.newline,
                         decoration: InputDecoration(
                           labelText: l10n.akSignupComment,
                           alignLabelWithHint: true,
@@ -142,6 +204,7 @@ class _EventRegistrationScreenState extends State<EventRegistrationScreen> {
                 ],
                 const SizedBox(height: 16),
                 FilledButton(
+                  key: const ValueKey('registration-save-button'),
                   onPressed: widget.controller.isSaving
                       ? null
                       : () async {

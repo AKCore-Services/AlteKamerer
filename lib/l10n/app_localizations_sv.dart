@@ -800,7 +800,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get hasCar => 'Har bil';
 
   @override
-  String get bringsOwnInstrument => 'Tar med instrument själv';
+  String get needsInstrumentTransport => 'Behöver transport av instrument';
 
   @override
   String get saveRegistration => 'Spara anmälan';
@@ -818,6 +818,15 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get registrationSaveFailed =>
       'Anmälan kunde inte sparas. Försök igen.';
+
+  @override
+  String get registrationAttending => 'Kommer';
+
+  @override
+  String get registrationNotAttending => 'Kommer inte';
+
+  @override
+  String get registrationPracticalDetails => 'Praktiska uppgifter';
 
   @override
   String get reminders => 'Påminnelser';

@@ -36,7 +36,7 @@ class EventRegistrationController extends ChangeNotifier {
 
   bool get car => _car;
 
-  bool get instrument => _instrument;
+  bool get needsInstrumentTransport => !_instrument;
 
   String get comment => _comment;
 
@@ -66,12 +66,14 @@ class EventRegistrationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setInstrument(bool value) {
-    if (_instrument == value) {
+  void setNeedsInstrumentTransport(bool value) {
+    final instrument = !value;
+
+    if (_instrument == instrument) {
       return;
     }
 
-    _instrument = value;
+    _instrument = instrument;
     _clearResultState();
     notifyListeners();
   }
