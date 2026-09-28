@@ -829,6 +829,41 @@ class AppLocalizationsSv extends AppLocalizations {
   String get registrationPracticalDetails => 'Praktiska uppgifter';
 
   @override
+  String get calendarDisplay => 'Kalendervisning';
+
+  @override
+  String get calendarDisplayDescription =>
+      'Välj hur datum och tider visas i kalendern.';
+
+  @override
+  String get calendarDateFormat => 'Datumformat';
+
+  @override
+  String get calendarDateFormatCompact => 'Kompakt (15/09)';
+
+  @override
+  String get calendarDateFormatNumeric => 'Numeriskt';
+
+  @override
+  String get calendarDateFormatWritten => 'Skrivet';
+
+  @override
+  String get calendarTimeFormat => 'Tidsformat';
+
+  @override
+  String get calendarTimeFormat24Hour => '24-timmars';
+
+  @override
+  String get calendarTimeFormat12Hour => '12-timmars';
+
+  @override
+  String get calendarShowWeekday => 'Visa veckodag';
+
+  @override
+  String get calendarShowWeekdayDescription =>
+      'Visa den lokaliserade förkortningen för veckodagen före datumet.';
+
+  @override
   String get reminders => 'Påminnelser';
 
   @override

@@ -1,4 +1,6 @@
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/calendar_display_controller.dart';
+import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
 import 'package:altekamerer/features/settings/locale_controller.dart';
 import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
@@ -36,6 +38,64 @@ void main() {
     expect(notificationSync.syncCount, 1);
   });
 
+  testWidgets('calendar display settings update and persist immediately', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final calendarPreferences = _FakeCalendarDisplayPreferences(
+      const CalendarDisplaySettings(),
+    );
+    final calendarController = CalendarDisplayController(calendarPreferences);
+    await calendarController.load();
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      calendarDisplayController: calendarController,
+    );
+
+    expect(find.text('Kalendervisning'), findsOneWidget);
+
+    final dateSelector = tester
+        .widget<DropdownButtonFormField<CalendarDateFormat>>(
+          find.byType(DropdownButtonFormField<CalendarDateFormat>),
+        );
+
+    dateSelector.onChanged!(CalendarDateFormat.written);
+    await tester.pumpAndSettle();
+
+    expect(calendarController.settings.dateFormat, CalendarDateFormat.written);
+    expect(calendarPreferences.settings.dateFormat, CalendarDateFormat.written);
+
+    final timeSelector = tester
+        .widget<DropdownButtonFormField<CalendarTimeFormat>>(
+          find.byType(DropdownButtonFormField<CalendarTimeFormat>),
+        );
+
+    timeSelector.onChanged!(CalendarTimeFormat.twelveHour);
+    await tester.pumpAndSettle();
+
+    expect(
+      calendarController.settings.timeFormat,
+      CalendarTimeFormat.twelveHour,
+    );
+    expect(
+      calendarPreferences.settings.timeFormat,
+      CalendarTimeFormat.twelveHour,
+    );
+
+    final weekdaySwitch = tester.widget<SwitchListTile>(
+      find.byType(SwitchListTile),
+    );
+
+    weekdaySwitch.onChanged!(true);
+    await tester.pumpAndSettle();
+
+    expect(calendarController.settings.showWeekday, isTrue);
+    expect(calendarPreferences.settings.showWeekday, isTrue);
+    expect(calendarPreferences.setCount, 3);
+  });
+
   testWidgets('loads configured reminders', (WidgetTester tester) async {
     final preferences = _FakeReminderPreferences([
       const Duration(hours: 5),
@@ -65,7 +125,11 @@ void main() {
 
     await _pumpScreen(tester, preferences: preferences);
 
-    await tester.tap(find.text('Lägg till påminnelse'));
+    final addReminder = find.text('Lägg till påminnelse');
+
+    await tester.ensureVisible(addReminder);
+    await tester.pumpAndSettle();
+    await tester.tap(addReminder);
     await tester.pump();
 
     expect(find.byType(TextFormField), findsOneWidget);
@@ -93,7 +157,14 @@ void main() {
       notificationSync: notificationSync,
     );
 
-    await tester.tap(find.text('Spara inställningar'));
+    final saveSettings = find.text('Spara inställningar');
+
+    await tester.scrollUntilVisible(
+      saveSettings,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveSettings);
     await tester.pumpAndSettle();
 
     expect(preferences.savedOffsets, [
@@ -122,7 +193,14 @@ void main() {
       notificationSync: notificationSync,
     );
 
-    await tester.tap(find.text('Spara inställningar'));
+    final saveSettings = find.text('Spara inställningar');
+
+    await tester.scrollUntilVisible(
+      saveSettings,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveSettings);
     await tester.pumpAndSettle();
 
     expect(preferences.savedOffsets, isEmpty);
@@ -142,7 +220,14 @@ void main() {
       notificationSync: notificationSync,
     );
 
-    await tester.tap(find.text('Spara inställningar'));
+    final saveSettings = find.text('Spara inställningar');
+
+    await tester.scrollUntilVisible(
+      saveSettings,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveSettings);
     await tester.pump();
 
     expect(
@@ -166,7 +251,14 @@ void main() {
     final field = find.byType(TextFormField).first;
 
     await tester.enterText(field, '0');
-    await tester.tap(find.text('Spara inställningar'));
+    final saveSettings = find.text('Spara inställningar');
+
+    await tester.scrollUntilVisible(
+      saveSettings,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveSettings);
     await tester.pump();
 
     expect(
@@ -183,8 +275,11 @@ Future<void> _pumpScreen(
   required _FakeReminderPreferences preferences,
   _FakeNotificationSync? notificationSync,
   LocaleController? localeController,
+  CalendarDisplayController? calendarDisplayController,
 }) async {
   final controller = localeController ?? _createLocaleController();
+  final displayController =
+      calendarDisplayController ?? _createCalendarDisplayController();
 
   await tester.pumpWidget(
     MaterialApp(
@@ -196,6 +291,7 @@ Future<void> _pumpScreen(
           reminderPreferences: preferences,
           notificationSync: notificationSync ?? _FakeNotificationSync(),
           localeController: controller,
+          calendarDisplayController: displayController,
         ),
       ),
     ),
@@ -208,6 +304,28 @@ LocaleController _createLocaleController([
   AppLocalePreference preference = AppLocalePreference.system,
 ]) {
   return LocaleController(_FakeLocalePreferences(preference));
+}
+
+CalendarDisplayController _createCalendarDisplayController([
+  CalendarDisplaySettings settings = const CalendarDisplaySettings(),
+]) {
+  return CalendarDisplayController(_FakeCalendarDisplayPreferences(settings));
+}
+
+class _FakeCalendarDisplayPreferences implements CalendarDisplayPreferences {
+  _FakeCalendarDisplayPreferences(this.settings);
+
+  CalendarDisplaySettings settings;
+  int setCount = 0;
+
+  @override
+  Future<CalendarDisplaySettings> getSettings() async => settings;
+
+  @override
+  Future<void> setSettings(CalendarDisplaySettings settings) async {
+    setCount++;
+    this.settings = settings;
+  }
 }
 
 class _FakeReminderPreferences implements ReminderPreferences {

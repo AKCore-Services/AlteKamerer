@@ -13,6 +13,7 @@ import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
 import '../notifications/notification_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
+import '../settings/calendar_display_controller.dart';
 import '../settings/reminder_preferences.dart';
 import '../settings/locale_controller.dart';
 import '../settings/reminder_settings_screen.dart';
@@ -29,6 +30,7 @@ class AppShell extends StatefulWidget {
     required this.notificationSync,
     required this.reminderPreferences,
     required this.localeController,
+    required this.calendarDisplayController,
   });
 
   final AuthController authController;
@@ -39,6 +41,7 @@ class AppShell extends StatefulWidget {
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
+  final CalendarDisplayController calendarDisplayController;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -150,6 +153,7 @@ class _AppShellState extends State<AppShell> {
     return switch (_currentPage) {
       _ShellPage.calendar => CalendarScreen(
         controller: widget.calendarController,
+        displayController: widget.calendarDisplayController,
         onOpenEvent: _openEvent,
         onRefresh: widget.notificationSync.sync,
       ),
@@ -157,6 +161,7 @@ class _AppShellState extends State<AppShell> {
         reminderPreferences: widget.reminderPreferences,
         notificationSync: widget.notificationSync,
         localeController: widget.localeController,
+        calendarDisplayController: widget.calendarDisplayController,
       ),
     };
   }

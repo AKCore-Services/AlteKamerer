@@ -4,6 +4,8 @@ import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../notifications/notification_sync_service.dart';
+import 'calendar_display_controller.dart';
+import 'calendar_display_preferences.dart';
 import 'locale_controller.dart';
 import 'locale_preferences.dart';
 import 'reminder_preferences.dart';
@@ -14,11 +16,13 @@ class ReminderSettingsScreen extends StatefulWidget {
     required this.reminderPreferences,
     required this.notificationSync,
     required this.localeController,
+    required this.calendarDisplayController,
   });
 
   final ReminderPreferences reminderPreferences;
   final NotificationSync notificationSync;
   final LocaleController localeController;
+  final CalendarDisplayController calendarDisplayController;
 
   @override
   State<ReminderSettingsScreen> createState() => _ReminderSettingsScreenState();
@@ -237,6 +241,94 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
               ),
             ],
           ),
+        ),
+        const SizedBox(height: 16),
+        ListenableBuilder(
+          listenable: widget.calendarDisplayController,
+          builder: (context, _) {
+            final settings = widget.calendarDisplayController.settings;
+
+            return AkSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.calendarDisplay,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.calendarDisplayDescription,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<CalendarDateFormat>(
+                    initialValue: settings.dateFormat,
+                    decoration: InputDecoration(
+                      labelText: l10n.calendarDateFormat,
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: CalendarDateFormat.compact,
+                        child: Text(l10n.calendarDateFormatCompact),
+                      ),
+                      DropdownMenuItem(
+                        value: CalendarDateFormat.numeric,
+                        child: Text(l10n.calendarDateFormatNumeric),
+                      ),
+                      DropdownMenuItem(
+                        value: CalendarDateFormat.written,
+                        child: Text(l10n.calendarDateFormatWritten),
+                      ),
+                    ],
+                    onChanged: (format) async {
+                      if (format == null) {
+                        return;
+                      }
+
+                      await widget.calendarDisplayController.setDateFormat(
+                        format,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<CalendarTimeFormat>(
+                    initialValue: settings.timeFormat,
+                    decoration: InputDecoration(
+                      labelText: l10n.calendarTimeFormat,
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: CalendarTimeFormat.twentyFourHour,
+                        child: Text(l10n.calendarTimeFormat24Hour),
+                      ),
+                      DropdownMenuItem(
+                        value: CalendarTimeFormat.twelveHour,
+                        child: Text(l10n.calendarTimeFormat12Hour),
+                      ),
+                    ],
+                    onChanged: (format) async {
+                      if (format == null) {
+                        return;
+                      }
+
+                      await widget.calendarDisplayController.setTimeFormat(
+                        format,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l10n.calendarShowWeekday),
+                    subtitle: Text(l10n.calendarShowWeekdayDescription),
+                    value: settings.showWeekday,
+                    onChanged: widget.calendarDisplayController.setShowWeekday,
+                  ),
+                ],
+              ),
+            );
+          },
         ),
         const SizedBox(height: 16),
         AkSurfaceCard(

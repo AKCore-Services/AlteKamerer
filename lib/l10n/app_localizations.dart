@@ -1676,6 +1676,72 @@ abstract class AppLocalizations {
   /// **'Practical details'**
   String get registrationPracticalDetails;
 
+  /// No description provided for @calendarDisplay.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar display'**
+  String get calendarDisplay;
+
+  /// No description provided for @calendarDisplayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how dates and times are shown in the calendar.'**
+  String get calendarDisplayDescription;
+
+  /// No description provided for @calendarDateFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Date format'**
+  String get calendarDateFormat;
+
+  /// No description provided for @calendarDateFormatCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Compact (15/09)'**
+  String get calendarDateFormatCompact;
+
+  /// No description provided for @calendarDateFormatNumeric.
+  ///
+  /// In en, this message translates to:
+  /// **'Numeric'**
+  String get calendarDateFormatNumeric;
+
+  /// No description provided for @calendarDateFormatWritten.
+  ///
+  /// In en, this message translates to:
+  /// **'Written'**
+  String get calendarDateFormatWritten;
+
+  /// No description provided for @calendarTimeFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Time format'**
+  String get calendarTimeFormat;
+
+  /// No description provided for @calendarTimeFormat24Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'24-hour'**
+  String get calendarTimeFormat24Hour;
+
+  /// No description provided for @calendarTimeFormat12Hour.
+  ///
+  /// In en, this message translates to:
+  /// **'12-hour'**
+  String get calendarTimeFormat12Hour;
+
+  /// No description provided for @calendarShowWeekday.
+  ///
+  /// In en, this message translates to:
+  /// **'Show weekday'**
+  String get calendarShowWeekday;
+
+  /// No description provided for @calendarShowWeekdayDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Show the localized weekday abbreviation before the date.'**
+  String get calendarShowWeekdayDescription;
+
   /// No description provided for @reminders.
   ///
   /// In en, this message translates to:

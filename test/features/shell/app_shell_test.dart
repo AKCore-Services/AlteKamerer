@@ -12,6 +12,8 @@ import 'package:altekamerer/features/event_registration/event_registration_api.d
 import 'package:altekamerer/features/event_registration/event_registration_screen.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/calendar_display_controller.dart';
+import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
 import 'package:altekamerer/features/settings/locale_controller.dart';
 import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
@@ -42,6 +44,7 @@ void main() {
         home: AppShell(
           authController: authController,
           calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: eventDetailsService,
           eventRegistrationService: eventRegistrationService,
           notificationNavigationController: NotificationNavigationController(),
@@ -90,6 +93,7 @@ void main() {
           child: AppShell(
             authController: authController,
             calendarController: calendarController,
+            calendarDisplayController: _createCalendarDisplayController(),
             eventDetailsService: eventDetailsService,
             eventRegistrationService: _FakeEventRegistrationService(),
             notificationNavigationController:
@@ -140,6 +144,7 @@ void main() {
         home: AppShell(
           authController: authController,
           calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: eventDetailsService,
           eventRegistrationService: registrationService,
           notificationNavigationController: NotificationNavigationController(),
@@ -210,6 +215,7 @@ void main() {
         home: AppShell(
           authController: authController,
           calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: eventDetailsService,
           eventRegistrationService: registrationService,
           notificationNavigationController: notificationNavigationController,
@@ -252,6 +258,7 @@ void main() {
             AccessTokenStore(),
           ),
           calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: eventDetailsService,
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: notificationNavigationController,
@@ -286,6 +293,7 @@ void main() {
             AccessTokenStore(),
           ),
           calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: NotificationNavigationController(),
@@ -303,14 +311,14 @@ void main() {
     await tester.tap(find.text('Inställningar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Påminnelser'), findsOneWidget);
+    expect(find.text('Språk'), findsWidgets);
     expect(find.text('Kårhusrep'), findsNothing);
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(find.text('Kårhusrep'), findsOneWidget);
-    expect(find.text('Påminnelser'), findsNothing);
+    expect(find.text('Språk'), findsNothing);
   });
 
   testWidgets('drawer switches between calendar and settings', (
@@ -330,6 +338,7 @@ void main() {
             AccessTokenStore(),
           ),
           calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: NotificationNavigationController(),
@@ -343,7 +352,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Kårhusrep'), findsOneWidget);
-    expect(find.text('Påminnelser'), findsNothing);
+    expect(find.text('Språk'), findsNothing);
 
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
@@ -351,7 +360,7 @@ void main() {
     await tester.tap(find.text('Inställningar'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Påminnelser'), findsOneWidget);
+    expect(find.text('Språk'), findsWidgets);
     expect(find.text('Kårhusrep'), findsNothing);
 
     await tester.tap(find.byIcon(Icons.menu));
@@ -361,7 +370,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Kårhusrep'), findsOneWidget);
-    expect(find.text('Påminnelser'), findsNothing);
+    expect(find.text('Språk'), findsNothing);
   });
 }
 
@@ -489,6 +498,22 @@ class _FakeNotificationSync implements NotificationSync {
   @override
   Future<void> clear() async {
     clearCount++;
+  }
+}
+
+CalendarDisplayController _createCalendarDisplayController() {
+  return CalendarDisplayController(_FakeCalendarDisplayPreferences());
+}
+
+class _FakeCalendarDisplayPreferences implements CalendarDisplayPreferences {
+  CalendarDisplaySettings settings = const CalendarDisplaySettings();
+
+  @override
+  Future<CalendarDisplaySettings> getSettings() async => settings;
+
+  @override
+  Future<void> setSettings(CalendarDisplaySettings settings) async {
+    this.settings = settings;
   }
 }
 

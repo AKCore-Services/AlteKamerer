@@ -16,6 +16,8 @@ import 'features/notifications/local_notification_service.dart';
 import 'features/notifications/notification_navigation_controller.dart';
 import 'features/notifications/notification_planner.dart';
 import 'features/notifications/notification_sync_service.dart';
+import 'features/settings/calendar_display_controller.dart';
+import 'features/settings/calendar_display_preferences.dart';
 import 'features/settings/locale_controller.dart';
 import 'features/settings/locale_preferences.dart';
 import 'features/settings/reminder_preferences.dart';
@@ -39,6 +41,13 @@ Future<void> main() async {
   );
   final localeController = LocaleController(localePreferences);
   await localeController.load();
+
+  final calendarDisplayPreferences =
+      SharedPreferencesCalendarDisplayPreferences(sharedPreferences);
+  final calendarDisplayController = CalendarDisplayController(
+    calendarDisplayPreferences,
+  );
+  await calendarDisplayController.load();
 
   final reminderPreferences = SharedPreferencesReminderPreferences(
     sharedPreferences,
@@ -88,6 +97,7 @@ Future<void> main() async {
       notificationSync: notificationSync,
       reminderPreferences: reminderPreferences,
       localeController: localeController,
+      calendarDisplayController: calendarDisplayController,
     ),
   );
 }

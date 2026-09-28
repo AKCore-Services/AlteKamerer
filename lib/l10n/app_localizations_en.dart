@@ -830,6 +830,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get registrationPracticalDetails => 'Practical details';
 
   @override
+  String get calendarDisplay => 'Calendar display';
+
+  @override
+  String get calendarDisplayDescription =>
+      'Choose how dates and times are shown in the calendar.';
+
+  @override
+  String get calendarDateFormat => 'Date format';
+
+  @override
+  String get calendarDateFormatCompact => 'Compact (15/09)';
+
+  @override
+  String get calendarDateFormatNumeric => 'Numeric';
+
+  @override
+  String get calendarDateFormatWritten => 'Written';
+
+  @override
+  String get calendarTimeFormat => 'Time format';
+
+  @override
+  String get calendarTimeFormat24Hour => '24-hour';
+
+  @override
+  String get calendarTimeFormat12Hour => '12-hour';
+
+  @override
+  String get calendarShowWeekday => 'Show weekday';
+
+  @override
+  String get calendarShowWeekdayDescription =>
+      'Show the localized weekday abbreviation before the date.';
+
+  @override
   String get reminders => 'Reminders';
 
   @override
