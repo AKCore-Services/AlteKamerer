@@ -269,6 +269,50 @@ void main() {
     expect(notificationNavigationController.pendingEventId, isNull);
   });
 
+  testWidgets('back from settings returns to calendar', (
+    WidgetTester tester,
+  ) async {
+    final calendarController = CalendarController(_FakeCalendarService());
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AppShell(
+          authController: AuthController(
+            _FakeCredentialStore(),
+            _FakeAuthService(),
+            AccessTokenStore(),
+          ),
+          calendarController: calendarController,
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          notificationNavigationController: NotificationNavigationController(),
+          notificationSync: _FakeNotificationSync(calendarController),
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Inställningar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Påminnelser'), findsOneWidget);
+    expect(find.text('Kårhusrep'), findsNothing);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kårhusrep'), findsOneWidget);
+    expect(find.text('Påminnelser'), findsNothing);
+  });
+
   testWidgets('drawer switches between calendar and settings', (
     WidgetTester tester,
   ) async {
