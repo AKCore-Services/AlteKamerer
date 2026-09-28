@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
+import 'package:altekamerer/features/settings/calendar_display_controller.dart';
+import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
 import 'package:altekamerer/features/calendar/calendar_screen.dart';
 import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -469,6 +471,57 @@ void main() {
     expect(find.text('Rehearsal place'), findsOneWidget);
   });
 
+  testWidgets('calendar display settings update the running calendar', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event()]),
+    );
+    final displayController = _createDisplayController();
+
+    await controller.load();
+    await displayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(controller: controller, displayController: displayController),
+    );
+
+    expect(find.text('15/09'), findsOneWidget);
+    expect(find.text('18:30'), findsOneWidget);
+
+    await displayController.setShowWeekday(true);
+    await displayController.setTimeFormat(CalendarTimeFormat.twelveHour);
+    await tester.pump();
+
+    expect(find.text('Datum: tis 15/09'), findsOneWidget);
+    expect(find.text('Tid: 6:30 em'), findsOneWidget);
+    expect(find.text('15/09'), findsNothing);
+    expect(find.text('18:30'), findsNothing);
+  });
+
+  testWidgets('written date format reaches the calendar row', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event()]),
+    );
+    final displayController = _createDisplayController(
+      const CalendarDisplaySettings(
+        dateFormat: CalendarDateFormat.written,
+        showWeekday: true,
+      ),
+    );
+
+    await controller.load();
+    await displayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(controller: controller, displayController: displayController),
+    );
+
+    expect(find.text('Datum: tis 15 sep. 2026'), findsOneWidget);
+  });
+
   testWidgets('tapping event reports selected calendar event', (
     WidgetTester tester,
   ) async {
@@ -496,9 +549,14 @@ void main() {
 }
 
 class _TestApp extends StatelessWidget {
-  const _TestApp({required this.controller, this.onOpenEvent});
+  _TestApp({
+    required this.controller,
+    CalendarDisplayController? displayController,
+    this.onOpenEvent,
+  }) : displayController = displayController ?? _createDisplayController();
 
   final CalendarController controller;
+  final CalendarDisplayController displayController;
   final ValueChanged<CalendarEvent>? onOpenEvent;
 
   @override
@@ -510,11 +568,32 @@ class _TestApp extends StatelessWidget {
       home: Scaffold(
         body: CalendarScreen(
           controller: controller,
+          displayController: displayController,
           onOpenEvent: onOpenEvent ?? (_) {},
           onRefresh: controller.load,
         ),
       ),
     );
+  }
+}
+
+CalendarDisplayController _createDisplayController([
+  CalendarDisplaySettings settings = const CalendarDisplaySettings(),
+]) {
+  return CalendarDisplayController(_FakeCalendarDisplayPreferences(settings));
+}
+
+class _FakeCalendarDisplayPreferences implements CalendarDisplayPreferences {
+  _FakeCalendarDisplayPreferences(this.settings);
+
+  CalendarDisplaySettings settings;
+
+  @override
+  Future<CalendarDisplaySettings> getSettings() async => settings;
+
+  @override
+  Future<void> setSettings(CalendarDisplaySettings settings) async {
+    this.settings = settings;
   }
 }
 

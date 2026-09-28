@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
+import '../settings/calendar_display_controller.dart';
+import '../settings/calendar_display_preferences.dart';
 import 'calendar_controller.dart';
 import 'calendar_event.dart';
 import 'calendar_event_row.dart';
@@ -11,18 +13,20 @@ class CalendarScreen extends StatelessWidget {
   const CalendarScreen({
     super.key,
     required this.controller,
+    required this.displayController,
     required this.onOpenEvent,
     required this.onRefresh,
   });
 
   final CalendarController controller;
+  final CalendarDisplayController displayController;
   final ValueChanged<CalendarEvent> onOpenEvent;
   final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: controller,
+      listenable: Listenable.merge([controller, displayController]),
       builder: (context, child) {
         final l10n = AppLocalizations.of(context);
 
@@ -69,11 +73,12 @@ class CalendarScreen extends StatelessWidget {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  const _CalendarHeader(),
+                  _CalendarHeader(displaySettings: displayController.settings),
                   const Divider(height: 1),
                   for (var index = 0; index < events.length; index++) ...[
                     CalendarEventRow(
                       event: events[index],
+                      displaySettings: displayController.settings,
                       onTap: () {
                         onOpenEvent(events[index]);
                       },
@@ -355,11 +360,17 @@ class _CalendarPeriodNavigation extends StatelessWidget {
 }
 
 class _CalendarHeader extends StatelessWidget {
-  const _CalendarHeader();
+  const _CalendarHeader({required this.displaySettings});
+
+  final CalendarDisplaySettings displaySettings;
 
   @override
   Widget build(BuildContext context) {
-    if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+    final useStackedLayout =
+        displaySettings.dateFormat != CalendarDateFormat.compact ||
+        displaySettings.showWeekday;
+
+    if (MediaQuery.textScalerOf(context).scale(1) >= 1.3 || useStackedLayout) {
       return const SizedBox.shrink();
     }
 

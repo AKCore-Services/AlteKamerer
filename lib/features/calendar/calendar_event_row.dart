@@ -1,37 +1,60 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
-
+import '../settings/calendar_display_preferences.dart';
+import 'calendar_display_formatter.dart';
 import 'calendar_event.dart';
 
 class CalendarEventRow extends StatelessWidget {
-  const CalendarEventRow({super.key, required this.event, required this.onTap});
+  const CalendarEventRow({
+    super.key,
+    required this.event,
+    required this.displaySettings,
+    required this.onTap,
+  });
 
   final CalendarEvent event;
+  final CalendarDisplaySettings displaySettings;
   final VoidCallback onTap;
+
+  static const _formatter = CalendarDisplayFormatter();
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
     final l10n = AppLocalizations.of(context);
-    final useLargeTextLayout = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final formattedDate = _formatter.formatDate(
+      event.date,
+      locale: locale,
+      settings: displaySettings,
+    );
+    final formattedTime = _formatter.formatTime(
+      event.displayTime,
+      locale: locale,
+      settings: displaySettings,
+    );
+    final useStackedLayout =
+        MediaQuery.textScalerOf(context).scale(1) >= 1.3 ||
+        displaySettings.dateFormat != CalendarDateFormat.compact ||
+        displaySettings.showWeekday;
 
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        child: useLargeTextLayout
+        child: useStackedLayout
             ? Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _CalendarEventField(
                     label: l10n.calendarDate,
-                    value: _formatDate(event.date),
+                    value: formattedDate,
                   ),
                   _CalendarEventField(
                     label: l10n.calendarTime,
-                    value: event.displayTime,
+                    value: formattedTime,
                   ),
                   _CalendarEventField(
                     label: l10n.calendarType,
@@ -51,14 +74,11 @@ class CalendarEventRow extends StatelessWidget {
                 children: [
                   SizedBox(
                     width: 54,
-                    child: Text(
-                      _formatDate(event.date),
-                      style: textTheme.bodyMedium,
-                    ),
+                    child: Text(formattedDate, style: textTheme.bodyMedium),
                   ),
                   SizedBox(
                     width: 54,
-                    child: Text(event.displayTime, style: textTheme.bodyMedium),
+                    child: Text(formattedTime, style: textTheme.bodyMedium),
                   ),
                   SizedBox(
                     width: 92,
@@ -85,19 +105,6 @@ class CalendarEventRow extends StatelessWidget {
               ),
       ),
     );
-  }
-
-  String _formatDate(String value) {
-    final date = DateTime.tryParse(value);
-
-    if (date == null) {
-      return value;
-    }
-
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-
-    return '$day/$month';
   }
 }
 

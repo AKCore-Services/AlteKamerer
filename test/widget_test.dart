@@ -13,6 +13,8 @@ import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
+import 'package:altekamerer/features/settings/calendar_display_controller.dart';
+import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
 import 'package:altekamerer/features/settings/locale_controller.dart';
 import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
@@ -35,6 +37,7 @@ void main() {
       AlteKamererApp(
         authController: authController,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -64,6 +67,7 @@ void main() {
       AlteKamererApp(
         authController: authController,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -93,6 +97,7 @@ void main() {
       AlteKamererApp(
         authController: authController,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -132,6 +137,7 @@ void main() {
       AlteKamererApp(
         authController: authController,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -166,6 +172,7 @@ void main() {
         AlteKamererApp(
           authController: authController,
           calendarController: _createCalendarController(),
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: NotificationNavigationController(),
@@ -191,6 +198,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -216,6 +224,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -246,6 +255,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -275,6 +285,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -316,6 +327,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -355,6 +367,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -389,6 +402,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -438,6 +452,7 @@ void main() {
       AlteKamererApp(
         authController: controller,
         calendarController: _createCalendarController(),
+        calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         notificationNavigationController: NotificationNavigationController(),
@@ -489,6 +504,7 @@ void main() {
         AlteKamererApp(
           authController: controller,
           calendarController: _createCalendarController(),
+          calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
           notificationNavigationController: notificationNavigationController,
@@ -510,6 +526,22 @@ void main() {
       expect(notificationNavigationController.pendingEventId, isNull);
     },
   );
+}
+
+CalendarDisplayController _createCalendarDisplayController() {
+  return CalendarDisplayController(_FakeCalendarDisplayPreferences());
+}
+
+class _FakeCalendarDisplayPreferences implements CalendarDisplayPreferences {
+  CalendarDisplaySettings settings = const CalendarDisplaySettings();
+
+  @override
+  Future<CalendarDisplaySettings> getSettings() async => settings;
+
+  @override
+  Future<void> setSettings(CalendarDisplaySettings settings) async {
+    this.settings = settings;
+  }
 }
 
 Future<LocaleController> _createLocaleController([
