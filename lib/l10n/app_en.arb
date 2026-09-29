@@ -323,5 +323,20 @@
         "type": "int"
       }
     }
-  }
+  },
+  "about": "About",
+  "aboutVersion": "AlteKamerer · Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutVersionUnavailable": "Version information is unavailable.",
+  "aboutArchitecture": "Built with Flutter and the AKCore mobile API, with local notifications, SharedPreferences for app settings, and FlutterSecureStorage for sign-in credentials.",
+  "aboutDevelopmentTitle": "If you want to help develop this app",
+  "aboutDevelopmentDescription": "The source code is available on GitHub. AKCore contains the backend and mobile API, while AlteKamerer contains the Flutter app.",
+  "aboutAkCoreRepository": "AKCore repository",
+  "aboutAlteKamererRepository": "AlteKamerer repository"
 }

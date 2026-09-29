@@ -323,5 +323,20 @@
         "type": "int"
       }
     }
-  }
+  },
+  "about": "Om",
+  "aboutVersion": "AlteKamerer · Version {version}",
+  "@aboutVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutVersionUnavailable": "Versionsinformation är inte tillgänglig.",
+  "aboutArchitecture": "Byggd med Flutter och AKCores mobil-API, med lokala notiser, SharedPreferences för appinställningar och FlutterSecureStorage för inloggningsuppgifter.",
+  "aboutDevelopmentTitle": "Om du vill hjälpa till att utveckla appen",
+  "aboutDevelopmentDescription": "Källkoden finns på GitHub. AKCore innehåller backend och mobil-API, medan AlteKamerer innehåller Flutter-appen.",
+  "aboutAkCoreRepository": "AKCore-kodförråd",
+  "aboutAlteKamererRepository": "AlteKamerer-kodförråd"
 }

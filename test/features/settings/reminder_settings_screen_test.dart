@@ -96,6 +96,207 @@ void main() {
     expect(calendarPreferences.setCount, 3);
   });
 
+  testWidgets('settings sections can be collapsed and expanded', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+
+    await _pumpScreen(tester, preferences: preferences);
+
+    expect(find.text('Språk'), findsNWidgets(2));
+
+    final languageHeader = find.ancestor(
+      of: find.text('Språk').first,
+      matching: find.byType(InkWell),
+    );
+
+    expect(languageHeader, findsOneWidget);
+
+    await tester.tap(languageHeader);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Språk'), findsOneWidget);
+
+    await tester.tap(languageHeader);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Språk'), findsNWidgets(2));
+  });
+
+  testWidgets('About is last, collapsed by default, and shows app version', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      appVersionLoader: () async => '9.8.7',
+    );
+
+    expect(find.text('AlteKamerer · Version 9.8.7'), findsNothing);
+
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -1000));
+    await tester.pumpAndSettle();
+
+    final aboutHeader = find.text('Om');
+    expect(aboutHeader, findsOneWidget);
+
+    final saveCenter = tester.getCenter(find.text('Spara inställningar'));
+    final aboutCenter = tester.getCenter(aboutHeader);
+    expect(aboutCenter.dy, greaterThan(saveCenter.dy));
+
+    await tester.tap(aboutHeader);
+    await tester.pumpAndSettle();
+
+    expect(find.text('AlteKamerer · Version 9.8.7'), findsOneWidget);
+  });
+
+  testWidgets('About describes the app and launches repository URLs', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final launchedUris = <Uri>[];
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      appVersionLoader: () async => '1.1.1',
+      externalUrlLauncher: (uri) async {
+        launchedUris.add(uri);
+        return true;
+      },
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Om'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Om'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('Flutter och AKCores mobil-API'),
+      findsOneWidget,
+    );
+    expect(
+      find.text('Om du vill hjälpa till att utveckla appen'),
+      findsOneWidget,
+    );
+
+    final akCoreRepository = find.text('AKCore-kodförråd');
+    await tester.ensureVisible(akCoreRepository);
+    await tester.pumpAndSettle();
+    await tester.tap(akCoreRepository);
+    await tester.pump();
+
+    final alteKamererRepository = find.text('AlteKamerer-kodförråd');
+    await tester.ensureVisible(alteKamererRepository);
+    await tester.pumpAndSettle();
+    await tester.tap(alteKamererRepository);
+    await tester.pump();
+
+    expect(
+      launchedUris,
+      equals([
+        Uri.parse('https://github.com/LudHag/AKCore'),
+        Uri.parse('https://github.com/AKCore-Services/AlteKamerer'),
+      ]),
+    );
+  });
+
+  testWidgets('About is localized in English', (WidgetTester tester) async {
+    final preferences = _FakeReminderPreferences([]);
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      locale: const Locale('en'),
+      appVersionLoader: () async => '1.1.1',
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('About'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('About'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('AlteKamerer · Version 1.1.1'), findsOneWidget);
+    expect(
+      find.textContaining('Flutter and the AKCore mobile API'),
+      findsOneWidget,
+    );
+    expect(find.text('If you want to help develop this app'), findsOneWidget);
+    expect(find.text('AKCore repository'), findsOneWidget);
+    expect(find.text('AlteKamerer repository'), findsOneWidget);
+  });
+
+  testWidgets('About supports large text and exposes expansion semantics', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final semantics = tester.ensureSemantics();
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      appVersionLoader: () async => '1.1.1',
+      textScaler: const TextScaler.linear(2),
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Om'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      tester.getSemantics(find.text('Om')),
+      matchesSemantics(
+        label: 'Om',
+        isButton: true,
+        isFocusable: true,
+        hasTapAction: true,
+        hasFocusAction: true,
+        hasExpandedState: true,
+        isExpanded: false,
+      ),
+    );
+
+    await tester.tap(find.text('Om'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+
+    expect(
+      tester.getSemantics(find.text('Om')),
+      matchesSemantics(
+        isButton: true,
+        isFocusable: true,
+        hasTapAction: true,
+        hasFocusAction: true,
+        hasExpandedState: true,
+        isExpanded: true,
+      ),
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('AlteKamerer-kodförråd'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('AlteKamerer-kodförråd'), findsOneWidget);
+
+    semantics.dispose();
+  });
+
   testWidgets('loads configured reminders', (WidgetTester tester) async {
     final preferences = _FakeReminderPreferences([
       const Duration(hours: 5),
@@ -103,6 +304,7 @@ void main() {
     ]);
 
     await _pumpScreen(tester, preferences: preferences);
+    await _scrollToReminders(tester);
 
     expect(find.text('Påminnelser'), findsOneWidget);
     expect(find.text('5'), findsOneWidget);
@@ -116,6 +318,7 @@ void main() {
     final preferences = _FakeReminderPreferences([]);
 
     await _pumpScreen(tester, preferences: preferences);
+    await _scrollToReminders(tester);
 
     expect(find.text('Inga påminnelser är aktiverade.'), findsOneWidget);
   });
@@ -124,6 +327,7 @@ void main() {
     final preferences = _FakeReminderPreferences([]);
 
     await _pumpScreen(tester, preferences: preferences);
+    await _scrollToReminders(tester);
 
     final addReminder = find.text('Lägg till påminnelse');
 
@@ -248,6 +452,8 @@ void main() {
       notificationSync: notificationSync,
     );
 
+    await _scrollToReminders(tester);
+
     final field = find.byType(TextFormField).first;
 
     await tester.enterText(field, '0');
@@ -276,6 +482,10 @@ Future<void> _pumpScreen(
   _FakeNotificationSync? notificationSync,
   LocaleController? localeController,
   CalendarDisplayController? calendarDisplayController,
+  Locale locale = const Locale('sv'),
+  AppVersionLoader? appVersionLoader,
+  ExternalUrlLauncher? externalUrlLauncher,
+  TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final controller = localeController ?? _createLocaleController();
   final displayController =
@@ -283,20 +493,37 @@ Future<void> _pumpScreen(
 
   await tester.pumpWidget(
     MaterialApp(
-      locale: const Locale('sv'),
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: textScaler),
+          child: child!,
+        );
+      },
       home: Scaffold(
         body: ReminderSettingsScreen(
           reminderPreferences: preferences,
           notificationSync: notificationSync ?? _FakeNotificationSync(),
           localeController: controller,
           calendarDisplayController: displayController,
+          appVersionLoader: appVersionLoader,
+          externalUrlLauncher: externalUrlLauncher,
         ),
       ),
     ),
   );
 
+  await tester.pumpAndSettle();
+}
+
+Future<void> _scrollToReminders(WidgetTester tester) async {
+  await tester.scrollUntilVisible(
+    find.text('Påminnelser'),
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
   await tester.pumpAndSettle();
 }
 
