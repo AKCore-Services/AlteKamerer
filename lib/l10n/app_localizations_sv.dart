@@ -929,4 +929,34 @@ class AppLocalizationsSv extends AppLocalizations {
   String notificationStartsInMinutes(int minutes) {
     return 'Börjar om $minutes minuter';
   }
+
+  @override
+  String get about => 'Om';
+
+  @override
+  String aboutVersion(String version) {
+    return 'AlteKamerer · Version $version';
+  }
+
+  @override
+  String get aboutVersionUnavailable =>
+      'Versionsinformation är inte tillgänglig.';
+
+  @override
+  String get aboutArchitecture =>
+      'Byggd med Flutter och AKCores mobil-API, med lokala notiser, SharedPreferences för appinställningar och FlutterSecureStorage för inloggningsuppgifter.';
+
+  @override
+  String get aboutDevelopmentTitle =>
+      'Om du vill hjälpa till att utveckla appen';
+
+  @override
+  String get aboutDevelopmentDescription =>
+      'Källkoden finns på GitHub. AKCore innehåller backend och mobil-API, medan AlteKamerer innehåller Flutter-appen.';
+
+  @override
+  String get aboutAkCoreRepository => 'AKCore-kodförråd';
+
+  @override
+  String get aboutAlteKamererRepository => 'AlteKamerer-kodförråd';
 }

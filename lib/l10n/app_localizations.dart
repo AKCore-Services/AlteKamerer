@@ -1855,6 +1855,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Starts in {minutes} minutes'**
   String notificationStartsInMinutes(int minutes);
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @aboutVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'AlteKamerer · Version {version}'**
+  String aboutVersion(String version);
+
+  /// No description provided for @aboutVersionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Version information is unavailable.'**
+  String get aboutVersionUnavailable;
+
+  /// No description provided for @aboutArchitecture.
+  ///
+  /// In en, this message translates to:
+  /// **'Built with Flutter and the AKCore mobile API, with local notifications, SharedPreferences for app settings, and FlutterSecureStorage for sign-in credentials.'**
+  String get aboutArchitecture;
+
+  /// No description provided for @aboutDevelopmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If you want to help develop this app'**
+  String get aboutDevelopmentTitle;
+
+  /// No description provided for @aboutDevelopmentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The source code is available on GitHub. AKCore contains the backend and mobile API, while AlteKamerer contains the Flutter app.'**
+  String get aboutDevelopmentDescription;
+
+  /// No description provided for @aboutAkCoreRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'AKCore repository'**
+  String get aboutAkCoreRepository;
+
+  /// No description provided for @aboutAlteKamererRepository.
+  ///
+  /// In en, this message translates to:
+  /// **'AlteKamerer repository'**
+  String get aboutAlteKamererRepository;
 }
 
 class _AppLocalizationsDelegate

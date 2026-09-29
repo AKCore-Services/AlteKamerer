@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
@@ -10,6 +12,9 @@ import 'locale_controller.dart';
 import 'locale_preferences.dart';
 import 'reminder_preferences.dart';
 
+typedef AppVersionLoader = Future<String> Function();
+typedef ExternalUrlLauncher = Future<bool> Function(Uri uri);
+
 class ReminderSettingsScreen extends StatefulWidget {
   const ReminderSettingsScreen({
     super.key,
@@ -17,12 +22,16 @@ class ReminderSettingsScreen extends StatefulWidget {
     required this.notificationSync,
     required this.localeController,
     required this.calendarDisplayController,
+    this.appVersionLoader,
+    this.externalUrlLauncher,
   });
 
   final ReminderPreferences reminderPreferences;
   final NotificationSync notificationSync;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final AppVersionLoader? appVersionLoader;
+  final ExternalUrlLauncher? externalUrlLauncher;
 
   @override
   State<ReminderSettingsScreen> createState() => _ReminderSettingsScreenState();
@@ -31,6 +40,11 @@ class ReminderSettingsScreen extends StatefulWidget {
 class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   final List<_ReminderEditor> _reminders = [];
 
+  bool _languageExpanded = true;
+  bool _calendarDisplayExpanded = true;
+  bool _remindersExpanded = true;
+  bool _aboutExpanded = false;
+  Future<String>? _appVersion;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _loadFailed = false;
@@ -50,6 +64,34 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     }
 
     super.dispose();
+  }
+
+  Future<String> _loadAppVersion() async {
+    final loader = widget.appVersionLoader;
+    if (loader != null) {
+      return loader();
+    }
+
+    final packageInfo = await PackageInfo.fromPlatform();
+    return packageInfo.version;
+  }
+
+  Future<bool> _launchExternalUrl(Uri uri) {
+    final launcher = widget.externalUrlLauncher;
+    if (launcher != null) {
+      return launcher(uri);
+    }
+
+    return launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  void _setAboutExpanded(bool expanded) {
+    setState(() {
+      _aboutExpanded = expanded;
+      if (expanded) {
+        _appVersion ??= _loadAppVersion();
+      }
+    });
   }
 
   Future<void> _load() async {
@@ -199,14 +241,17 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        AkSurfaceCard(
+        _SettingsSection(
+          title: l10n.language,
+          expanded: _languageExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _languageExpanded = expanded;
+            });
+          },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.language,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
               const SizedBox(height: 8),
               Text(
                 l10n.languageDescription,
@@ -248,14 +293,17 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
           builder: (context, _) {
             final settings = widget.calendarDisplayController.settings;
 
-            return AkSurfaceCard(
+            return _SettingsSection(
+              title: l10n.calendarDisplay,
+              expanded: _calendarDisplayExpanded,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _calendarDisplayExpanded = expanded;
+                });
+              },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.calendarDisplay,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
                   const SizedBox(height: 8),
                   Text(
                     l10n.calendarDisplayDescription,
@@ -331,14 +379,17 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
           },
         ),
         const SizedBox(height: 16),
-        AkSurfaceCard(
+        _SettingsSection(
+          title: l10n.reminders,
+          expanded: _remindersExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _remindersExpanded = expanded;
+            });
+          },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.reminders,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
               const SizedBox(height: 8),
               Text(
                 l10n.remindersDescription,
@@ -394,7 +445,119 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                 )
               : Text(l10n.saveSettings),
         ),
+        const SizedBox(height: 16),
+        _SettingsSection(
+          title: l10n.about,
+          expanded: _aboutExpanded,
+          onExpansionChanged: _setAboutExpanded,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              FutureBuilder<String>(
+                future: _appVersion,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(l10n.aboutVersion(snapshot.data!));
+                  }
+
+                  if (snapshot.hasError) {
+                    return Text(l10n.aboutVersionUnavailable);
+                  }
+
+                  return const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.aboutArchitecture,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                l10n.aboutDevelopmentTitle,
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.aboutDevelopmentDescription,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: () => _launchExternalUrl(
+                  Uri.parse('https://github.com/LudHag/AKCore'),
+                ),
+                icon: const Icon(Icons.open_in_new),
+                label: Text(l10n.aboutAkCoreRepository),
+              ),
+              TextButton.icon(
+                onPressed: () => _launchExternalUrl(
+                  Uri.parse('https://github.com/AKCore-Services/AlteKamerer'),
+                ),
+                icon: const Icon(Icons.open_in_new),
+                label: Text(l10n.aboutAlteKamererRepository),
+              ),
+            ],
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  const _SettingsSection({
+    required this.title,
+    required this.expanded,
+    required this.onExpansionChanged,
+    required this.child,
+  });
+
+  final String title;
+  final bool expanded;
+  final ValueChanged<bool> onExpansionChanged;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AkSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            expanded: expanded,
+            child: InkWell(
+              onTap: () => onExpansionChanged(!expanded),
+              borderRadius: BorderRadius.circular(12),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 48),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(expanded ? Icons.expand_less : Icons.expand_more),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (expanded) child,
+        ],
+      ),
     );
   }
 }

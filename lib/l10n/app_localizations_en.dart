@@ -930,4 +930,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String notificationStartsInMinutes(int minutes) {
     return 'Starts in $minutes minutes';
   }
+
+  @override
+  String get about => 'About';
+
+  @override
+  String aboutVersion(String version) {
+    return 'AlteKamerer · Version $version';
+  }
+
+  @override
+  String get aboutVersionUnavailable => 'Version information is unavailable.';
+
+  @override
+  String get aboutArchitecture =>
+      'Built with Flutter and the AKCore mobile API, with local notifications, SharedPreferences for app settings, and FlutterSecureStorage for sign-in credentials.';
+
+  @override
+  String get aboutDevelopmentTitle => 'If you want to help develop this app';
+
+  @override
+  String get aboutDevelopmentDescription =>
+      'The source code is available on GitHub. AKCore contains the backend and mobile API, while AlteKamerer contains the Flutter app.';
+
+  @override
+  String get aboutAkCoreRepository => 'AKCore repository';
+
+  @override
+  String get aboutAlteKamererRepository => 'AlteKamerer repository';
 }
