@@ -338,5 +338,20 @@
   "aboutDevelopmentTitle": "If you want to help develop this app",
   "aboutDevelopmentDescription": "The source code is available on GitHub. AKCore contains the backend and mobile API, while AlteKamerer contains the Flutter app.",
   "aboutAkCoreRepository": "AKCore repository",
-  "aboutAlteKamererRepository": "AlteKamerer repository"
+  "aboutAlteKamererRepository": "AlteKamerer repository",
+  "settingsBackup": "Backup and restore",
+  "settingsBackupDescription": "Export your local app settings to a file or restore settings from a previous backup. Sign-in information and cached server data are not included.",
+  "exportSettings": "Export settings",
+  "importSettings": "Import settings",
+  "settingsExported": "Settings exported successfully.",
+  "settingsExportFailed": "The settings could not be exported.",
+  "settingsImportInvalid": "This is not a valid AlteKamerer settings file.",
+  "settingsImportUnsupported": "This settings file was created with an unsupported settings format.",
+  "settingsImportReadFailed": "The settings file could not be read.",
+  "settingsImportFailed": "The settings could not be imported.",
+  "settingsImported": "Settings imported successfully.",
+  "confirmSettingsImportTitle": "Import settings?",
+  "confirmSettingsImportDescription": "The settings in this backup will replace the corresponding local app settings on this device. Sign-in information is not affected.",
+  "cancel": "Cancel",
+  "confirmImport": "Import"
 }

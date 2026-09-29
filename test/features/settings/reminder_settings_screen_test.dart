@@ -5,6 +5,8 @@ import 'package:altekamerer/features/settings/locale_controller.dart';
 import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_settings_screen.dart';
+import 'package:altekamerer/features/settings/settings_backup_file_service.dart';
+import 'package:altekamerer/features/settings/settings_backup_service.dart';
 import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -297,6 +299,282 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('exports settings through the file service', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([
+      const Duration(hours: 5),
+      const Duration(hours: 1),
+    ]);
+    final localePreferences = _FakeLocalePreferences(
+      AppLocalePreference.swedish,
+    );
+    final localeController = LocaleController(localePreferences);
+    await localeController.load();
+
+    final calendarPreferences = _FakeCalendarDisplayPreferences(
+      const CalendarDisplaySettings(
+        dateFormat: CalendarDateFormat.numeric,
+        timeFormat: CalendarTimeFormat.twelveHour,
+        showWeekday: true,
+      ),
+    );
+    final calendarController = CalendarDisplayController(calendarPreferences);
+    await calendarController.load();
+
+    final backupService = SettingsBackupService(
+      localePreferences: localePreferences,
+      reminderPreferences: preferences,
+      calendarDisplayPreferences: calendarPreferences,
+      localeController: localeController,
+      calendarDisplayController: calendarController,
+    );
+    final fileService = _FakeSettingsBackupFileService();
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      localeController: localeController,
+      calendarDisplayController: calendarController,
+      settingsBackupService: backupService,
+      settingsBackupFileService: fileService,
+    );
+
+    await _openBackupSection(tester);
+    await tester.tap(find.text('Exportera inställningar'));
+    await tester.pumpAndSettle();
+
+    expect(fileService.savedContents, isNotNull);
+    expect(fileService.savedContents, contains('"schemaVersion": 1'));
+    expect(fileService.savedContents, contains('"language": "sv"'));
+    expect(fileService.savedContents, contains('"offsetMinutes": ['));
+    expect(fileService.savedContents, contains('300'));
+    expect(fileService.savedContents, contains('60'));
+    expect(fileService.savedContents, isNot(contains('token')));
+    expect(find.text('Inställningarna exporterades.'), findsOneWidget);
+  });
+
+  testWidgets('invalid import is rejected without confirmation or writes', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([const Duration(hours: 5)]);
+    final localePreferences = _FakeLocalePreferences(
+      AppLocalePreference.swedish,
+    );
+    final localeController = LocaleController(localePreferences);
+    await localeController.load();
+
+    final calendarPreferences = _FakeCalendarDisplayPreferences(
+      const CalendarDisplaySettings(),
+    );
+    final calendarController = CalendarDisplayController(calendarPreferences);
+    await calendarController.load();
+
+    final backupService = SettingsBackupService(
+      localePreferences: localePreferences,
+      reminderPreferences: preferences,
+      calendarDisplayPreferences: calendarPreferences,
+      localeController: localeController,
+      calendarDisplayController: calendarController,
+    );
+    final fileService = _FakeSettingsBackupFileService(
+      pickedContents: '''
+{
+  "schemaVersion": 1,
+  "settings": {
+    "language": "invalid"
+  }
+}
+''',
+    );
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      localeController: localeController,
+      calendarDisplayController: calendarController,
+      settingsBackupService: backupService,
+      settingsBackupFileService: fileService,
+    );
+
+    await _openBackupSection(tester);
+    await tester.tap(find.text('Importera inställningar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Importera inställningar?'), findsNothing);
+    expect(
+      find.text('Det här är inte en giltig AlteKamerer-inställningsfil.'),
+      findsOneWidget,
+    );
+    expect(localePreferences.setCount, 0);
+    expect(preferences.setCount, 0);
+    expect(calendarPreferences.setCount, 0);
+  });
+
+  testWidgets(
+    'valid import requires confirmation and cancel preserves settings',
+    (WidgetTester tester) async {
+      final preferences = _FakeReminderPreferences([const Duration(hours: 5)]);
+      final localePreferences = _FakeLocalePreferences(
+        AppLocalePreference.swedish,
+      );
+      final localeController = LocaleController(localePreferences);
+      await localeController.load();
+
+      final calendarPreferences = _FakeCalendarDisplayPreferences(
+        const CalendarDisplaySettings(),
+      );
+      final calendarController = CalendarDisplayController(calendarPreferences);
+      await calendarController.load();
+
+      final backupService = SettingsBackupService(
+        localePreferences: localePreferences,
+        reminderPreferences: preferences,
+        calendarDisplayPreferences: calendarPreferences,
+        localeController: localeController,
+        calendarDisplayController: calendarController,
+      );
+      final fileService = _FakeSettingsBackupFileService(
+        pickedContents: '''
+{
+  "schemaVersion": 1,
+  "settings": {
+    "language": "en",
+    "reminders": {
+      "offsetMinutes": [30]
+    }
+  }
+}
+''',
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        localeController: localeController,
+        calendarDisplayController: calendarController,
+        settingsBackupService: backupService,
+        settingsBackupFileService: fileService,
+      );
+
+      await _openBackupSection(tester);
+      await tester.tap(find.text('Importera inställningar'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Importera inställningar?'), findsOneWidget);
+      expect(localePreferences.setCount, 0);
+      expect(preferences.setCount, 0);
+      expect(calendarPreferences.setCount, 0);
+
+      await tester.tap(find.text('Avbryt'));
+      await tester.pumpAndSettle();
+
+      expect(localeController.preference, AppLocalePreference.swedish);
+      expect(await preferences.getReminderOffsets(), [
+        const Duration(hours: 5),
+      ]);
+      expect(localePreferences.setCount, 0);
+      expect(preferences.setCount, 0);
+      expect(calendarPreferences.setCount, 0);
+    },
+  );
+
+  testWidgets('confirmed import applies settings and refreshes reminders', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([const Duration(hours: 5)]);
+    final notificationSync = _FakeNotificationSync();
+    final localePreferences = _FakeLocalePreferences(
+      AppLocalePreference.swedish,
+    );
+    final localeController = LocaleController(localePreferences);
+    await localeController.load();
+
+    final calendarPreferences = _FakeCalendarDisplayPreferences(
+      const CalendarDisplaySettings(),
+    );
+    final calendarController = CalendarDisplayController(calendarPreferences);
+    await calendarController.load();
+
+    final backupService = SettingsBackupService(
+      localePreferences: localePreferences,
+      reminderPreferences: preferences,
+      calendarDisplayPreferences: calendarPreferences,
+      localeController: localeController,
+      calendarDisplayController: calendarController,
+    );
+    final fileService = _FakeSettingsBackupFileService(
+      pickedContents: '''
+{
+  "schemaVersion": 1,
+  "settings": {
+    "language": "en",
+    "reminders": {
+      "offsetMinutes": [30]
+    },
+    "calendarDisplay": {
+      "dateFormat": "written",
+      "timeFormat": "12-hour",
+      "showWeekday": true
+    }
+  }
+}
+''',
+    );
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      notificationSync: notificationSync,
+      localeController: localeController,
+      calendarDisplayController: calendarController,
+      settingsBackupService: backupService,
+      settingsBackupFileService: fileService,
+    );
+
+    await _openBackupSection(tester);
+    await tester.tap(find.text('Importera inställningar'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Importera').last);
+    await tester.pumpAndSettle();
+
+    expect(localeController.preference, AppLocalePreference.english);
+    expect(calendarController.settings.dateFormat, CalendarDateFormat.written);
+    expect(
+      calendarController.settings.timeFormat,
+      CalendarTimeFormat.twelveHour,
+    );
+    expect(calendarController.settings.showWeekday, isTrue);
+    expect(await preferences.getReminderOffsets(), [
+      const Duration(minutes: 30),
+    ]);
+    expect(notificationSync.syncCount, 1);
+
+    await _scrollToReminders(tester);
+    expect(find.text('30'), findsOneWidget);
+  });
+
+  testWidgets('canceling file selection leaves settings unchanged', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([const Duration(hours: 5)]);
+    final fileService = _FakeSettingsBackupFileService();
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      settingsBackupFileService: fileService,
+    );
+
+    await _openBackupSection(tester);
+    await tester.tap(find.text('Importera inställningar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Importera inställningar?'), findsNothing);
+    expect(preferences.setCount, 0);
+  });
+
   testWidgets('loads configured reminders', (WidgetTester tester) async {
     final preferences = _FakeReminderPreferences([
       const Duration(hours: 5),
@@ -485,11 +763,27 @@ Future<void> _pumpScreen(
   Locale locale = const Locale('sv'),
   AppVersionLoader? appVersionLoader,
   ExternalUrlLauncher? externalUrlLauncher,
+  SettingsBackupService? settingsBackupService,
+  SettingsBackupFileService? settingsBackupFileService,
   TextScaler textScaler = TextScaler.noScaling,
 }) async {
   final controller = localeController ?? _createLocaleController();
   final displayController =
       calendarDisplayController ?? _createCalendarDisplayController();
+
+  final backupLocalePreferences = _FakeLocalePreferences(controller.preference);
+  final backupCalendarPreferences = _FakeCalendarDisplayPreferences(
+    displayController.settings,
+  );
+  final backupService =
+      settingsBackupService ??
+      SettingsBackupService(
+        localePreferences: backupLocalePreferences,
+        reminderPreferences: preferences,
+        calendarDisplayPreferences: backupCalendarPreferences,
+        localeController: controller,
+        calendarDisplayController: displayController,
+      );
 
   await tester.pumpWidget(
     MaterialApp(
@@ -508,6 +802,9 @@ Future<void> _pumpScreen(
           notificationSync: notificationSync ?? _FakeNotificationSync(),
           localeController: controller,
           calendarDisplayController: displayController,
+          settingsBackupService: backupService,
+          settingsBackupFileService:
+              settingsBackupFileService ?? _FakeSettingsBackupFileService(),
           appVersionLoader: appVersionLoader,
           externalUrlLauncher: externalUrlLauncher,
         ),
@@ -523,6 +820,23 @@ Future<void> _scrollToReminders(WidgetTester tester) async {
     find.text('Påminnelser'),
     300,
     scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openBackupSection(WidgetTester tester) async {
+  final scrollable = find.byType(Scrollable).first;
+  final backupHeader = find.text('Säkerhetskopiera och återställ');
+
+  await tester.scrollUntilVisible(backupHeader, 300, scrollable: scrollable);
+  await tester.pumpAndSettle();
+  await tester.tap(backupHeader);
+  await tester.pumpAndSettle();
+
+  await tester.scrollUntilVisible(
+    find.text('Importera inställningar'),
+    100,
+    scrollable: scrollable,
   );
   await tester.pumpAndSettle();
 }
@@ -556,10 +870,10 @@ class _FakeCalendarDisplayPreferences implements CalendarDisplayPreferences {
 }
 
 class _FakeReminderPreferences implements ReminderPreferences {
-  _FakeReminderPreferences(this.offsets);
+  _FakeReminderPreferences(List<Duration> offsets)
+    : offsets = List<Duration>.of(offsets);
 
-  final List<Duration> offsets;
-
+  List<Duration> offsets;
   List<Duration>? savedOffsets;
   int setCount = 0;
 
@@ -571,6 +885,7 @@ class _FakeReminderPreferences implements ReminderPreferences {
   @override
   Future<void> setReminderOffsets(List<Duration> offsets) async {
     setCount++;
+    this.offsets = List.of(offsets);
     savedOffsets = List.of(offsets);
   }
 }
@@ -579,6 +894,7 @@ class _FakeLocalePreferences implements LocalePreferences {
   _FakeLocalePreferences(this.preference);
 
   AppLocalePreference preference;
+  int setCount = 0;
 
   @override
   Future<AppLocalePreference> getLocalePreference() async {
@@ -587,8 +903,25 @@ class _FakeLocalePreferences implements LocalePreferences {
 
   @override
   Future<void> setLocalePreference(AppLocalePreference preference) async {
+    setCount++;
     this.preference = preference;
   }
+}
+
+class _FakeSettingsBackupFileService implements SettingsBackupFileService {
+  _FakeSettingsBackupFileService({this.pickedContents});
+
+  final String? pickedContents;
+  String? savedContents;
+
+  @override
+  Future<bool> save(String contents) async {
+    savedContents = contents;
+    return true;
+  }
+
+  @override
+  Future<String?> pick() async => pickedContents;
 }
 
 class _FakeNotificationSync implements NotificationSync {

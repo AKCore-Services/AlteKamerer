@@ -12,6 +12,8 @@ import 'features/settings/calendar_display_controller.dart';
 import 'features/settings/locale_controller.dart';
 import 'l10n/app_localizations.dart';
 import 'features/settings/reminder_preferences.dart';
+import 'features/settings/settings_backup_file_service.dart';
+import 'features/settings/settings_backup_service.dart';
 
 class AlteKamererApp extends StatelessWidget {
   const AlteKamererApp({
@@ -25,6 +27,8 @@ class AlteKamererApp extends StatelessWidget {
     required this.reminderPreferences,
     required this.localeController,
     required this.calendarDisplayController,
+    required this.settingsBackupService,
+    required this.settingsBackupFileService,
   });
 
   final AuthController authController;
@@ -36,6 +40,8 @@ class AlteKamererApp extends StatelessWidget {
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final SettingsBackupService settingsBackupService;
+  final SettingsBackupFileService settingsBackupFileService;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +72,8 @@ class AlteKamererApp extends StatelessWidget {
             reminderPreferences: reminderPreferences,
             localeController: localeController,
             calendarDisplayController: calendarDisplayController,
+            settingsBackupService: settingsBackupService,
+            settingsBackupFileService: settingsBackupFileService,
           ),
         );
       },

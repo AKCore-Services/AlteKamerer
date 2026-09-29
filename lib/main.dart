@@ -21,6 +21,8 @@ import 'features/settings/calendar_display_preferences.dart';
 import 'features/settings/locale_controller.dart';
 import 'features/settings/locale_preferences.dart';
 import 'features/settings/reminder_preferences.dart';
+import 'features/settings/settings_backup_file_service.dart';
+import 'features/settings/settings_backup_service.dart';
 
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,6 +54,15 @@ Future<void> main() async {
   final reminderPreferences = SharedPreferencesReminderPreferences(
     sharedPreferences,
   );
+  final settingsBackupService = SettingsBackupService(
+    localePreferences: localePreferences,
+    reminderPreferences: reminderPreferences,
+    calendarDisplayPreferences: calendarDisplayPreferences,
+    localeController: localeController,
+    calendarDisplayController: calendarDisplayController,
+  );
+  const settingsBackupFileService = FilePickerSettingsBackupFileService();
+
   final apiClient = ApiClient(config, accessTokenStore);
   final authApi = AuthApi(apiClient);
   final calendarApi = CalendarApi(apiClient);
@@ -98,6 +109,8 @@ Future<void> main() async {
       reminderPreferences: reminderPreferences,
       localeController: localeController,
       calendarDisplayController: calendarDisplayController,
+      settingsBackupService: settingsBackupService,
+      settingsBackupFileService: settingsBackupFileService,
     ),
   );
 }

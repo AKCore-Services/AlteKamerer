@@ -1903,6 +1903,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AlteKamerer repository'**
   String get aboutAlteKamererRepository;
+
+  /// No description provided for @settingsBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup and restore'**
+  String get settingsBackup;
+
+  /// No description provided for @settingsBackupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Export your local app settings to a file or restore settings from a previous backup. Sign-in information and cached server data are not included.'**
+  String get settingsBackupDescription;
+
+  /// No description provided for @exportSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Export settings'**
+  String get exportSettings;
+
+  /// No description provided for @importSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Import settings'**
+  String get importSettings;
+
+  /// No description provided for @settingsExported.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings exported successfully.'**
+  String get settingsExported;
+
+  /// No description provided for @settingsExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The settings could not be exported.'**
+  String get settingsExportFailed;
+
+  /// No description provided for @settingsImportInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a valid AlteKamerer settings file.'**
+  String get settingsImportInvalid;
+
+  /// No description provided for @settingsImportUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This settings file was created with an unsupported settings format.'**
+  String get settingsImportUnsupported;
+
+  /// No description provided for @settingsImportReadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The settings file could not be read.'**
+  String get settingsImportReadFailed;
+
+  /// No description provided for @settingsImportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The settings could not be imported.'**
+  String get settingsImportFailed;
+
+  /// No description provided for @settingsImported.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings imported successfully.'**
+  String get settingsImported;
+
+  /// No description provided for @confirmSettingsImportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import settings?'**
+  String get confirmSettingsImportTitle;
+
+  /// No description provided for @confirmSettingsImportDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'The settings in this backup will replace the corresponding local app settings on this device. Sign-in information is not affected.'**
+  String get confirmSettingsImportDescription;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @confirmImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get confirmImport;
 }
 
 class _AppLocalizationsDelegate

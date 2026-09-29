@@ -11,6 +11,9 @@ import 'calendar_display_preferences.dart';
 import 'locale_controller.dart';
 import 'locale_preferences.dart';
 import 'reminder_preferences.dart';
+import 'settings_backup.dart';
+import 'settings_backup_file_service.dart';
+import 'settings_backup_service.dart';
 
 typedef AppVersionLoader = Future<String> Function();
 typedef ExternalUrlLauncher = Future<bool> Function(Uri uri);
@@ -22,6 +25,8 @@ class ReminderSettingsScreen extends StatefulWidget {
     required this.notificationSync,
     required this.localeController,
     required this.calendarDisplayController,
+    required this.settingsBackupService,
+    required this.settingsBackupFileService,
     this.appVersionLoader,
     this.externalUrlLauncher,
   });
@@ -30,6 +35,8 @@ class ReminderSettingsScreen extends StatefulWidget {
   final NotificationSync notificationSync;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final SettingsBackupService settingsBackupService;
+  final SettingsBackupFileService settingsBackupFileService;
   final AppVersionLoader? appVersionLoader;
   final ExternalUrlLauncher? externalUrlLauncher;
 
@@ -43,13 +50,16 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   bool _languageExpanded = true;
   bool _calendarDisplayExpanded = true;
   bool _remindersExpanded = true;
+  bool _backupExpanded = false;
   bool _aboutExpanded = false;
   Future<String>? _appVersion;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isBackupBusy = false;
   bool _loadFailed = false;
   _ReminderValidation? _validation;
   _ReminderSaveStatus? _saveStatus;
+  _SettingsBackupStatus? _backupStatus;
 
   @override
   void initState() {
@@ -209,6 +219,181 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     }
   }
 
+  Future<void> _exportSettings() async {
+    setState(() {
+      _isBackupBusy = true;
+      _backupStatus = null;
+    });
+
+    try {
+      final contents = await widget.settingsBackupService.exportSettings();
+      final saved = await widget.settingsBackupFileService.save(contents);
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        if (saved) {
+          _backupStatus = _SettingsBackupStatus.exported;
+        }
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.exportFailed;
+      });
+    }
+  }
+
+  Future<void> _importSettings() async {
+    setState(() {
+      _isBackupBusy = true;
+      _backupStatus = null;
+    });
+
+    String? source;
+    try {
+      source = await widget.settingsBackupFileService.pick();
+
+      if (source == null) {
+        if (mounted) {
+          setState(() {
+            _isBackupBusy = false;
+          });
+        }
+        return;
+      }
+    } on SettingsBackupFileFormatException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.readFailed;
+      });
+      return;
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.readFailed;
+      });
+      return;
+    }
+
+    late final SettingsBackup backup;
+    try {
+      backup = widget.settingsBackupService.validateImport(source);
+    } on SettingsBackupUnsupportedVersionException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.unsupported;
+      });
+      return;
+    } on SettingsBackupFormatException {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.invalid;
+      });
+      return;
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.invalid;
+      });
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isBackupBusy = false;
+    });
+
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(l10n.confirmSettingsImportTitle),
+          content: Text(l10n.confirmSettingsImportDescription),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.confirmImport),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isBackupBusy = true;
+      _backupStatus = null;
+    });
+
+    try {
+      await widget.settingsBackupService.importSettings(backup);
+      await widget.notificationSync.sync();
+
+      final offsets = await widget.reminderPreferences.getReminderOffsets();
+
+      if (!mounted) {
+        return;
+      }
+
+      _replaceReminders(offsets.map(_ReminderEditor.fromDuration).toList());
+
+      setState(() {
+        _isBackupBusy = false;
+        _validation = null;
+        _saveStatus = null;
+        _backupStatus = _SettingsBackupStatus.imported;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isBackupBusy = false;
+        _backupStatus = _SettingsBackupStatus.importFailed;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -235,6 +420,17 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     final statusMessage = switch (_saveStatus) {
       _ReminderSaveStatus.saved => l10n.remindersSaved,
       _ReminderSaveStatus.failed => l10n.remindersSaveFailed,
+      null => null,
+    };
+
+    final backupStatusMessage = switch (_backupStatus) {
+      _SettingsBackupStatus.exported => l10n.settingsExported,
+      _SettingsBackupStatus.exportFailed => l10n.settingsExportFailed,
+      _SettingsBackupStatus.invalid => l10n.settingsImportInvalid,
+      _SettingsBackupStatus.unsupported => l10n.settingsImportUnsupported,
+      _SettingsBackupStatus.readFailed => l10n.settingsImportReadFailed,
+      _SettingsBackupStatus.importFailed => l10n.settingsImportFailed,
+      _SettingsBackupStatus.imported => l10n.settingsImported,
       null => null,
     };
 
@@ -444,6 +640,67 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Text(l10n.saveSettings),
+        ),
+        const SizedBox(height: 16),
+        _SettingsSection(
+          title: l10n.settingsBackup,
+          expanded: _backupExpanded,
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _backupExpanded = expanded;
+            });
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 8),
+              Text(
+                l10n.settingsBackupDescription,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                onPressed: _isBackupBusy ? null : _exportSettings,
+                icon: const Icon(Icons.file_upload_outlined),
+                label: Text(l10n.exportSettings),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _isBackupBusy ? null : _importSettings,
+                icon: const Icon(Icons.file_download_outlined),
+                label: Text(l10n.importSettings),
+              ),
+              if (_isBackupBusy) ...[
+                const SizedBox(height: 16),
+                const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ],
+              if (backupStatusMessage != null) ...[
+                const SizedBox(height: 16),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    backupStatusMessage,
+                    style: switch (_backupStatus) {
+                      _SettingsBackupStatus.exportFailed ||
+                      _SettingsBackupStatus.invalid ||
+                      _SettingsBackupStatus.unsupported ||
+                      _SettingsBackupStatus.readFailed ||
+                      _SettingsBackupStatus.importFailed => TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      _ => null,
+                    },
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         _SettingsSection(
@@ -670,3 +927,13 @@ enum _ReminderUnit {
 enum _ReminderValidation { positiveTimeRequired, duplicateTime }
 
 enum _ReminderSaveStatus { saved, failed }
+
+enum _SettingsBackupStatus {
+  exported,
+  exportFailed,
+  invalid,
+  unsupported,
+  readFailed,
+  importFailed,
+  imported,
+}

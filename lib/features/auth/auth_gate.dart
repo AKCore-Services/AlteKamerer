@@ -10,6 +10,8 @@ import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
 import '../settings/locale_controller.dart';
 import '../settings/reminder_preferences.dart';
+import '../settings/settings_backup_file_service.dart';
+import '../settings/settings_backup_service.dart';
 import '../shell/app_shell.dart';
 import 'auth_controller.dart';
 import 'login_screen.dart';
@@ -26,6 +28,8 @@ class AuthGate extends StatefulWidget {
     required this.reminderPreferences,
     required this.localeController,
     required this.calendarDisplayController,
+    required this.settingsBackupService,
+    required this.settingsBackupFileService,
   });
 
   final AuthController authController;
@@ -37,6 +41,8 @@ class AuthGate extends StatefulWidget {
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final SettingsBackupService settingsBackupService;
+  final SettingsBackupFileService settingsBackupFileService;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -107,6 +113,8 @@ class _AuthGateState extends State<AuthGate> {
             reminderPreferences: widget.reminderPreferences,
             localeController: widget.localeController,
             calendarDisplayController: widget.calendarDisplayController,
+            settingsBackupService: widget.settingsBackupService,
+            settingsBackupFileService: widget.settingsBackupFileService,
           ),
           AuthStatus.restoreFailed => Scaffold(
             body: SafeArea(

@@ -338,5 +338,20 @@
   "aboutDevelopmentTitle": "Om du vill hjälpa till att utveckla appen",
   "aboutDevelopmentDescription": "Källkoden finns på GitHub. AKCore innehåller backend och mobil-API, medan AlteKamerer innehåller Flutter-appen.",
   "aboutAkCoreRepository": "AKCore-kodförråd",
-  "aboutAlteKamererRepository": "AlteKamerer-kodförråd"
+  "aboutAlteKamererRepository": "AlteKamerer-kodförråd",
+  "settingsBackup": "Säkerhetskopiera och återställ",
+  "settingsBackupDescription": "Exportera dina lokala appinställningar till en fil eller återställ inställningar från en tidigare säkerhetskopia. Inloggningsuppgifter och cachad serverdata inkluderas inte.",
+  "exportSettings": "Exportera inställningar",
+  "importSettings": "Importera inställningar",
+  "settingsExported": "Inställningarna exporterades.",
+  "settingsExportFailed": "Inställningarna kunde inte exporteras.",
+  "settingsImportInvalid": "Det här är inte en giltig AlteKamerer-inställningsfil.",
+  "settingsImportUnsupported": "Inställningsfilen skapades med ett inställningsformat som inte stöds.",
+  "settingsImportReadFailed": "Inställningsfilen kunde inte läsas.",
+  "settingsImportFailed": "Inställningarna kunde inte importeras.",
+  "settingsImported": "Inställningarna importerades.",
+  "confirmSettingsImportTitle": "Importera inställningar?",
+  "confirmSettingsImportDescription": "Inställningarna i säkerhetskopian ersätter motsvarande lokala appinställningar på den här enheten. Inloggningsuppgifter påverkas inte.",
+  "cancel": "Avbryt",
+  "confirmImport": "Importera"
 }
