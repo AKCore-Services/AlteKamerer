@@ -51,24 +51,6 @@ void main() {
     },
   );
 
-  test('sync updates calendar member context from current member', () async {
-    final calendarController = CalendarController(_FakeCalendarService());
-    final scheduler = _FakeNotificationScheduler();
-
-    final service = NotificationSyncService(
-      _FakeMeService(isBallet: true),
-      calendarController,
-      NotificationPlanner(stockholm),
-      scheduler,
-      _FakeReminderPreferences(defaultReminderOffsets),
-      now: () => DateTime.utc(2026, 9, 20, 6),
-    );
-
-    await service.sync();
-
-    expect(calendarController.isBallet, isTrue);
-  });
-
   test('sync supports a configurable number of reminders', () async {
     final calendarController = CalendarController(_FakeCalendarService());
     final scheduler = _FakeNotificationScheduler();
@@ -182,9 +164,9 @@ class _FailingCalendarService implements CalendarService {
 }
 
 class _FakeMeService implements MeService {
-  _FakeMeService({this.isBallet = false});
+  _FakeMeService();
 
-  final bool isBallet;
+  static const bool isBallet = false;
 
   @override
   Future<Me> getMe() async {

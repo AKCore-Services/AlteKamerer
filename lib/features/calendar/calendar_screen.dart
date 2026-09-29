@@ -55,11 +55,7 @@ class CalendarScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _CalendarViewSelector(controller: controller),
-          const SizedBox(height: 12),
-          _CalendarSearch(controller: controller),
-          const SizedBox(height: 12),
-          _CalendarFilters(controller: controller),
+          _CalendarToolbar(controller: controller),
           if (controller.view == CalendarView.week ||
               controller.view == CalendarView.month) ...[
             const SizedBox(height: 12),
@@ -94,6 +90,44 @@ class CalendarScreen extends StatelessWidget {
   }
 }
 
+class _CalendarToolbar extends StatelessWidget {
+  const _CalendarToolbar({required this.controller});
+
+  final CalendarController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final hasActiveFilters =
+        controller.eventTypeFilter != null ||
+        controller.registrationFilter != CalendarRegistrationFilter.all;
+
+    return Row(
+      children: [
+        OutlinedButton.icon(
+          key: const ValueKey('calendar-filters-button'),
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+          onPressed: () => _showFilters(context),
+          icon: Icon(
+            hasActiveFilters ? Icons.filter_alt : Icons.filter_alt_outlined,
+          ),
+          label: Text(l10n.calendarFilter),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: _CalendarViewSelector(controller: controller)),
+      ],
+    );
+  }
+
+  Future<void> _showFilters(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _CalendarFilterSheet(controller: controller),
+    );
+  }
+}
+
 class _CalendarViewSelector extends StatelessWidget {
   const _CalendarViewSelector({required this.controller});
 
@@ -105,31 +139,59 @@ class _CalendarViewSelector extends StatelessWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: SegmentedButton<CalendarView>(
-        segments: [
-          ButtonSegment(
-            value: CalendarView.upcoming,
-            label: Text(l10n.calendarViewUpcoming),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CalendarViewButton(
+            label: l10n.calendarViewUpcoming,
+            selected: controller.view == CalendarView.upcoming,
+            onPressed: () => controller.setView(CalendarView.upcoming),
           ),
-          ButtonSegment(
-            value: CalendarView.today,
-            label: Text(l10n.calendarViewToday),
+          _CalendarViewButton(
+            label: l10n.calendarViewToday,
+            selected: controller.view == CalendarView.today,
+            onPressed: () => controller.setView(CalendarView.today),
           ),
-          ButtonSegment(
-            value: CalendarView.week,
-            label: Text(l10n.calendarViewWeek),
+          _CalendarViewButton(
+            label: l10n.calendarViewWeek,
+            selected: controller.view == CalendarView.week,
+            onPressed: () => controller.setView(CalendarView.week),
           ),
-          ButtonSegment(
-            value: CalendarView.month,
-            label: Text(l10n.calendarViewMonth),
+          _CalendarViewButton(
+            label: l10n.calendarViewMonth,
+            selected: controller.view == CalendarView.month,
+            onPressed: () => controller.setView(CalendarView.month),
           ),
         ],
-        selected: {controller.view},
-        showSelectedIcon: false,
-        onSelectionChanged: (selection) {
-          controller.setView(selection.single);
-        },
       ),
+    );
+  }
+}
+
+class _CalendarViewButton extends StatelessWidget {
+  const _CalendarViewButton({
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: selected
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurface,
+        textStyle: TextStyle(
+          fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+        ),
+      ),
+      child: Text(label),
     );
   }
 }
@@ -157,8 +219,8 @@ class _CalendarSearch extends StatelessWidget {
   }
 }
 
-class _CalendarFilters extends StatelessWidget {
-  const _CalendarFilters({required this.controller});
+class _CalendarFilterSheet extends StatelessWidget {
+  const _CalendarFilterSheet({required this.controller});
 
   final CalendarController controller;
 
@@ -166,78 +228,102 @@ class _CalendarFilters extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final semanticFilter = _FilterDropdown<CalendarFilter>(
-          key: const ValueKey('calendar-semantic-filter'),
-          label: l10n.calendarFilter,
-          value: controller.filter,
-          items: CalendarFilter.values
-              .map(
-                (filter) => DropdownMenuItem(
-                  value: filter,
-                  enabled:
-                      filter != CalendarFilter.relevant ||
-                      controller.isBallet != null,
-                  child: Text(_filterLabel(l10n, filter)),
-                ),
-              )
-              .toList(),
-          onChanged: (filter) {
-            if (filter != null) {
-              controller.setFilter(filter);
-            }
-          },
-        );
-
-        final eventTypeFilter = _FilterDropdown<String?>(
-          key: const ValueKey('calendar-event-type-filter'),
-          label: l10n.calendarEventTypeFilter,
-          value: controller.eventTypeFilter,
-          items: [
-            DropdownMenuItem<String?>(
-              value: null,
-              child: Text(l10n.calendarAllEventTypes),
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, child) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              24 + MediaQuery.viewInsetsOf(context).bottom,
             ),
-            for (final type in controller.availableEventTypes)
-              DropdownMenuItem<String?>(
-                value: type,
-                child: Text(_eventTypeLabel(l10n, type)),
-              ),
-          ],
-          onChanged: controller.setEventTypeFilter,
-        );
-
-        if (constraints.maxWidth >= 600) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: semanticFilter),
-              const SizedBox(width: 12),
-              Expanded(child: eventTypeFilter),
-            ],
-          );
-        }
-
-        return Column(
-          children: [
-            semanticFilter,
-            const SizedBox(height: 12),
-            eventTypeFilter,
-          ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.calendarFilter,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 20),
+                _CalendarSearch(controller: controller),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String?>(
+                  key: const ValueKey('calendar-activity-filter'),
+                  initialValue: controller.eventTypeFilter,
+                  decoration: InputDecoration(
+                    labelText: l10n.calendarEventTypeFilter,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text(l10n.calendarAllEventTypes),
+                    ),
+                    for (final type in controller.availableEventTypes)
+                      DropdownMenuItem<String?>(
+                        value: type,
+                        child: Text(_eventTypeLabel(l10n, type)),
+                      ),
+                  ],
+                  onChanged: controller.setEventTypeFilter,
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<CalendarRegistrationFilter>(
+                  key: const ValueKey('calendar-status-filter'),
+                  initialValue: controller.registrationFilter,
+                  decoration: InputDecoration(
+                    labelText: l10n.calendarStatusFilter,
+                    border: const OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final filter in CalendarRegistrationFilter.values)
+                      DropdownMenuItem(
+                        value: filter,
+                        child: Text(_registrationFilterLabel(l10n, filter)),
+                      ),
+                  ],
+                  onChanged: (filter) {
+                    if (filter != null) {
+                      controller.setRegistrationFilter(filter);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    key: const ValueKey('calendar-reset-filters'),
+                    onPressed:
+                        controller.eventTypeFilter != null ||
+                            controller.registrationFilter !=
+                                CalendarRegistrationFilter.all
+                        ? controller.resetFilters
+                        : null,
+                    icon: const Icon(Icons.restart_alt),
+                    label: Text(l10n.calendarResetFilters),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 
-  String _filterLabel(AppLocalizations l10n, CalendarFilter filter) {
+  String _registrationFilterLabel(
+    AppLocalizations l10n,
+    CalendarRegistrationFilter filter,
+  ) {
     return switch (filter) {
-      CalendarFilter.all => l10n.calendarFilterAll,
-      CalendarFilter.rehearsals => l10n.calendarFilterRehearsals,
-      CalendarFilter.performances => l10n.calendarFilterPerformances,
-      CalendarFilter.social => l10n.calendarFilterSocial,
-      CalendarFilter.registered => l10n.calendarFilterRegistered,
-      CalendarFilter.relevant => l10n.calendarFilterRelevant,
+      CalendarRegistrationFilter.all => l10n.calendarStatusAll,
+      CalendarRegistrationFilter.coming => l10n.calendarStatusComing,
+      CalendarRegistrationFilter.notRegistered =>
+        l10n.calendarStatusNotRegistered,
+      CalendarRegistrationFilter.notComing => l10n.calendarStatusNotComing,
     };
   }
 
@@ -254,40 +340,6 @@ class _CalendarFilters extends StatelessWidget {
       'Evenemang' => l10n.calendarEventTypeEvenemang,
       _ => type,
     };
-  }
-}
-
-class _FilterDropdown<T> extends StatelessWidget {
-  const _FilterDropdown({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  final String label;
-  final T value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return InputDecorator(
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: true,
-          items: items,
-          onChanged: onChanged,
-        ),
-      ),
-    );
   }
 }
 
@@ -319,10 +371,12 @@ class _CalendarPeriodNavigation extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium,
                 textAlign: TextAlign.center,
               ),
-              TextButton(
-                onPressed: controller.showCurrentPeriod,
-                child: Text(l10n.calendarCurrentPeriod),
-              ),
+              if (!controller.isCurrentPeriod)
+                TextButton(
+                  key: const ValueKey('calendar-current-period-button'),
+                  onPressed: controller.showCurrentPeriod,
+                  child: Text(l10n.calendarCurrentPeriod),
+                ),
             ],
           ),
         ),
@@ -366,14 +420,15 @@ class _CalendarHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final useStackedLayout =
-        displaySettings.dateFormat != CalendarDateFormat.compact ||
-        displaySettings.showWeekday;
-
-    if (MediaQuery.textScalerOf(context).scale(1) >= 1.3 || useStackedLayout) {
+    if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
       return const SizedBox.shrink();
     }
 
+    final dateWidth = switch (displaySettings.dateFormat) {
+      CalendarDateFormat.compact => displaySettings.showWeekday ? 82.0 : 54.0,
+      CalendarDateFormat.numeric => displaySettings.showWeekday ? 108.0 : 82.0,
+      CalendarDateFormat.written => displaySettings.showWeekday ? 128.0 : 104.0,
+    };
     final l10n = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.labelMedium
         ?.copyWith(fontWeight: FontWeight.w600);
@@ -382,7 +437,10 @@ class _CalendarHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
-          SizedBox(width: 54, child: Text(l10n.calendarDate, style: style)),
+          SizedBox(
+            width: dateWidth,
+            child: Text(l10n.calendarDate, style: style),
+          ),
           SizedBox(width: 54, child: Text(l10n.calendarTime, style: style)),
           SizedBox(width: 92, child: Text(l10n.calendarType, style: style)),
           Expanded(child: Text(l10n.calendarPlace, style: style)),

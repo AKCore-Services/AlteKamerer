@@ -662,28 +662,28 @@ class AppLocalizationsSv extends AppLocalizations {
   String get calendarFilter => 'Filter';
 
   @override
-  String get calendarFilterAll => 'Alla';
+  String get calendarEventTypeFilter => 'Aktivitet';
 
   @override
-  String get calendarFilterRehearsals => 'Repetitioner';
+  String get calendarAllEventTypes => 'Alla aktiviteter';
 
   @override
-  String get calendarFilterPerformances => 'Spelningar';
+  String get calendarStatusFilter => 'Status';
 
   @override
-  String get calendarFilterSocial => 'Fester';
+  String get calendarStatusAll => 'Alla statusar';
 
   @override
-  String get calendarFilterRegistered => 'Anmälda';
+  String get calendarStatusComing => 'Kommer';
 
   @override
-  String get calendarFilterRelevant => 'Relevanta';
+  String get calendarStatusNotRegistered => 'Inte anmäld';
 
   @override
-  String get calendarEventTypeFilter => 'Aktivitetstyp';
+  String get calendarStatusNotComing => 'Kommer inte';
 
   @override
-  String get calendarAllEventTypes => 'Alla aktivitetstyper';
+  String get calendarResetFilters => 'Återställ filter';
 
   @override
   String get calendarSearch => 'Sök i kalendern';

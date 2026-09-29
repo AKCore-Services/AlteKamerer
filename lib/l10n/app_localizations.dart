@@ -1358,53 +1358,53 @@ abstract class AppLocalizations {
   /// **'Filter'**
   String get calendarFilter;
 
-  /// No description provided for @calendarFilterAll.
-  ///
-  /// In en, this message translates to:
-  /// **'All'**
-  String get calendarFilterAll;
-
-  /// No description provided for @calendarFilterRehearsals.
-  ///
-  /// In en, this message translates to:
-  /// **'Rehearsals'**
-  String get calendarFilterRehearsals;
-
-  /// No description provided for @calendarFilterPerformances.
-  ///
-  /// In en, this message translates to:
-  /// **'Performances'**
-  String get calendarFilterPerformances;
-
-  /// No description provided for @calendarFilterSocial.
-  ///
-  /// In en, this message translates to:
-  /// **'Parties'**
-  String get calendarFilterSocial;
-
-  /// No description provided for @calendarFilterRegistered.
-  ///
-  /// In en, this message translates to:
-  /// **'Registered'**
-  String get calendarFilterRegistered;
-
-  /// No description provided for @calendarFilterRelevant.
-  ///
-  /// In en, this message translates to:
-  /// **'Relevant'**
-  String get calendarFilterRelevant;
-
   /// No description provided for @calendarEventTypeFilter.
   ///
   /// In en, this message translates to:
-  /// **'Activity type'**
+  /// **'Activity'**
   String get calendarEventTypeFilter;
 
   /// No description provided for @calendarAllEventTypes.
   ///
   /// In en, this message translates to:
-  /// **'All activity types'**
+  /// **'All activities'**
   String get calendarAllEventTypes;
+
+  /// No description provided for @calendarStatusFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get calendarStatusFilter;
+
+  /// No description provided for @calendarStatusAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All statuses'**
+  String get calendarStatusAll;
+
+  /// No description provided for @calendarStatusComing.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming'**
+  String get calendarStatusComing;
+
+  /// No description provided for @calendarStatusNotRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not registered'**
+  String get calendarStatusNotRegistered;
+
+  /// No description provided for @calendarStatusNotComing.
+  ///
+  /// In en, this message translates to:
+  /// **'Not coming'**
+  String get calendarStatusNotComing;
+
+  /// No description provided for @calendarResetFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset filters'**
+  String get calendarResetFilters;
 
   /// No description provided for @calendarSearch.
   ///

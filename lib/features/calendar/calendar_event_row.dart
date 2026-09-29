@@ -35,10 +35,12 @@ class CalendarEventRow extends StatelessWidget {
       locale: locale,
       settings: displaySettings,
     );
-    final useStackedLayout =
-        MediaQuery.textScalerOf(context).scale(1) >= 1.3 ||
-        displaySettings.dateFormat != CalendarDateFormat.compact ||
-        displaySettings.showWeekday;
+    final useStackedLayout = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    final dateWidth = switch (displaySettings.dateFormat) {
+      CalendarDateFormat.compact => displaySettings.showWeekday ? 82.0 : 54.0,
+      CalendarDateFormat.numeric => displaySettings.showWeekday ? 108.0 : 82.0,
+      CalendarDateFormat.written => displaySettings.showWeekday ? 128.0 : 104.0,
+    };
 
     return InkWell(
       onTap: onTap,
@@ -73,8 +75,13 @@ class CalendarEventRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 54,
-                    child: Text(formattedDate, style: textTheme.bodyMedium),
+                    width: dateWidth,
+                    child: Text(
+                      formattedDate,
+                      style: textTheme.bodyMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   SizedBox(
                     width: 54,
