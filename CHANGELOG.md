@@ -2,6 +2,46 @@
 
 Alla betydande AlteKamerer-releaser dokumenteras här.
 
+## 1.1.0
+
+Den första funktionsuppdateringen efter AlteKamerer 1.0 med utökad kalender,
+språkstöd, förbättrad tillgänglighet och förbättringar av Android-upplevelsen.
+
+### Språk
+
+- Stöd för svenska och engelska i applikationens gränssnitt.
+- Språk kan väljas i inställningarna och valet sparas lokalt.
+- Datum och kalenderpresentation följer valt språk där det är relevant.
+
+### Kalender
+
+- Utökade kalendervyer för enklare navigering och överblick.
+- Filtrering av kalenderaktiviteter.
+- Sökning bland kalenderaktiviteter.
+- Konfigurerbar datumvisning med kompakt, numeriskt eller skrivet format.
+- Valbar lokaliserad veckodagsförkortning.
+- Konfigurerbar 24- eller 12-timmarsvisning.
+- Kalenderns visningsinställningar sparas lokalt och tillämpas direkt.
+- Befintlig AKCore-semantik för aktiviteter, sortering, synlighet och
+  anmälningar är oförändrad.
+
+### Aktivitetsanmälan
+
+- Förbättrat gränssnitt och återkoppling vid aktivitetsanmälan.
+- Tydligare presentation av aktuell anmälningsstatus och tillgängliga val.
+
+### Tillgänglighet
+
+- Förbättrad hantering av större textstorlekar.
+- Förbättrade semantiska etiketter och stöd för hjälpmedel.
+- Förbättrad layout för innehåll som behöver mer utrymme.
+
+### Android
+
+- Förbättrad Android-anpassning och visuellt beteende.
+- Förbättrad hantering av systemets status- och navigationsytor.
+- Förbättrad integration med Androids visuella systembeteende.
+
 ## 1.0.0
 
 Första stabila Android-releasen av AlteKamerer, mobilapplikationen för AKCore.
