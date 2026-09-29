@@ -17,6 +17,8 @@ import 'package:altekamerer/features/settings/calendar_display_preferences.dart'
 import 'package:altekamerer/features/settings/locale_controller.dart';
 import 'package:altekamerer/features/settings/locale_preferences.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
+import 'package:altekamerer/features/settings/settings_backup_file_service.dart';
+import 'package:altekamerer/features/settings/settings_backup_service.dart';
 import 'package:altekamerer/features/shell/app_shell.dart';
 import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +53,8 @@ void main() {
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
           localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
         ),
       ),
     );
@@ -101,6 +105,8 @@ void main() {
             notificationSync: notificationSync,
             reminderPreferences: _FakeReminderPreferences(),
             localeController: _createLocaleController(),
+            settingsBackupService: _createSettingsBackupService(),
+            settingsBackupFileService: _FakeSettingsBackupFileService(),
           ),
         ),
       ),
@@ -151,6 +157,8 @@ void main() {
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
           localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
         ),
       ),
     );
@@ -222,6 +230,8 @@ void main() {
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
           localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
         ),
       ),
     );
@@ -265,6 +275,8 @@ void main() {
           notificationSync: notificationSync,
           reminderPreferences: _FakeReminderPreferences(),
           localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
         ),
       ),
     );
@@ -300,6 +312,8 @@ void main() {
           notificationSync: _FakeNotificationSync(calendarController),
           reminderPreferences: _FakeReminderPreferences(),
           localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
         ),
       ),
     );
@@ -345,6 +359,8 @@ void main() {
           notificationSync: _FakeNotificationSync(calendarController),
           reminderPreferences: _FakeReminderPreferences(),
           localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
         ),
       ),
     );
@@ -533,6 +549,27 @@ class _FakeLocalePreferences implements LocalePreferences {
   Future<void> setLocalePreference(AppLocalePreference preference) async {
     _preference = preference;
   }
+}
+
+SettingsBackupService _createSettingsBackupService() {
+  final localePreferences = _FakeLocalePreferences();
+  final calendarPreferences = _FakeCalendarDisplayPreferences();
+
+  return SettingsBackupService(
+    localePreferences: localePreferences,
+    reminderPreferences: _FakeReminderPreferences(),
+    calendarDisplayPreferences: calendarPreferences,
+    localeController: LocaleController(localePreferences),
+    calendarDisplayController: CalendarDisplayController(calendarPreferences),
+  );
+}
+
+class _FakeSettingsBackupFileService implements SettingsBackupFileService {
+  @override
+  Future<bool> save(String contents) async => true;
+
+  @override
+  Future<String?> pick() async => null;
 }
 
 class _FakeReminderPreferences implements ReminderPreferences {

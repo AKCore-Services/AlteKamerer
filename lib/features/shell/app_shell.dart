@@ -17,6 +17,8 @@ import '../settings/calendar_display_controller.dart';
 import '../settings/reminder_preferences.dart';
 import '../settings/locale_controller.dart';
 import '../settings/reminder_settings_screen.dart';
+import '../settings/settings_backup_file_service.dart';
+import '../settings/settings_backup_service.dart';
 import '../../l10n/app_localizations.dart';
 
 class AppShell extends StatefulWidget {
@@ -31,6 +33,8 @@ class AppShell extends StatefulWidget {
     required this.reminderPreferences,
     required this.localeController,
     required this.calendarDisplayController,
+    required this.settingsBackupService,
+    required this.settingsBackupFileService,
   });
 
   final AuthController authController;
@@ -42,6 +46,8 @@ class AppShell extends StatefulWidget {
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final SettingsBackupService settingsBackupService;
+  final SettingsBackupFileService settingsBackupFileService;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -162,6 +168,8 @@ class _AppShellState extends State<AppShell> {
         notificationSync: widget.notificationSync,
         localeController: widget.localeController,
         calendarDisplayController: widget.calendarDisplayController,
+        settingsBackupService: widget.settingsBackupService,
+        settingsBackupFileService: widget.settingsBackupFileService,
       ),
     };
   }

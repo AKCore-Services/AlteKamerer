@@ -959,4 +959,53 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get aboutAlteKamererRepository => 'AlteKamerer-kodförråd';
+
+  @override
+  String get settingsBackup => 'Säkerhetskopiera och återställ';
+
+  @override
+  String get settingsBackupDescription =>
+      'Exportera dina lokala appinställningar till en fil eller återställ inställningar från en tidigare säkerhetskopia. Inloggningsuppgifter och cachad serverdata inkluderas inte.';
+
+  @override
+  String get exportSettings => 'Exportera inställningar';
+
+  @override
+  String get importSettings => 'Importera inställningar';
+
+  @override
+  String get settingsExported => 'Inställningarna exporterades.';
+
+  @override
+  String get settingsExportFailed => 'Inställningarna kunde inte exporteras.';
+
+  @override
+  String get settingsImportInvalid =>
+      'Det här är inte en giltig AlteKamerer-inställningsfil.';
+
+  @override
+  String get settingsImportUnsupported =>
+      'Inställningsfilen skapades med ett inställningsformat som inte stöds.';
+
+  @override
+  String get settingsImportReadFailed => 'Inställningsfilen kunde inte läsas.';
+
+  @override
+  String get settingsImportFailed => 'Inställningarna kunde inte importeras.';
+
+  @override
+  String get settingsImported => 'Inställningarna importerades.';
+
+  @override
+  String get confirmSettingsImportTitle => 'Importera inställningar?';
+
+  @override
+  String get confirmSettingsImportDescription =>
+      'Inställningarna i säkerhetskopian ersätter motsvarande lokala appinställningar på den här enheten. Inloggningsuppgifter påverkas inte.';
+
+  @override
+  String get cancel => 'Avbryt';
+
+  @override
+  String get confirmImport => 'Importera';
 }

@@ -958,4 +958,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aboutAlteKamererRepository => 'AlteKamerer repository';
+
+  @override
+  String get settingsBackup => 'Backup and restore';
+
+  @override
+  String get settingsBackupDescription =>
+      'Export your local app settings to a file or restore settings from a previous backup. Sign-in information and cached server data are not included.';
+
+  @override
+  String get exportSettings => 'Export settings';
+
+  @override
+  String get importSettings => 'Import settings';
+
+  @override
+  String get settingsExported => 'Settings exported successfully.';
+
+  @override
+  String get settingsExportFailed => 'The settings could not be exported.';
+
+  @override
+  String get settingsImportInvalid =>
+      'This is not a valid AlteKamerer settings file.';
+
+  @override
+  String get settingsImportUnsupported =>
+      'This settings file was created with an unsupported settings format.';
+
+  @override
+  String get settingsImportReadFailed => 'The settings file could not be read.';
+
+  @override
+  String get settingsImportFailed => 'The settings could not be imported.';
+
+  @override
+  String get settingsImported => 'Settings imported successfully.';
+
+  @override
+  String get confirmSettingsImportTitle => 'Import settings?';
+
+  @override
+  String get confirmSettingsImportDescription =>
+      'The settings in this backup will replace the corresponding local app settings on this device. Sign-in information is not affected.';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get confirmImport => 'Import';
 }
