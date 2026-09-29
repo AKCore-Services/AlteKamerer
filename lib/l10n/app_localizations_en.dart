@@ -662,28 +662,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarFilter => 'Filter';
 
   @override
-  String get calendarFilterAll => 'All';
+  String get calendarEventTypeFilter => 'Activity';
 
   @override
-  String get calendarFilterRehearsals => 'Rehearsals';
+  String get calendarAllEventTypes => 'All activities';
 
   @override
-  String get calendarFilterPerformances => 'Performances';
+  String get calendarStatusFilter => 'Status';
 
   @override
-  String get calendarFilterSocial => 'Parties';
+  String get calendarStatusAll => 'All statuses';
 
   @override
-  String get calendarFilterRegistered => 'Registered';
+  String get calendarStatusComing => 'Coming';
 
   @override
-  String get calendarFilterRelevant => 'Relevant';
+  String get calendarStatusNotRegistered => 'Not registered';
 
   @override
-  String get calendarEventTypeFilter => 'Activity type';
+  String get calendarStatusNotComing => 'Not coming';
 
   @override
-  String get calendarAllEventTypes => 'All activity types';
+  String get calendarResetFilters => 'Reset filters';
 
   @override
   String get calendarSearch => 'Search calendar';

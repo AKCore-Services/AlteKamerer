@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:altekamerer/core/theme/app_theme.dart';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
@@ -193,6 +194,32 @@ void main() {
     expect(find.text('Tomorrow place'), findsNothing);
   });
 
+  testWidgets('calendar renders on a narrow phone viewport', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event()]),
+      now: () => DateTime(2026, 9, 15),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('calendar-filters-button')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('calendar-search-field')), findsNothing);
+    expect(find.text('Kommande'), findsOneWidget);
+    expect(find.text('Idag'), findsOneWidget);
+    expect(find.text('Kårhuset'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('empty selected view keeps controls visible', (
     WidgetTester tester,
   ) async {
@@ -226,7 +253,29 @@ void main() {
 
     expect(find.byIcon(Icons.chevron_left), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right), findsOneWidget);
-    expect(find.text('Idag'), findsWidgets);
+    expect(
+      find.byKey(const ValueKey('calendar-current-period-button')),
+      findsNothing,
+    );
+
+    await tester.tap(find.byIcon(Icons.chevron_right));
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('calendar-current-period-button')),
+      findsOneWidget,
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('calendar-current-period-button')),
+    );
+    await tester.pump();
+
+    expect(controller.isCurrentPeriod, isTrue);
+    expect(
+      find.byKey(const ValueKey('calendar-current-period-button')),
+      findsNothing,
+    );
   });
 
   testWidgets('month view navigation changes visible month', (
@@ -258,7 +307,7 @@ void main() {
     expect(find.text('October place'), findsOneWidget);
   });
 
-  testWidgets('shows semantic and event type calendar filters', (
+  testWidgets('shows compact filter button and opens filter sheet', (
     WidgetTester tester,
   ) async {
     final controller = CalendarController(
@@ -274,44 +323,62 @@ void main() {
     await tester.pumpWidget(_TestApp(controller: controller));
 
     expect(
-      find.byKey(const ValueKey('calendar-semantic-filter')),
+      find.byKey(const ValueKey('calendar-filters-button')),
       findsOneWidget,
     );
     expect(
-      find.byKey(const ValueKey('calendar-event-type-filter')),
+      find.byKey(const ValueKey('calendar-activity-filter')),
+      findsNothing,
+    );
+    expect(find.byKey(const ValueKey('calendar-status-filter')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('calendar-activity-filter')),
       findsOneWidget,
     );
-
-    expect(find.text('Filter'), findsOneWidget);
-    expect(find.text('Aktivitetstyp'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('calendar-status-filter')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('calendar-search-field')), findsOneWidget);
+    expect(find.text('Aktivitet'), findsOneWidget);
+    expect(find.text('Status'), findsOneWidget);
+    expect(find.text('Återställ filter'), findsOneWidget);
   });
 
-  testWidgets('semantic rehearsal filter changes visible events', (
+  testWidgets('filter sheet is localized in English', (
     WidgetTester tester,
   ) async {
     final controller = CalendarController(
-      FakeCalendarService(
-        events: [
-          _event(id: 1, type: 'Rep', place: 'Rep place'),
-          _event(id: 2, type: 'Spelning', place: 'Gig place'),
-        ],
-      ),
+      FakeCalendarService(events: [_event(type: 'Rep')]),
     );
 
     await controller.load();
-    await tester.pumpWidget(_TestApp(controller: controller));
 
-    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.pumpWidget(
+      _TestApp(controller: controller, locale: const Locale('en')),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Repetitioner').last);
+    expect(find.text('Activity'), findsOneWidget);
+    expect(find.text('Status'), findsOneWidget);
+    expect(find.text('Reset filters'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-status-filter')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Rep place'), findsOneWidget);
-    expect(find.text('Gig place'), findsNothing);
+    expect(find.text('All statuses'), findsWidgets);
+    expect(find.text('Coming'), findsOneWidget);
+    expect(find.text('Not registered'), findsOneWidget);
+    expect(find.text('Not coming'), findsOneWidget);
   });
 
-  testWidgets('exact event type filter composes with semantic filter', (
+  testWidgets('activity filter uses exact existing event types', (
     WidgetTester tester,
   ) async {
     final controller = CalendarController(
@@ -327,71 +394,207 @@ void main() {
     await controller.load();
     await tester.pumpWidget(_TestApp(controller: controller));
 
-    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Repetitioner').last);
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('calendar-event-type-filter')));
+    await tester.tap(find.byKey(const ValueKey('calendar-activity-filter')));
     await tester.pumpAndSettle();
+
     await tester.tap(find.text('Kårhusrep').last);
     await tester.pumpAndSettle();
 
+    expect(controller.eventTypeFilter, 'Kårhusrep');
     expect(find.text('Orchestra place'), findsNothing);
     expect(find.text('Kårhus place'), findsOneWidget);
     expect(find.text('Gig place'), findsNothing);
   });
 
-  testWidgets('relevant filter follows member context', (
+  testWidgets('status filter groups Hålan and Direkt as coming', (
     WidgetTester tester,
   ) async {
     final controller = CalendarController(
       FakeCalendarService(
         events: [
-          _event(id: 1, type: 'Rep', place: 'Orchestra place'),
-          _event(id: 2, type: 'Balettrep', place: 'Ballet place'),
+          _event(id: 1, place: 'Hålan place', signupState: 'Hålan'),
+          _event(id: 2, place: 'Direkt place', signupState: 'Direkt'),
+          _event(id: 3, place: 'Cannot place', signupState: 'Kan inte komma'),
+          _event(id: 4, place: 'Unregistered place'),
         ],
       ),
     );
 
     await controller.load();
-    controller.setMemberContext(isBallet: true);
-
     await tester.pumpWidget(_TestApp(controller: controller));
 
-    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Relevanta').last);
+    await tester.tap(find.byKey(const ValueKey('calendar-status-filter')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Orchestra place'), findsNothing);
-    expect(find.text('Ballet place'), findsOneWidget);
+    await tester.tap(find.text('Kommer').last);
+    await tester.pumpAndSettle();
+
+    expect(controller.registrationFilter, CalendarRegistrationFilter.coming);
+    expect(find.text('Hålan place'), findsOneWidget);
+    expect(find.text('Direkt place'), findsOneWidget);
+    expect(find.text('Cannot place'), findsNothing);
+    expect(find.text('Unregistered place'), findsNothing);
   });
 
-  testWidgets('relevant filter is disabled until member context is available', (
+  testWidgets('activity and status filters compose', (
     WidgetTester tester,
   ) async {
     final controller = CalendarController(
-      FakeCalendarService(events: [_event(id: 1, type: 'Rep')]),
+      FakeCalendarService(
+        events: [
+          _event(
+            id: 1,
+            type: 'Rep',
+            place: 'Matching place',
+            signupState: 'Direkt',
+          ),
+          _event(
+            id: 2,
+            type: 'Rep',
+            place: 'Wrong status place',
+            signupState: 'Kan inte komma',
+          ),
+          _event(
+            id: 3,
+            type: 'Spelning',
+            place: 'Wrong activity place',
+            signupState: 'Direkt',
+          ),
+        ],
+      ),
     );
 
     await controller.load();
     await tester.pumpWidget(_TestApp(controller: controller));
 
-    await tester.tap(find.byKey(const ValueKey('calendar-semantic-filter')));
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
     await tester.pumpAndSettle();
 
-    final relevantItem = tester.widget<DropdownMenuItem<CalendarFilter>>(
-      find
-          .ancestor(
-            of: find.text('Relevanta').last,
-            matching: find.byType(DropdownMenuItem<CalendarFilter>),
-          )
-          .first,
+    await tester.tap(find.byKey(const ValueKey('calendar-activity-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Orkesterrep').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('calendar-status-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kommer').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Matching place'), findsOneWidget);
+    expect(find.text('Wrong status place'), findsNothing);
+    expect(find.text('Wrong activity place'), findsNothing);
+  });
+
+  testWidgets('search composes with activity and status filters', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(
+            id: 1,
+            type: 'Rep',
+            name: 'Monday orchestra',
+            place: 'Matching place',
+            signupState: 'Direkt',
+          ),
+          _event(
+            id: 2,
+            type: 'Rep',
+            name: 'Tuesday orchestra',
+            place: 'Wrong search place',
+            signupState: 'Direkt',
+          ),
+          _event(
+            id: 3,
+            type: 'Rep',
+            name: 'Monday rehearsal',
+            place: 'Wrong status place',
+            signupState: 'Kan inte komma',
+          ),
+          _event(
+            id: 4,
+            type: 'Spelning',
+            name: 'Monday performance',
+            place: 'Wrong activity place',
+            signupState: 'Direkt',
+          ),
+        ],
+      ),
     );
 
-    expect(relevantItem.enabled, isFalse);
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.byKey(const ValueKey('calendar-search-field')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const ValueKey('calendar-search-field')),
+      'Monday',
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey('calendar-activity-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Orkesterrep').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('calendar-status-filter')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kommer').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Matching place'), findsOneWidget);
+    expect(find.text('Wrong search place'), findsNothing);
+    expect(find.text('Wrong status place'), findsNothing);
+    expect(find.text('Wrong activity place'), findsNothing);
+  });
+
+  testWidgets('reset filters restores all activities and statuses', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(id: 1, type: 'Rep', place: 'Rep place', signupState: 'Direkt'),
+          _event(
+            id: 2,
+            type: 'Spelning',
+            place: 'Gig place',
+            signupState: 'Kan inte komma',
+          ),
+        ],
+      ),
+    );
+
+    await controller.load();
+    controller.setEventTypeFilter('Rep');
+    controller.setRegistrationFilter(CalendarRegistrationFilter.coming);
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.text('Rep place'), findsOneWidget);
+    expect(find.text('Gig place'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('calendar-reset-filters')));
+    await tester.pumpAndSettle();
+
+    expect(controller.eventTypeFilter, isNull);
+    expect(controller.registrationFilter, CalendarRegistrationFilter.all);
+    expect(find.text('Rep place'), findsOneWidget);
+    expect(find.text('Gig place'), findsOneWidget);
   });
 
   testWidgets('shows localized calendar search field', (
@@ -403,6 +606,11 @@ void main() {
 
     await controller.load();
     await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.byKey(const ValueKey('calendar-search-field')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
+    await tester.pumpAndSettle();
 
     final searchField = find.byKey(const ValueKey('calendar-search-field'));
 
@@ -430,6 +638,9 @@ void main() {
     expect(find.text('Stora salen'), findsOneWidget);
     expect(find.text('Kårhuset'), findsOneWidget);
 
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
+    await tester.pumpAndSettle();
+
     await tester.enterText(
       find.byKey(const ValueKey('calendar-search-field')),
       'höst',
@@ -455,6 +666,9 @@ void main() {
 
     await controller.load();
     await tester.pumpWidget(_TestApp(controller: controller));
+
+    await tester.tap(find.byKey(const ValueKey('calendar-filters-button')));
+    await tester.pumpAndSettle();
 
     final searchField = find.byKey(const ValueKey('calendar-search-field'));
 
@@ -493,10 +707,12 @@ void main() {
     await displayController.setTimeFormat(CalendarTimeFormat.twelveHour);
     await tester.pump();
 
-    expect(find.text('Datum: tis 15/09'), findsOneWidget);
-    expect(find.text('Tid: 6:30 em'), findsOneWidget);
-    expect(find.text('15/09'), findsNothing);
-    expect(find.text('18:30'), findsNothing);
+    expect(find.text('tis 15/09'), findsOneWidget);
+    expect(find.text('6:30 em'), findsOneWidget);
+    expect(find.text('Datum'), findsOneWidget);
+    expect(find.text('Tid'), findsOneWidget);
+    expect(find.text('Datum: tis 15/09', findRichText: true), findsNothing);
+    expect(find.text('Tid: 6:30 em', findRichText: true), findsNothing);
   });
 
   testWidgets('written date format reaches the calendar row', (
@@ -519,7 +735,12 @@ void main() {
       _TestApp(controller: controller, displayController: displayController),
     );
 
-    expect(find.text('Datum: tis 15 sep. 2026'), findsOneWidget);
+    expect(find.text('tis 15 sep. 2026'), findsOneWidget);
+    expect(find.text('Datum'), findsOneWidget);
+    expect(
+      find.text('Datum: tis 15 sep. 2026', findRichText: true),
+      findsNothing,
+    );
   });
 
   testWidgets('tapping event reports selected calendar event', (
@@ -553,16 +774,19 @@ class _TestApp extends StatelessWidget {
     required this.controller,
     CalendarDisplayController? displayController,
     this.onOpenEvent,
+    this.locale = const Locale('sv'),
   }) : displayController = displayController ?? _createDisplayController();
 
   final CalendarController controller;
   final CalendarDisplayController displayController;
   final ValueChanged<CalendarEvent>? onOpenEvent;
+  final Locale locale;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      locale: const Locale('sv'),
+      theme: AppTheme.dark,
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(
