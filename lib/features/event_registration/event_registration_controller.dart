@@ -1,23 +1,30 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/diagnostics/diagnostic_error_details.dart';
+import '../../core/diagnostics/diagnostics_service.dart';
+
 import '../event_details/event_details.dart';
 import 'event_registration_api.dart';
 
 enum EventRegistrationStatus { idle, saving, saved, error }
 
 class EventRegistrationController extends ChangeNotifier {
-  EventRegistrationController(this._registrationService, EventDetails event)
-    : _eventId = event.id,
-      _where = event.registration.where,
-      _car = event.registration.car,
-      _instrument = event.registration.instrument,
-      _comment = event.registration.comment,
-      _selectedInstrument = event.registration.selectedInstrument,
-      availableInstruments = List.unmodifiable(
-        event.registration.availableInstruments,
-      );
+  EventRegistrationController(
+    this._registrationService,
+    EventDetails event, {
+    this._diagnostics,
+  }) : _eventId = event.id,
+       _where = event.registration.where,
+       _car = event.registration.car,
+       _instrument = event.registration.instrument,
+       _comment = event.registration.comment,
+       _selectedInstrument = event.registration.selectedInstrument,
+       availableInstruments = List.unmodifiable(
+         event.registration.availableInstruments,
+       );
 
   final EventRegistrationService _registrationService;
+  final DiagnosticsService? _diagnostics;
   final int _eventId;
 
   EventRegistrationStatus _status = EventRegistrationStatus.idle;
@@ -127,9 +134,14 @@ class EventRegistrationController extends ChangeNotifier {
       _status = EventRegistrationStatus.saved;
       notifyListeners();
       return true;
-    } catch (error) {
+    } catch (error, stackTrace) {
       _error = error;
       _status = EventRegistrationStatus.error;
+      await _diagnostics?.recordError(
+        subsystem: 'Registration',
+        message: 'Event registration save failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
       notifyListeners();
       return false;
     }

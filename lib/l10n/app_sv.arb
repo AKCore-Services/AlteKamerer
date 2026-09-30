@@ -324,6 +324,21 @@
       }
     }
   },
+  "diagnostics": "Diagnostik",
+  "diagnosticsVersion": "Version",
+  "diagnosticsBuild": "Build",
+  "diagnosticsPlatform": "Plattform",
+  "diagnosticsApiServer": "API-server",
+  "diagnosticsRecentErrors": "Senaste fel",
+  "diagnosticsNoErrors": "Inga diagnostikfel har registrerats.",
+  "diagnosticsCopyReport": "Kopiera diagnostikrapport",
+  "diagnosticsClearLogs": "Rensa diagnostikloggar",
+  "diagnosticsCopied": "Diagnostikrapporten kopierades.",
+  "diagnosticsCopyFailed": "Diagnostikrapporten kunde inte kopieras.",
+  "diagnosticsCleared": "Diagnostikloggarna rensades.",
+  "diagnosticsClearFailed": "Diagnostikloggarna kunde inte rensas.",
+  "diagnosticsUnavailable": "Diagnostikinformation är inte tillgänglig.",
+  "diagnosticsUnavailableValue": "Inte tillgänglig",
   "about": "Om",
   "aboutVersion": "AlteKamerer · Version {version}",
   "@aboutVersion": {

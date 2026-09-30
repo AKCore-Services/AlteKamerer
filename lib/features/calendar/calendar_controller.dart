@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/diagnostics/diagnostic_error_details.dart';
+import '../../core/diagnostics/diagnostics_service.dart';
+
 import 'calendar_api.dart';
 import 'calendar_event.dart';
 
@@ -10,11 +13,15 @@ enum CalendarView { upcoming, today, week, month }
 enum CalendarRegistrationFilter { all, coming, notRegistered, notComing }
 
 class CalendarController extends ChangeNotifier {
-  CalendarController(this._calendarService, {DateTime Function()? now})
-    : _now = now ?? DateTime.now;
+  CalendarController(
+    this._calendarService, {
+    DateTime Function()? now,
+    this._diagnostics,
+  }) : _now = now ?? DateTime.now;
 
   final CalendarService _calendarService;
   final DateTime Function() _now;
+  final DiagnosticsService? _diagnostics;
 
   CalendarStatus _status = CalendarStatus.loading;
   List<CalendarEvent> _events = const [];
@@ -196,10 +203,15 @@ class CalendarController extends ChangeNotifier {
     try {
       _events = await _calendarService.getCalendar();
       _status = CalendarStatus.loaded;
-    } catch (error) {
+    } catch (error, stackTrace) {
       _events = const [];
       _error = error;
       _status = CalendarStatus.error;
+      await _diagnostics?.recordError(
+        subsystem: 'Calendar',
+        message: 'Calendar loading failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
     }
 
     notifyListeners();

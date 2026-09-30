@@ -1,3 +1,5 @@
+import '../../core/diagnostics/diagnostic_error_details.dart';
+import '../../core/diagnostics/diagnostics_service.dart';
 import '../calendar/calendar_controller.dart';
 import '../me/me_api.dart';
 import '../settings/reminder_preferences.dart';
@@ -18,6 +20,7 @@ class NotificationSyncService implements NotificationSync {
     this._notificationScheduler,
     this._reminderPreferences, {
     DateTime Function()? now,
+    this._diagnostics,
   }) : _now = now ?? (() => DateTime.now().toUtc());
 
   final MeService _meService;
@@ -26,6 +29,7 @@ class NotificationSyncService implements NotificationSync {
   final LocalNotificationScheduler _notificationScheduler;
   final ReminderPreferences _reminderPreferences;
   final DateTime Function() _now;
+  final DiagnosticsService? _diagnostics;
 
   @override
   Future<void> sync() async {
@@ -48,7 +52,12 @@ class NotificationSyncService implements NotificationSync {
       );
 
       await _notificationScheduler.reconcile(plans);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Notifications',
+        message: 'Notification synchronization failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
       // Notification synchronisation must not make the calendar unusable.
     }
   }

@@ -1856,6 +1856,96 @@ abstract class AppLocalizations {
   /// **'Starts in {minutes} minutes'**
   String notificationStartsInMinutes(int minutes);
 
+  /// No description provided for @diagnostics.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostics'**
+  String get diagnostics;
+
+  /// No description provided for @diagnosticsVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get diagnosticsVersion;
+
+  /// No description provided for @diagnosticsBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get diagnosticsBuild;
+
+  /// No description provided for @diagnosticsPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get diagnosticsPlatform;
+
+  /// No description provided for @diagnosticsApiServer.
+  ///
+  /// In en, this message translates to:
+  /// **'API server'**
+  String get diagnosticsApiServer;
+
+  /// No description provided for @diagnosticsRecentErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent errors'**
+  String get diagnosticsRecentErrors;
+
+  /// No description provided for @diagnosticsNoErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'No diagnostic errors recorded.'**
+  String get diagnosticsNoErrors;
+
+  /// No description provided for @diagnosticsCopyReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy diagnostic report'**
+  String get diagnosticsCopyReport;
+
+  /// No description provided for @diagnosticsClearLogs.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear diagnostic logs'**
+  String get diagnosticsClearLogs;
+
+  /// No description provided for @diagnosticsCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic report copied.'**
+  String get diagnosticsCopied;
+
+  /// No description provided for @diagnosticsCopyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The diagnostic report could not be copied.'**
+  String get diagnosticsCopyFailed;
+
+  /// No description provided for @diagnosticsCleared.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic logs cleared.'**
+  String get diagnosticsCleared;
+
+  /// No description provided for @diagnosticsClearFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic logs could not be cleared.'**
+  String get diagnosticsClearFailed;
+
+  /// No description provided for @diagnosticsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Diagnostic information is unavailable.'**
+  String get diagnosticsUnavailable;
+
+  /// No description provided for @diagnosticsUnavailableValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get diagnosticsUnavailableValue;
+
   /// No description provided for @about.
   ///
   /// In en, this message translates to:

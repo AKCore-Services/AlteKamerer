@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/diagnostics/diagnostics_service.dart';
 import '../auth/auth_controller.dart';
 import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_event.dart';
@@ -35,6 +36,8 @@ class AppShell extends StatefulWidget {
     required this.calendarDisplayController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
+    this.diagnosticsService,
+    this.apiServer,
   });
 
   final AuthController authController;
@@ -48,6 +51,8 @@ class AppShell extends StatefulWidget {
   final CalendarDisplayController calendarDisplayController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
+  final DiagnosticsService? diagnosticsService;
+  final String? apiServer;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -170,6 +175,8 @@ class _AppShellState extends State<AppShell> {
         calendarDisplayController: widget.calendarDisplayController,
         settingsBackupService: widget.settingsBackupService,
         settingsBackupFileService: widget.settingsBackupFileService,
+        diagnosticsService: widget.diagnosticsService,
+        apiServer: widget.apiServer,
       ),
     };
   }
@@ -204,7 +211,10 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _openEventById(int eventId) {
-    final controller = EventDetailsController(widget.eventDetailsService);
+    final controller = EventDetailsController(
+      widget.eventDetailsService,
+      diagnostics: widget.diagnosticsService,
+    );
 
     Navigator.of(context).push(
       _AccessibleMaterialPageRoute<void>(
@@ -229,6 +239,7 @@ class _AppShellState extends State<AppShell> {
     final registrationController = EventRegistrationController(
       widget.eventRegistrationService,
       event,
+      diagnostics: widget.diagnosticsService,
     );
 
     final saved = await Navigator.of(context).push<bool>(

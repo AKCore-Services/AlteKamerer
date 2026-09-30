@@ -1,14 +1,18 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/diagnostics/diagnostic_error_details.dart';
+import '../../core/diagnostics/diagnostics_service.dart';
+
 import 'event_details.dart';
 import 'event_details_api.dart';
 
 enum EventDetailsStatus { loading, loaded, error }
 
 class EventDetailsController extends ChangeNotifier {
-  EventDetailsController(this._eventDetailsService);
+  EventDetailsController(this._eventDetailsService, {this._diagnostics});
 
   final EventDetailsService _eventDetailsService;
+  final DiagnosticsService? _diagnostics;
 
   EventDetailsStatus _status = EventDetailsStatus.loading;
   EventDetails? _event;
@@ -29,10 +33,15 @@ class EventDetailsController extends ChangeNotifier {
     try {
       _event = await _eventDetailsService.getEvent(eventId);
       _status = EventDetailsStatus.loaded;
-    } catch (error) {
+    } catch (error, stackTrace) {
       _event = null;
       _error = error;
       _status = EventDetailsStatus.error;
+      await _diagnostics?.recordError(
+        subsystem: 'Event details',
+        message: 'Event details loading failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
     }
 
     notifyListeners();

@@ -932,6 +932,52 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get diagnostics => 'Diagnostics';
+
+  @override
+  String get diagnosticsVersion => 'Version';
+
+  @override
+  String get diagnosticsBuild => 'Build';
+
+  @override
+  String get diagnosticsPlatform => 'Platform';
+
+  @override
+  String get diagnosticsApiServer => 'API server';
+
+  @override
+  String get diagnosticsRecentErrors => 'Recent errors';
+
+  @override
+  String get diagnosticsNoErrors => 'No diagnostic errors recorded.';
+
+  @override
+  String get diagnosticsCopyReport => 'Copy diagnostic report';
+
+  @override
+  String get diagnosticsClearLogs => 'Clear diagnostic logs';
+
+  @override
+  String get diagnosticsCopied => 'Diagnostic report copied.';
+
+  @override
+  String get diagnosticsCopyFailed =>
+      'The diagnostic report could not be copied.';
+
+  @override
+  String get diagnosticsCleared => 'Diagnostic logs cleared.';
+
+  @override
+  String get diagnosticsClearFailed => 'Diagnostic logs could not be cleared.';
+
+  @override
+  String get diagnosticsUnavailable => 'Diagnostic information is unavailable.';
+
+  @override
+  String get diagnosticsUnavailableValue => 'Unavailable';
+
+  @override
   String get about => 'About';
 
   @override

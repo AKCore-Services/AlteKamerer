@@ -1,13 +1,19 @@
 import 'dart:async';
 
+import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/core/network/access_token_store.dart';
 import 'package:altekamerer/core/network/api_exception.dart';
 import 'package:altekamerer/core/storage/credential_store.dart';
 import 'package:altekamerer/features/auth/auth_api.dart';
 import 'package:altekamerer/features/auth/auth_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   test('restoreSession is unauthenticated without refresh token', () async {
     final store = FakeCredentialStore();
     final auth = FakeAuthService();
@@ -109,6 +115,58 @@ void main() {
     expect(controller.status, AuthStatus.restoreFailed);
   });
 
+  test('non-401 login failure is recorded without server message', () async {
+    final preferences = await SharedPreferences.getInstance();
+    final diagnostics = DiagnosticsService(preferences);
+    final controller = AuthController(
+      FakeCredentialStore(),
+      FakeAuthService(
+        loginError: const ApiException(
+          statusCode: 503,
+          message: 'password=server-secret',
+        ),
+      ),
+      AccessTokenStore(),
+      diagnostics: diagnostics,
+    );
+
+    await expectLater(
+      controller.login(username: 'member', password: 'password'),
+      throwsA(isA<ApiException>()),
+    );
+
+    final entries = await diagnostics.readEntries();
+
+    expect(entries, hasLength(1));
+    expect(entries.single.subsystem, 'Authentication');
+    expect(entries.single.message, 'Login failed');
+    expect(entries.single.details, contains('HTTP 503'));
+    expect(entries.single.details, isNot(contains('server-secret')));
+  });
+
+  test('invalid credentials are not recorded as diagnostic errors', () async {
+    final preferences = await SharedPreferences.getInstance();
+    final diagnostics = DiagnosticsService(preferences);
+    final controller = AuthController(
+      FakeCredentialStore(),
+      FakeAuthService(
+        loginError: const ApiException(
+          statusCode: 401,
+          message: 'Invalid username or password.',
+        ),
+      ),
+      AccessTokenStore(),
+      diagnostics: diagnostics,
+    );
+
+    await expectLater(
+      controller.login(username: 'member', password: 'wrong'),
+      throwsA(isA<ApiException>()),
+    );
+
+    expect(await diagnostics.readEntries(), isEmpty);
+  });
+
   test('login stores refresh token and keeps access token in memory', () async {
     final store = FakeCredentialStore();
     final auth = FakeAuthService(
@@ -196,6 +254,7 @@ class FakeCredentialStore implements CredentialStore {
 class FakeAuthService implements AuthService {
   FakeAuthService({
     this.loginResult,
+    this.loginError,
     this.refreshResult,
     this.refreshError,
     this.refreshCompleter,
@@ -203,6 +262,7 @@ class FakeAuthService implements AuthService {
   });
 
   final AuthTokens? loginResult;
+  final Object? loginError;
   final AuthTokens? refreshResult;
   final Object? refreshError;
   final Completer<AuthTokens>? refreshCompleter;
@@ -220,6 +280,10 @@ class FakeAuthService implements AuthService {
   }) async {
     loginUsername = username;
     loginPassword = password;
+
+    if (loginError != null) {
+      throw loginError!;
+    }
 
     return loginResult ??
         const AuthTokens(accessToken: 'access', refreshToken: 'refresh');

@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/diagnostics/diagnostic_error_details.dart';
+import '../../core/diagnostics/diagnostics_service.dart';
 import '../../core/network/access_token_store.dart';
 import '../../core/network/api_exception.dart';
 import '../../core/storage/credential_store.dart';
@@ -11,12 +13,14 @@ class AuthController extends ChangeNotifier {
   AuthController(
     this._credentialStore,
     this._authService,
-    this._accessTokenStore,
-  );
+    this._accessTokenStore, {
+    this._diagnostics,
+  });
 
   final CredentialStore _credentialStore;
   final AuthService _authService;
   final AccessTokenStore _accessTokenStore;
+  final DiagnosticsService? _diagnostics;
 
   AuthStatus _status = AuthStatus.loading;
   String? _refreshToken;
@@ -44,16 +48,26 @@ class AuthController extends ChangeNotifier {
     try {
       final tokens = await _authService.refresh(refreshToken);
       await _setSession(tokens);
-    } on ApiException catch (exception) {
+    } on ApiException catch (exception, stackTrace) {
       if (exception.statusCode == 401) {
         await _clearSession();
         return;
       }
 
+      await _diagnostics?.recordError(
+        subsystem: 'Authentication',
+        message: 'Session restore failed',
+        error: diagnosticErrorDetails(exception, stackTrace),
+      );
       _clearMemorySession();
       _status = AuthStatus.restoreFailed;
       notifyListeners();
-    } catch (_) {
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Authentication',
+        message: 'Session restore failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
       _clearMemorySession();
       _status = AuthStatus.restoreFailed;
       notifyListeners();
@@ -64,12 +78,30 @@ class AuthController extends ChangeNotifier {
     required String username,
     required String password,
   }) async {
-    final tokens = await _authService.login(
-      username: username,
-      password: password,
-    );
+    try {
+      final tokens = await _authService.login(
+        username: username,
+        password: password,
+      );
 
-    await _setSession(tokens);
+      await _setSession(tokens);
+    } on ApiException catch (exception, stackTrace) {
+      if (exception.statusCode != 401) {
+        await _diagnostics?.recordError(
+          subsystem: 'Authentication',
+          message: 'Login failed',
+          error: diagnosticErrorDetails(exception, stackTrace),
+        );
+      }
+      rethrow;
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Authentication',
+        message: 'Login failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+      rethrow;
+    }
   }
 
   Future<bool> refreshSession() {
@@ -96,12 +128,24 @@ class AuthController extends ChangeNotifier {
       final tokens = await _authService.refresh(refreshToken);
       await _setSession(tokens);
       return true;
-    } on ApiException catch (exception) {
+    } on ApiException catch (exception, stackTrace) {
       if (exception.statusCode == 401) {
         await _clearSession();
         return false;
       }
 
+      await _diagnostics?.recordError(
+        subsystem: 'Authentication',
+        message: 'Session refresh failed',
+        error: diagnosticErrorDetails(exception, stackTrace),
+      );
+      rethrow;
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Authentication',
+        message: 'Session refresh failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
       rethrow;
     }
   }
@@ -113,6 +157,13 @@ class AuthController extends ChangeNotifier {
       if (refreshToken != null) {
         await _authService.logout(refreshToken);
       }
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Authentication',
+        message: 'Logout failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+      rethrow;
     } finally {
       await _clearSession();
     }

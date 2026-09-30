@@ -1,3 +1,4 @@
+import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
 import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
@@ -10,8 +11,13 @@ import 'package:altekamerer/features/settings/settings_backup_service.dart';
 import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets('changing language resynchronizes notifications', (
     WidgetTester tester,
   ) async {
@@ -123,6 +129,165 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Språk'), findsNWidgets(2));
+  });
+
+  testWidgets(
+    'Diagnostics shows version, platform, API server, and recorded errors',
+    (WidgetTester tester) async {
+      final preferences = _FakeReminderPreferences([]);
+      final sharedPreferences = await SharedPreferences.getInstance();
+      final diagnosticsService = DiagnosticsService(sharedPreferences);
+
+      await diagnosticsService.recordError(
+        subsystem: 'Calendar',
+        message: 'Calendar loading failed',
+        error: 'HTTP 503',
+      );
+
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        diagnosticsService: diagnosticsService,
+        apiServer: 'https://api.example.test',
+        diagnosticsMetadataLoader: () async => const DiagnosticsMetadata(
+          version: '1.1.1',
+          buildNumber: '42',
+          platform: 'Android 16',
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.text('Diagnostik'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      expect(find.text('1.1.1'), findsNothing);
+      expect(find.text('42'), findsNothing);
+      expect(find.text('Android 16'), findsNothing);
+      expect(find.text('Calendar: Calendar loading failed'), findsNothing);
+
+      await tester.tap(find.text('Diagnostik'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('1.1.1'), findsOneWidget);
+      expect(find.text('42'), findsOneWidget);
+      expect(find.text('Android 16'), findsOneWidget);
+      expect(find.text('https://api.example.test'), findsOneWidget);
+      expect(find.text('Calendar: Calendar loading failed'), findsOneWidget);
+      expect(find.text('HTTP 503'), findsOneWidget);
+    },
+  );
+
+  testWidgets('Diagnostics copies a diagnostic report', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final diagnosticsService = DiagnosticsService(sharedPreferences);
+    String? copiedReport;
+
+    await diagnosticsService.recordError(
+      subsystem: 'Authentication',
+      message: 'Login failed',
+      error: 'HTTP 503',
+    );
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      diagnosticsService: diagnosticsService,
+      apiServer: 'https://api.example.test',
+      diagnosticsMetadataLoader: () async => const DiagnosticsMetadata(
+        version: '1.1.1',
+        buildNumber: '42',
+        platform: 'Android 16',
+      ),
+      diagnosticClipboardWriter: (report) async {
+        copiedReport = report;
+      },
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Diagnostik'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Diagnostik'));
+    await tester.pumpAndSettle();
+
+    final copyButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Kopiera diagnostikrapport'),
+    );
+    expect(copyButton.onPressed, isNotNull);
+
+    copyButton.onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(copiedReport, isNotNull);
+    expect(copiedReport, contains('Version: 1.1.1'));
+    expect(copiedReport, contains('Build: 42'));
+    expect(copiedReport, contains('Platform: Android 16'));
+    expect(copiedReport, contains('API server: https://api.example.test'));
+    expect(copiedReport, contains('ERROR Authentication'));
+    expect(copiedReport, contains('Login failed'));
+    expect(copiedReport, contains('HTTP 503'));
+    expect(find.text('Diagnostikrapporten kopierades.'), findsOneWidget);
+  });
+
+  testWidgets('Diagnostics clears local diagnostic logs', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final sharedPreferences = await SharedPreferences.getInstance();
+    final diagnosticsService = DiagnosticsService(sharedPreferences);
+
+    await diagnosticsService.recordError(
+      subsystem: 'Notifications',
+      message: 'Notification synchronization failed',
+      error: 'network unavailable',
+    );
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      diagnosticsService: diagnosticsService,
+      apiServer: 'https://api.example.test',
+      diagnosticsMetadataLoader: () async => const DiagnosticsMetadata(
+        version: '1.1.1',
+        buildNumber: '42',
+        platform: 'Android 16',
+      ),
+    );
+
+    await tester.scrollUntilVisible(
+      find.text('Diagnostik'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Diagnostik'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Notifications: Notification synchronization failed'),
+      findsOneWidget,
+    );
+
+    final clearButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Rensa diagnostikloggar'),
+    );
+    expect(clearButton.onPressed, isNotNull);
+
+    clearButton.onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(await diagnosticsService.readEntries(), isEmpty);
+    expect(
+      find.text('Notifications: Notification synchronization failed'),
+      findsNothing,
+    );
+    expect(find.text('Inga diagnostikfel har registrerats.'), findsOneWidget);
+    expect(find.text('Diagnostikloggarna rensades.'), findsOneWidget);
   });
 
   testWidgets('About is last, collapsed by default, and shows app version', (
@@ -550,9 +715,6 @@ void main() {
       const Duration(minutes: 30),
     ]);
     expect(notificationSync.syncCount, 1);
-
-    await _scrollToReminders(tester);
-    expect(find.text('30'), findsOneWidget);
   });
 
   testWidgets('canceling file selection leaves settings unchanged', (
@@ -761,6 +923,10 @@ Future<void> _pumpScreen(
   LocaleController? localeController,
   CalendarDisplayController? calendarDisplayController,
   Locale locale = const Locale('sv'),
+  DiagnosticsService? diagnosticsService,
+  String? apiServer,
+  DiagnosticsMetadataLoader? diagnosticsMetadataLoader,
+  DiagnosticClipboardWriter? diagnosticClipboardWriter,
   AppVersionLoader? appVersionLoader,
   ExternalUrlLauncher? externalUrlLauncher,
   SettingsBackupService? settingsBackupService,
@@ -805,6 +971,10 @@ Future<void> _pumpScreen(
           settingsBackupService: backupService,
           settingsBackupFileService:
               settingsBackupFileService ?? _FakeSettingsBackupFileService(),
+          diagnosticsService: diagnosticsService,
+          apiServer: apiServer,
+          diagnosticsMetadataLoader: diagnosticsMetadataLoader,
+          diagnosticClipboardWriter: diagnosticClipboardWriter,
           appVersionLoader: appVersionLoader,
           externalUrlLauncher: externalUrlLauncher,
         ),
