@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:altekamerer/features/calendar/calendar_api.dart';
+import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('load exposes successful calendar result', () async {
@@ -30,8 +32,11 @@ void main() {
   });
 
   test('load exposes error and clears stale events', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final diagnostics = DiagnosticsService(preferences);
     final service = FakeCalendarService(events: [_event()]);
-    final controller = CalendarController(service);
+    final controller = CalendarController(service, diagnostics: diagnostics);
 
     await controller.load();
 
@@ -44,6 +49,12 @@ void main() {
     expect(controller.status, CalendarStatus.error);
     expect(controller.events, isEmpty);
     expect(controller.error, isA<StateError>());
+
+    final entries = await diagnostics.readEntries();
+    expect(entries, hasLength(1));
+    expect(entries.single.subsystem, 'Calendar');
+    expect(entries.single.message, 'Calendar loading failed');
+    expect(entries.single.details, contains('StateError'));
   });
 
   test('load returns to loading before retry completes', () async {

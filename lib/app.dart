@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'core/diagnostics/diagnostics_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/auth/auth_gate.dart';
@@ -29,6 +30,8 @@ class AlteKamererApp extends StatelessWidget {
     required this.calendarDisplayController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
+    this.diagnosticsService,
+    this.apiServer,
   });
 
   final AuthController authController;
@@ -42,6 +45,8 @@ class AlteKamererApp extends StatelessWidget {
   final CalendarDisplayController calendarDisplayController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
+  final DiagnosticsService? diagnosticsService;
+  final String? apiServer;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +79,8 @@ class AlteKamererApp extends StatelessWidget {
             calendarDisplayController: calendarDisplayController,
             settingsBackupService: settingsBackupService,
             settingsBackupFileService: settingsBackupFileService,
+            diagnosticsService: diagnosticsService,
+            apiServer: apiServer,
           ),
         );
       },

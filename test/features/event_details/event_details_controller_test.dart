@@ -1,7 +1,9 @@
+import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_details/event_details_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('load exposes loaded event', () async {
@@ -18,8 +20,12 @@ void main() {
   });
 
   test('load exposes error state when service fails', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final diagnostics = DiagnosticsService(preferences);
     final controller = EventDetailsController(
       _FakeEventDetailsService(error: Exception('failed')),
+      diagnostics: diagnostics,
     );
 
     await controller.load(42);
@@ -27,6 +33,12 @@ void main() {
     expect(controller.status, EventDetailsStatus.error);
     expect(controller.event, isNull);
     expect(controller.error, isNotNull);
+
+    final entries = await diagnostics.readEntries();
+    expect(entries, hasLength(1));
+    expect(entries.single.subsystem, 'Event details');
+    expect(entries.single.message, 'Event details loading failed');
+    expect(entries.single.details, contains('Exception'));
   });
 
   test('Rep uses Hålan time as effective on-site time', () {

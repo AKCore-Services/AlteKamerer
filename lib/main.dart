@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
 import 'app.dart';
 import 'core/config/app_config.dart';
+import 'core/diagnostics/diagnostics_service.dart';
 import 'core/network/access_token_store.dart';
 import 'core/network/api_client.dart';
 import 'core/storage/secure_credential_store.dart';
@@ -38,6 +42,36 @@ Future<void> main() async {
   final accessTokenStore = AccessTokenStore();
   final credentialStore = SecureCredentialStore();
   final sharedPreferences = await SharedPreferences.getInstance();
+  final diagnosticsService = DiagnosticsService(sharedPreferences);
+
+  final previousFlutterErrorHandler = FlutterError.onError;
+  FlutterError.onError = (details) {
+    unawaited(
+      diagnosticsService.recordError(
+        subsystem: 'Application',
+        message: 'Unexpected Flutter error',
+      ),
+    );
+
+    if (previousFlutterErrorHandler != null) {
+      previousFlutterErrorHandler(details);
+    } else {
+      FlutterError.presentError(details);
+    }
+  };
+
+  final previousPlatformErrorHandler = PlatformDispatcher.instance.onError;
+  PlatformDispatcher.instance.onError = (error, stackTrace) {
+    unawaited(
+      diagnosticsService.recordError(
+        subsystem: 'Application',
+        message: 'Unexpected platform error',
+      ),
+    );
+
+    return previousPlatformErrorHandler?.call(error, stackTrace) ?? false;
+  };
+
   final localePreferences = SharedPreferencesLocalePreferences(
     sharedPreferences,
   );
@@ -66,7 +100,10 @@ Future<void> main() async {
   final apiClient = ApiClient(config, accessTokenStore);
   final authApi = AuthApi(apiClient);
   final calendarApi = CalendarApi(apiClient);
-  final calendarController = CalendarController(calendarApi);
+  final calendarController = CalendarController(
+    calendarApi,
+    diagnostics: diagnosticsService,
+  );
   final meApi = MeApi(apiClient);
   final eventDetailsApi = EventDetailsApi(apiClient);
   final eventRegistrationApi = EventRegistrationApi(apiClient);
@@ -84,6 +121,7 @@ Future<void> main() async {
     NotificationPlanner(stockholm),
     localNotificationService,
     reminderPreferences,
+    diagnostics: diagnosticsService,
   );
 
   await localNotificationService.initialize();
@@ -92,6 +130,7 @@ Future<void> main() async {
     credentialStore,
     authApi,
     accessTokenStore,
+    diagnostics: diagnosticsService,
   );
 
   await authController.restoreSession();
@@ -111,6 +150,8 @@ Future<void> main() async {
       calendarDisplayController: calendarDisplayController,
       settingsBackupService: settingsBackupService,
       settingsBackupFileService: settingsBackupFileService,
+      diagnosticsService: diagnosticsService,
+      apiServer: config.apiBaseUrl.origin,
     ),
   );
 }

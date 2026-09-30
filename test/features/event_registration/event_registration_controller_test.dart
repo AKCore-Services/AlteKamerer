@@ -1,7 +1,9 @@
+import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('initializes from existing event registration', () {
@@ -83,12 +85,16 @@ void main() {
   });
 
   test('save exposes backend failure', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final diagnostics = DiagnosticsService(preferences);
     final service = _FakeRegistrationService(
       error: Exception('registration failed'),
     );
     final controller = EventRegistrationController(
       service,
       _event(where: 'Direkt'),
+      diagnostics: diagnostics,
     );
 
     final result = await controller.save();
@@ -96,6 +102,12 @@ void main() {
     expect(result, isFalse);
     expect(controller.status, EventRegistrationStatus.error);
     expect(controller.error, isNotNull);
+
+    final entries = await diagnostics.readEntries();
+    expect(entries, hasLength(1));
+    expect(entries.single.subsystem, 'Registration');
+    expect(entries.single.message, 'Event registration save failed');
+    expect(entries.single.details, contains('Exception'));
   });
 
   test('editing field clears previous result state', () async {

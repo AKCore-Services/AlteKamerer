@@ -931,6 +931,53 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
+  String get diagnostics => 'Diagnostik';
+
+  @override
+  String get diagnosticsVersion => 'Version';
+
+  @override
+  String get diagnosticsBuild => 'Build';
+
+  @override
+  String get diagnosticsPlatform => 'Plattform';
+
+  @override
+  String get diagnosticsApiServer => 'API-server';
+
+  @override
+  String get diagnosticsRecentErrors => 'Senaste fel';
+
+  @override
+  String get diagnosticsNoErrors => 'Inga diagnostikfel har registrerats.';
+
+  @override
+  String get diagnosticsCopyReport => 'Kopiera diagnostikrapport';
+
+  @override
+  String get diagnosticsClearLogs => 'Rensa diagnostikloggar';
+
+  @override
+  String get diagnosticsCopied => 'Diagnostikrapporten kopierades.';
+
+  @override
+  String get diagnosticsCopyFailed =>
+      'Diagnostikrapporten kunde inte kopieras.';
+
+  @override
+  String get diagnosticsCleared => 'Diagnostikloggarna rensades.';
+
+  @override
+  String get diagnosticsClearFailed => 'Diagnostikloggarna kunde inte rensas.';
+
+  @override
+  String get diagnosticsUnavailable =>
+      'Diagnostikinformation är inte tillgänglig.';
+
+  @override
+  String get diagnosticsUnavailableValue => 'Inte tillgänglig';
+
+  @override
   String get about => 'Om';
 
   @override

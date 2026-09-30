@@ -1,7 +1,12 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/diagnostics/diagnostic_entry.dart';
+import '../../core/diagnostics/diagnostics_service.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
@@ -16,7 +21,21 @@ import 'settings_backup_file_service.dart';
 import 'settings_backup_service.dart';
 
 typedef AppVersionLoader = Future<String> Function();
+typedef DiagnosticsMetadataLoader = Future<DiagnosticsMetadata> Function();
+typedef DiagnosticClipboardWriter = Future<void> Function(String text);
 typedef ExternalUrlLauncher = Future<bool> Function(Uri uri);
+
+class DiagnosticsMetadata {
+  const DiagnosticsMetadata({
+    required this.version,
+    required this.buildNumber,
+    required this.platform,
+  });
+
+  final String version;
+  final String buildNumber;
+  final String platform;
+}
 
 class ReminderSettingsScreen extends StatefulWidget {
   const ReminderSettingsScreen({
@@ -27,6 +46,10 @@ class ReminderSettingsScreen extends StatefulWidget {
     required this.calendarDisplayController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
+    this.diagnosticsService,
+    this.apiServer,
+    this.diagnosticsMetadataLoader,
+    this.diagnosticClipboardWriter,
     this.appVersionLoader,
     this.externalUrlLauncher,
   });
@@ -37,6 +60,10 @@ class ReminderSettingsScreen extends StatefulWidget {
   final CalendarDisplayController calendarDisplayController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
+  final DiagnosticsService? diagnosticsService;
+  final String? apiServer;
+  final DiagnosticsMetadataLoader? diagnosticsMetadataLoader;
+  final DiagnosticClipboardWriter? diagnosticClipboardWriter;
   final AppVersionLoader? appVersionLoader;
   final ExternalUrlLauncher? externalUrlLauncher;
 
@@ -51,8 +78,11 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   bool _calendarDisplayExpanded = true;
   bool _remindersExpanded = true;
   bool _backupExpanded = false;
+  bool _diagnosticsExpanded = false;
   bool _aboutExpanded = false;
   Future<String>? _appVersion;
+  Future<_DiagnosticsViewData>? _diagnostics;
+  _DiagnosticsStatus? _diagnosticsStatus;
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isBackupBusy = false;
@@ -84,6 +114,114 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
 
     final packageInfo = await PackageInfo.fromPlatform();
     return packageInfo.version;
+  }
+
+  Future<DiagnosticsMetadata> _loadDiagnosticsMetadata() async {
+    final loader = widget.diagnosticsMetadataLoader;
+    if (loader != null) {
+      return loader();
+    }
+
+    final packageInfo = await PackageInfo.fromPlatform();
+
+    final platformName = Platform.operatingSystem == 'android'
+        ? 'Android'
+        : Platform.operatingSystem;
+
+    return DiagnosticsMetadata(
+      version: packageInfo.version,
+      buildNumber: packageInfo.buildNumber,
+      platform: '$platformName ${Platform.operatingSystemVersion}'.trim(),
+    );
+  }
+
+  Future<_DiagnosticsViewData> _loadDiagnostics() async {
+    final service = widget.diagnosticsService;
+    final metadata = await _loadDiagnosticsMetadata();
+
+    return _DiagnosticsViewData(
+      metadata: metadata,
+      entries: service == null ? const [] : await service.readEntries(),
+    );
+  }
+
+  void _setDiagnosticsExpanded(bool expanded) {
+    setState(() {
+      _diagnosticsExpanded = expanded;
+      _diagnosticsStatus = null;
+      if (expanded) {
+        _diagnostics ??= _loadDiagnostics();
+      }
+    });
+  }
+
+  Future<void> _copyDiagnostics() async {
+    final service = widget.diagnosticsService;
+    if (service == null) {
+      return;
+    }
+
+    try {
+      final data = await _loadDiagnostics();
+      final report = service.buildReport(
+        version: data.metadata.version,
+        buildNumber: data.metadata.buildNumber,
+        platform: data.metadata.platform,
+        apiServer: widget.apiServer ?? 'Unavailable',
+        entries: data.entries,
+      );
+
+      final writer = widget.diagnosticClipboardWriter;
+      if (writer != null) {
+        await writer(report);
+      } else {
+        await Clipboard.setData(ClipboardData(text: report));
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _diagnosticsStatus = _DiagnosticsStatus.copied;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _diagnosticsStatus = _DiagnosticsStatus.copyFailed;
+      });
+    }
+  }
+
+  Future<void> _clearDiagnostics() async {
+    final service = widget.diagnosticsService;
+    if (service == null) {
+      return;
+    }
+
+    try {
+      await service.clear();
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _diagnostics = _loadDiagnostics();
+        _diagnosticsStatus = _DiagnosticsStatus.cleared;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _diagnosticsStatus = _DiagnosticsStatus.clearFailed;
+      });
+    }
   }
 
   Future<bool> _launchExternalUrl(Uri uri) {
@@ -704,6 +842,128 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
         ),
         const SizedBox(height: 16),
         _SettingsSection(
+          title: l10n.diagnostics,
+          expanded: _diagnosticsExpanded,
+          onExpansionChanged: _setDiagnosticsExpanded,
+          child: FutureBuilder<_DiagnosticsViewData>(
+            future: _diagnostics,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(l10n.diagnosticsUnavailable),
+                );
+              }
+
+              final data = snapshot.data;
+              if (data == null) {
+                return const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+
+              final statusMessage = switch (_diagnosticsStatus) {
+                _DiagnosticsStatus.copied => l10n.diagnosticsCopied,
+                _DiagnosticsStatus.copyFailed => l10n.diagnosticsCopyFailed,
+                _DiagnosticsStatus.cleared => l10n.diagnosticsCleared,
+                _DiagnosticsStatus.clearFailed => l10n.diagnosticsClearFailed,
+                null => null,
+              };
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 8),
+                  _DiagnosticValue(
+                    label: l10n.diagnosticsVersion,
+                    value: data.metadata.version,
+                  ),
+                  const SizedBox(height: 12),
+                  _DiagnosticValue(
+                    label: l10n.diagnosticsBuild,
+                    value: data.metadata.buildNumber,
+                  ),
+                  const SizedBox(height: 12),
+                  _DiagnosticValue(
+                    label: l10n.diagnosticsPlatform,
+                    value: data.metadata.platform,
+                  ),
+                  const SizedBox(height: 12),
+                  _DiagnosticValue(
+                    label: l10n.diagnosticsApiServer,
+                    value: widget.apiServer ?? l10n.diagnosticsUnavailableValue,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    l10n.diagnosticsRecentErrors,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  if (data.entries.isEmpty)
+                    Text(l10n.diagnosticsNoErrors)
+                  else
+                    for (final entry in data.entries.reversed) ...[
+                      Text(
+                        '${entry.subsystem}: ${entry.message}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      if (entry.details case final details?) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          details,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                    ],
+                  OutlinedButton.icon(
+                    onPressed: widget.diagnosticsService == null
+                        ? null
+                        : _copyDiagnostics,
+                    icon: const Icon(Icons.copy_outlined),
+                    label: Text(l10n.diagnosticsCopyReport),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: widget.diagnosticsService == null
+                        ? null
+                        : _clearDiagnostics,
+                    icon: const Icon(Icons.delete_outline),
+                    label: Text(l10n.diagnosticsClearLogs),
+                  ),
+                  if (statusMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        statusMessage,
+                        style:
+                            _diagnosticsStatus ==
+                                    _DiagnosticsStatus.copyFailed ||
+                                _diagnosticsStatus ==
+                                    _DiagnosticsStatus.clearFailed
+                            ? TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              )
+                            : null,
+                      ),
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        _SettingsSection(
           title: l10n.about,
           expanded: _aboutExpanded,
           onExpansionChanged: _setAboutExpanded,
@@ -762,6 +1022,34 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
             ],
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _DiagnosticsViewData {
+  const _DiagnosticsViewData({required this.metadata, required this.entries});
+
+  final DiagnosticsMetadata metadata;
+  final List<DiagnosticEntry> entries;
+}
+
+enum _DiagnosticsStatus { copied, copyFailed, cleared, clearFailed }
+
+class _DiagnosticValue extends StatelessWidget {
+  const _DiagnosticValue({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.labelLarge),
+        const SizedBox(height: 2),
+        SelectableText(value),
       ],
     );
   }

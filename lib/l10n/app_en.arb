@@ -324,6 +324,21 @@
       }
     }
   },
+  "diagnostics": "Diagnostics",
+  "diagnosticsVersion": "Version",
+  "diagnosticsBuild": "Build",
+  "diagnosticsPlatform": "Platform",
+  "diagnosticsApiServer": "API server",
+  "diagnosticsRecentErrors": "Recent errors",
+  "diagnosticsNoErrors": "No diagnostic errors recorded.",
+  "diagnosticsCopyReport": "Copy diagnostic report",
+  "diagnosticsClearLogs": "Clear diagnostic logs",
+  "diagnosticsCopied": "Diagnostic report copied.",
+  "diagnosticsCopyFailed": "The diagnostic report could not be copied.",
+  "diagnosticsCleared": "Diagnostic logs cleared.",
+  "diagnosticsClearFailed": "Diagnostic logs could not be cleared.",
+  "diagnosticsUnavailable": "Diagnostic information is unavailable.",
+  "diagnosticsUnavailableValue": "Unavailable",
   "about": "About",
   "aboutVersion": "AlteKamerer · Version {version}",
   "@aboutVersion": {

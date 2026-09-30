@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/diagnostics/diagnostics_service.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../l10n/app_localizations.dart';
 import '../calendar/calendar_controller.dart';
@@ -30,6 +31,8 @@ class AuthGate extends StatefulWidget {
     required this.calendarDisplayController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
+    this.diagnosticsService,
+    this.apiServer,
   });
 
   final AuthController authController;
@@ -43,6 +46,8 @@ class AuthGate extends StatefulWidget {
   final CalendarDisplayController calendarDisplayController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
+  final DiagnosticsService? diagnosticsService;
+  final String? apiServer;
 
   @override
   State<AuthGate> createState() => _AuthGateState();
@@ -115,6 +120,8 @@ class _AuthGateState extends State<AuthGate> {
             calendarDisplayController: widget.calendarDisplayController,
             settingsBackupService: widget.settingsBackupService,
             settingsBackupFileService: widget.settingsBackupFileService,
+            diagnosticsService: widget.diagnosticsService,
+            apiServer: widget.apiServer,
           ),
           AuthStatus.restoreFailed => Scaffold(
             body: SafeArea(

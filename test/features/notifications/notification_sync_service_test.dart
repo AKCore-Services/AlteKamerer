@@ -1,3 +1,4 @@
+import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
@@ -9,6 +10,7 @@ import 'package:altekamerer/features/notifications/notification_planner.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/reminder_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -18,6 +20,10 @@ void main() {
   setUpAll(() {
     tzdata.initializeTimeZones();
     stockholm = tz.getLocation('Europe/Stockholm');
+  });
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
   });
 
   test(
@@ -97,6 +103,32 @@ void main() {
     expect(scheduler.reconciledPlans, isEmpty);
   });
 
+  test('records notification synchronization failures', () async {
+    final preferences = await SharedPreferences.getInstance();
+    final diagnostics = DiagnosticsService(preferences);
+    final scheduler = _FakeNotificationScheduler();
+
+    final service = NotificationSyncService(
+      _FailingMeService(),
+      CalendarController(_FakeCalendarService()),
+      NotificationPlanner(stockholm),
+      scheduler,
+      _FakeReminderPreferences(defaultReminderOffsets),
+      diagnostics: diagnostics,
+    );
+
+    await service.sync();
+
+    final entries = await diagnostics.readEntries();
+
+    expect(entries, hasLength(1));
+    expect(entries.single.subsystem, 'Notifications');
+    expect(entries.single.message, 'Notification synchronization failed');
+    expect(entries.single.details, contains('_Exception'));
+    expect(entries.single.details, isNot(contains('member lookup failed')));
+    expect(scheduler.reconcileCount, 0);
+  });
+
   test('clear delegates to local notification scheduler', () async {
     final scheduler = _FakeNotificationScheduler();
 
@@ -160,6 +192,13 @@ class _FailingCalendarService implements CalendarService {
   @override
   Future<List<CalendarEvent>> getCalendar() {
     throw Exception('calendar failed');
+  }
+}
+
+class _FailingMeService implements MeService {
+  @override
+  Future<Me> getMe() {
+    throw Exception('member lookup failed');
   }
 }
 
