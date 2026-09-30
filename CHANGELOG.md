@@ -2,6 +2,41 @@
 
 Alla betydande AlteKamerer-releaser dokumenteras här.
 
+## 1.1.1
+
+En mindre funktions- och kvalitetsuppdatering med förbättrade inställningar,
+kalenderpresentation och lokal diagnostik.
+
+### Kalender
+
+- Förenklad filtrering av kalenderaktiviteter och tydligare presentation av
+  aktiva filter.
+- Förbättrad kalenderpresentation utan att ändra AKCores befintliga semantik
+  för aktiviteter eller synlighet.
+
+### Inställningar
+
+- Inställningar kan exporteras till och importeras från en lokal säkerhetskopia.
+- Importerade säkerhetskopior kan innehålla delar av inställningarna utan att
+  övriga lokala inställningar skrivs över.
+- Ny sektion med information om AlteKamerer, appversion och utvecklingsprojekt.
+- Länkar till AlteKamerers och AKCores källkod.
+
+### Diagnostik
+
+- Ny användartillgänglig diagnostik med appversion, buildnummer, plattform och
+  serverinformation.
+- Lokala applikationsfel kan visas, kopieras som en diagnostikrapport och
+  rensas från enheten.
+- Diagnostikloggen är lokalt lagrad och begränsad i storlek.
+- Lösenord, autentiseringstokens, sessionsidentifierare och andra hemligheter
+  ska inte lagras i diagnostikloggen.
+- Ingen diagnostik eller telemetri skickas automatiskt till en extern tjänst.
+
+### Android
+
+- Korrigerat applikationsnamnet som visas i Androids launcher.
+
 ## 1.1.0
 
 Den första funktionsuppdateringen efter AlteKamerer 1.0 med utökad kalender,
