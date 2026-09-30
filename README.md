@@ -21,7 +21,7 @@ AKCore-databasen
 ## Aktuell version
 
 ```text
-1.1.0
+1.1.1
 ```
 
 Versionshistoriken finns i [CHANGELOG.md](CHANGELOG.md).
@@ -270,7 +270,7 @@ altekamerer-vX.Y.Z
 Exempel:
 
 ```text
-altekamerer-v1.1.0
+altekamerer-v1.1.1
 ```
 
 Releaseflödet:
@@ -281,10 +281,10 @@ Releaseflödet:
 4. döper om den till `AlteKamerer-X.Y.Z.apk`;
 5. laddar upp APK-filen till motsvarande GitHub Release.
 
-För version 1.1.0 blir filnamnet:
+För version 1.1.1 blir filnamnet:
 
 ```text
-AlteKamerer-1.1.0.apk
+AlteKamerer-1.1.1.apk
 ```
 
 Releasebygget är separat från den vanliga valideringen på `main`.
