@@ -1,3 +1,17 @@
+// -----------------------------------------------------------------------------
+// notification_plan.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Represents a single planned event reminder, including its
+//   event time, reminder offset, and scheduled notification time.
+//
+// -----------------------------------------------------------------------------
+
+/// Describes one reminder to be scheduled for an event.
+///
+/// Event and scheduled times are absolute UTC instants, while the reminder
+/// offset determines how far in advance the notification should fire.
 class NotificationPlan {
   const NotificationPlan({
     required this.eventId,

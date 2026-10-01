@@ -1,3 +1,13 @@
+// -----------------------------------------------------------------------------
+// reminder_settings_screen.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Provides application settings for language, calendar display,
+//   reminders, backup/import, diagnostics, and application information.
+//
+// -----------------------------------------------------------------------------
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -37,6 +47,11 @@ class DiagnosticsMetadata {
   final String platform;
 }
 
+/// Provides the application's settings and diagnostic tools.
+///
+/// Coordinates preference controllers, reminder scheduling, settings
+/// backups, and local diagnostic reporting through their respective
+/// services. The screen owns temporary editing and feedback state.
 class ReminderSettingsScreen extends StatefulWidget {
   const ReminderSettingsScreen({
     super.key,
@@ -301,6 +316,8 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
     });
   }
 
+  // Persist reminder changes before synchronizing scheduled notifications.
+  // A failed save must not replace the device's existing reminder plan.
   Future<void> _save() async {
     final offsets = <Duration>[];
 

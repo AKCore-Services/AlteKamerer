@@ -1,3 +1,17 @@
+// -----------------------------------------------------------------------------
+// auth_controller.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Owns the mobile authentication lifecycle, including login, session
+//   restoration, token refresh, logout, and observable session state.
+//
+// Contains:
+//   - AuthStatus: Authentication and restoration states.
+//   - AuthController: Session state and credential lifecycle.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/diagnostics/diagnostic_error_details.dart';
@@ -7,8 +21,17 @@ import '../../core/network/api_exception.dart';
 import '../../core/storage/credential_store.dart';
 import 'auth_api.dart';
 
+/// States used to select authenticated, login, or recovery UI.
+///
+/// [restoreFailed] distinguishes a failed session check from a confirmed
+/// unauthenticated session, allowing the user to retry restoration.
 enum AuthStatus { loading, unauthenticated, authenticated, restoreFailed }
 
+/// Coordinates authentication and the lifetime of mobile credentials.
+///
+/// Persists refresh tokens through [CredentialStore], keeps access tokens
+/// in memory, and exposes session state to the application. Also provides
+/// the refresh handler used by `ApiClient` for expired access tokens.
 class AuthController extends ChangeNotifier {
   AuthController(
     this._credentialStore,
@@ -32,6 +55,11 @@ class AuthController extends ChangeNotifier {
 
   String? get accessToken => _accessTokenStore.accessToken;
 
+  /// Attempts to restore a session using the persisted refresh token.
+  ///
+  /// A missing or rejected token produces an unauthenticated state.
+  /// Other failures retain the stored credentials and enter [AuthStatus.restoreFailed]
+  /// so restoration can be retried.
   Future<void> restoreSession() async {
     _status = AuthStatus.loading;
     notifyListeners();
@@ -74,6 +102,12 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Authenticates the supplied credentials and establishes a session.
+  ///
+  /// On success, persists the refresh token, updates the in-memory access
+  /// token, and notifies listeners of the authenticated state.
+  ///
+  /// Authentication or persistence failures propagate to the caller.
   Future<void> login({
     required String username,
     required String password,
@@ -104,6 +138,12 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Refreshes the current session, sharing an in-flight refresh request.
+  ///
+  /// Concurrent callers receive the same result, avoiding multiple requests
+  /// that could compete to rotate the same refresh token. Returns false when
+  /// the session cannot be renewed because its credentials are unavailable
+  /// or rejected; other failures are propagated.
   Future<bool> refreshSession() {
     return _refreshInFlight ??= _refreshSessionSingleFlight();
   }
@@ -150,6 +190,10 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  /// Revokes the current refresh token and clears local session state.
+  ///
+  /// Local credentials are cleared even when the server request fails.
+  /// The server error is recorded and rethrown to the caller.
   Future<void> logout() async {
     final refreshToken = _refreshToken;
 

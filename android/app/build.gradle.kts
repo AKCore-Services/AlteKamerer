@@ -26,10 +26,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Keep the released application ID stable: changing it creates a
+        // different Android application rather than upgrading existing installs.
         applicationId = "org.altekamereren.altekamerer"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
@@ -54,6 +53,8 @@ android {
 
     buildTypes {
         release {
+            // CI supplies key.properties for signed releases. Local builds
+            // without that file fall back to debug signing.
             signingConfig =
                 if (keystorePropertiesFile.exists()) {
                     signingConfigs.getByName("release")

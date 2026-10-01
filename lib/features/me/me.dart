@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// me.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Represents current-member information returned by AKCore.
+//
+// -----------------------------------------------------------------------------
+
+/// Contains the authenticated member information used by the app.
+///
+/// Membership and ballet association inform reminder relevance, while
+/// available instruments are used by the registration interface.
 class Me {
   const Me({
     required this.displayName,
@@ -6,6 +19,10 @@ class Me {
     required this.availableInstruments,
   });
 
+  /// Decodes the current-member API response.
+  ///
+  /// A missing display name becomes an empty string. The membership flags
+  /// and available instrument collection must have their expected types.
   factory Me.fromJson(Map<String, dynamic> json) {
     final instruments = json['availableInstruments'];
 

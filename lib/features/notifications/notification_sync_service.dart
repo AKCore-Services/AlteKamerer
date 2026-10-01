@@ -1,3 +1,13 @@
+// -----------------------------------------------------------------------------
+// notification_sync_service.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Coordinates calendar loading, member relevance, reminder
+//   preferences, planning, and device notification scheduling.
+//
+// -----------------------------------------------------------------------------
+
 import '../../core/diagnostics/diagnostic_error_details.dart';
 import '../../core/diagnostics/diagnostics_service.dart';
 import '../calendar/calendar_controller.dart';
@@ -6,12 +16,17 @@ import '../settings/reminder_preferences.dart';
 import 'local_notification_service.dart';
 import 'notification_planner.dart';
 
+/// Contract for refreshing or clearing scheduled event reminders.
 abstract interface class NotificationSync {
   Future<void> sync();
 
   Future<void> clear();
 }
 
+/// Coordinates reminder planning and local notification scheduling.
+///
+/// Retrieves calendar and member data, applies reminder preferences through
+/// [NotificationPlanner], and reconciles the resulting local notifications.
 class NotificationSyncService implements NotificationSync {
   NotificationSyncService(
     this._meService,
@@ -32,6 +47,11 @@ class NotificationSyncService implements NotificationSync {
   final DiagnosticsService? _diagnostics;
 
   @override
+  /// Refreshes scheduled reminders from current calendar data.
+  ///
+  /// If calendar loading fails, existing reminders are left unchanged.
+  /// Subsequent synchronization failures are recorded when diagnostics are
+  /// available and do not propagate to the calendar UI.
   Future<void> sync() async {
     await _calendarController.load();
 

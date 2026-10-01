@@ -1,5 +1,18 @@
+// -----------------------------------------------------------------------------
+// calendar_display_preferences.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines calendar date and time display options and their
+//   persistent representation.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Supported calendar date formats.
+///
+/// Unrecognized stored values fall back to [CalendarDateFormat.compact].
 enum CalendarDateFormat {
   compact('compact'),
   numeric('numeric'),
@@ -18,6 +31,10 @@ enum CalendarDateFormat {
   }
 }
 
+/// Supported clock formats for calendar event times.
+///
+/// Unrecognized stored values fall back to
+/// [CalendarTimeFormat.twentyFourHour].
 enum CalendarTimeFormat {
   twentyFourHour('24-hour'),
   twelveHour('12-hour');
@@ -34,6 +51,9 @@ enum CalendarTimeFormat {
   }
 }
 
+/// Groups the member's preferred calendar display options.
+///
+/// Defaults to compact dates, a 24-hour clock, and hidden weekday names.
 class CalendarDisplaySettings {
   const CalendarDisplaySettings({
     this.dateFormat = CalendarDateFormat.compact,
@@ -58,12 +78,17 @@ class CalendarDisplaySettings {
   }
 }
 
+/// Contract for loading and persisting calendar display settings.
 abstract interface class CalendarDisplayPreferences {
   Future<CalendarDisplaySettings> getSettings();
 
   Future<void> setSettings(CalendarDisplaySettings settings);
 }
 
+/// Persists calendar display settings using shared preferences.
+///
+/// Each option has its own storage key. Missing or unrecognized format
+/// values use the defaults defined by [CalendarDisplaySettings].
 class SharedPreferencesCalendarDisplayPreferences
     implements CalendarDisplayPreferences {
   SharedPreferencesCalendarDisplayPreferences(this._preferences);

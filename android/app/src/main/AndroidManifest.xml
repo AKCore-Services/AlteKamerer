@@ -28,6 +28,9 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- Scheduled reminders are delivered by the notification plugin.
+             Its boot receiver restores scheduling after device reboot or
+             application replacement. -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />

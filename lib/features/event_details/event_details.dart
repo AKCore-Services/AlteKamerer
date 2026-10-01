@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// event_details.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines detailed event data, the member's registration selection, and attendee information.
+//
+// -----------------------------------------------------------------------------
+
+/// Represents the detailed event information returned by AKCore.
+///
+/// Includes event metadata, the member's registration selection, and the
+/// attendee collection used by the event details and registration screens.
 class EventDetails {
   const EventDetails({
     required this.id,
@@ -82,6 +95,10 @@ class EventDetails {
   final EventRegistrationSelection registration;
   final List<EventAttendee> attendees;
 
+  /// Returns the arrival time appropriate for this event type.
+  ///
+  /// Orchestra and ballet rehearsals use Hålan time. Other events
+  /// use the ordinary arrival time supplied by AKCore.
   String get effectiveThereTime {
     if (type == 'Rep' || type == 'Balettrep') {
       return halanTime;
@@ -99,6 +116,9 @@ class EventDetails {
   bool get isRegisteredNotAttending => signupState == 'Kan inte komma';
 }
 
+/// Represents the member's current registration form values.
+///
+/// Includes the available instruments supplied by the backend.
 class EventRegistrationSelection {
   const EventRegistrationSelection({
     required this.where,
@@ -134,6 +154,7 @@ class EventRegistrationSelection {
   final List<String> availableInstruments;
 }
 
+/// Represents an attendee entry returned with event details.
 class EventAttendee {
   const EventAttendee({
     required this.personName,

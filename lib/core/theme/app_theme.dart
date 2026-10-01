@@ -1,7 +1,20 @@
+// -----------------------------------------------------------------------------
+// app_theme.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines the shared Material theme using AKCore's colors and visual identity.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import 'ak_colors.dart';
 
+/// Defines the application's shared Material theme.
+///
+/// Applies the AKCore palette to typography, controls, and surfaces so
+/// individual screens do not need to reproduce the visual styling.
 abstract final class AppTheme {
   static ThemeData get dark {
     final baseTheme = ThemeData.dark(useMaterial3: true);

@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// login_screen.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Provides the login form and presents authentication or connection errors.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../core/network/api_exception.dart';
@@ -6,6 +15,10 @@ import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
 import 'auth_controller.dart';
 
+/// Presents the login form for an existing AKCore account.
+///
+/// Submits credentials through [AuthController] and distinguishes invalid
+/// credentials from other API failures and connection errors.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.authController});
 

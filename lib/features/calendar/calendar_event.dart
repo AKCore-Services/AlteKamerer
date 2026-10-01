@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// calendar_event.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Represents a calendar event and the member-specific information returned by AKCore.
+//
+// -----------------------------------------------------------------------------
+
+/// Represents an event in the authenticated member calendar.
+///
+/// Includes the member's registration state and event times used by calendar
+/// presentation and notification relevance calculations.
 class CalendarEvent {
   const CalendarEvent({
     required this.id,
@@ -56,6 +69,10 @@ class CalendarEvent {
   final int notComing;
   final bool disabled;
 
+  /// Selects the time displayed for this member's event.
+  ///
+  /// Prefers Hålan time for a Hålan registration, then the effective arrival
+  /// time, Hålan time, and finally the event start time.
   String get displayTime {
     if (signupState == 'Hålan' && halanTime.isNotEmpty) {
       return halanTime;
@@ -82,6 +99,10 @@ class CalendarEvent {
 
   bool get isRegistered => signupState != null && signupState!.isNotEmpty;
 
+  /// Whether the member registered as attending.
+  ///
+  /// Both `Hålan` and `Direkt` count as attending; `Kan inte komma`
+  /// is an explicit non-attendance registration.
   bool get isAttending {
     return signupState == 'Hålan' || signupState == 'Direkt';
   }
@@ -103,6 +124,11 @@ class CalendarEvent {
 
   bool get isSocialEvent => type == 'Fest';
 
+  /// Determines whether this event is relevant for member reminders.
+  ///
+  /// An explicit `Kan inte komma` registration always excludes the event.
+  /// Attending registrations always include it; otherwise rehearsal type
+  /// and ballet membership determine relevance.
   bool isRelevantTo({required bool isBallet}) {
     if (signupState == 'Kan inte komma') {
       return false;

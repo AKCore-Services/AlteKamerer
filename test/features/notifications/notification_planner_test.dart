@@ -164,10 +164,7 @@ void main() {
         me: orchestraMember,
         events: [event(type: 'Rep')],
         now: DateTime.utc(2026, 9, 20, 6),
-        reminderOffsets: const [
-          Duration(hours: 5),
-          Duration(hours: 1),
-        ],
+        reminderOffsets: const [Duration(hours: 5), Duration(hours: 1)],
       );
 
       expect(plans, hasLength(2));
@@ -210,10 +207,7 @@ void main() {
         me: orchestraMember,
         events: [event()],
         now: DateTime.utc(2026, 9, 20, 12),
-        reminderOffsets: const [
-          Duration(hours: 5),
-          Duration(hours: 1),
-        ],
+        reminderOffsets: const [Duration(hours: 5), Duration(hours: 1)],
       );
 
       expect(plans, hasLength(1));
@@ -235,6 +229,8 @@ void main() {
       expect(plans, isEmpty);
     });
 
+    // Reminder offsets are elapsed durations, not wall-clock subtraction:
+    // a Stockholm daylight-saving transition must not shorten the lead time.
     test('8 hour reminder remains 8 real hours before event across DST', () {
       final planner = NotificationPlanner(stockholm);
 

@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// calendar_controller.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Owns loaded calendar data, date navigation, and the filters applied to the calendar UI.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/diagnostics/diagnostic_error_details.dart';
@@ -8,10 +17,16 @@ import 'calendar_event.dart';
 
 enum CalendarStatus { loading, loaded, error }
 
+/// Available date ranges for displaying calendar events.
 enum CalendarView { upcoming, today, week, month }
 
+/// Filters events by the member's registration state.
 enum CalendarRegistrationFilter { all, coming, notRegistered, notComing }
 
+/// Coordinates calendar loading and presentation state.
+///
+/// Retrieves events through [CalendarService] and applies date, event type,
+/// registration, and search filters to the loaded collection.
 class CalendarController extends ChangeNotifier {
   CalendarController(
     this._calendarService, {
@@ -33,6 +48,8 @@ class CalendarController extends ChangeNotifier {
   CalendarRegistrationFilter get registrationFilter => _registrationFilter;
   String get searchQuery => _searchQuery;
 
+  /// Returns the distinct event types in the loaded calendar, sorted
+  /// alphabetically.
   List<String> get availableEventTypes {
     final types = _events.map((event) => event.type).toSet().toList()..sort();
     return types;
@@ -52,11 +69,18 @@ class CalendarController extends ChangeNotifier {
 
   CalendarView get view => _view;
 
+  /// Returns the focused calendar date, defaulting to today.
+  ///
+  /// The time component is removed before the date is exposed.
   DateTime get focusedDate {
     final value = _focusedDate ?? _today;
     return DateTime(value.year, value.month, value.day);
   }
 
+  /// Returns events matching the selected view and all active filters.
+  ///
+  /// Date, type, registration, and search conditions are combined rather
+  /// than applied as alternative ways of matching an event.
   List<CalendarEvent> get visibleEvents {
     final dateFilteredEvents = switch (_view) {
       CalendarView.upcoming => _events,
@@ -72,6 +96,11 @@ class CalendarController extends ChangeNotifier {
         .toList();
   }
 
+  /// Changes the calendar view and updates the focused date as needed.
+  ///
+  /// Switching to today focuses the current date. Entering week or month
+  /// view initializes an unset focused date to today. Other transitions
+  /// preserve the existing focused date.
   void setView(CalendarView view) {
     if (_view == view) {
       return;
@@ -105,6 +134,10 @@ class CalendarController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clears the event-type and registration filters.
+  ///
+  /// Preserves the search query, selected view, and focused date.
+  /// Does nothing when both filters are already at their defaults.
   void resetFilters() {
     if (_eventTypeFilter == null &&
         _registrationFilter == CalendarRegistrationFilter.all) {
@@ -149,6 +182,9 @@ class CalendarController extends ChangeNotifier {
     }
   }
 
+  /// Whether navigation to an earlier calendar period is available.
+  ///
+  /// Week and month navigation stops at the current period.
   bool get canShowPreviousPeriod {
     switch (_view) {
       case CalendarView.upcoming:
@@ -195,6 +231,10 @@ class CalendarController extends ChangeNotifier {
     setFocusedDate(_today);
   }
 
+  /// Reloads calendar events from the backend.
+  ///
+  /// A failed request clears the previous event collection, exposes the
+  /// error state, and records a diagnostic when diagnostics are configured.
   Future<void> load() async {
     _status = CalendarStatus.loading;
     _error = null;

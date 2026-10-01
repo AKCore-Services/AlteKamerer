@@ -1,14 +1,30 @@
+// -----------------------------------------------------------------------------
+// settings_backup_file_service.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Handles selecting and saving settings backup files through
+//   the platform file picker.
+//
+// -----------------------------------------------------------------------------
+
 import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 
+/// Contract for reading and writing settings backup files.
+///
+/// A cancelled save returns false; a cancelled file selection returns null.
 abstract interface class SettingsBackupFileService {
   Future<bool> save(String contents);
 
   Future<String?> pick();
 }
 
+/// Reads and writes UTF-8 JSON backups through the platform file picker.
+///
+/// Invalid UTF-8 input is reported separately from JSON schema errors.
 class FilePickerSettingsBackupFileService implements SettingsBackupFileService {
   const FilePickerSettingsBackupFileService();
 

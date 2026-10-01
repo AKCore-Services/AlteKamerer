@@ -1,8 +1,25 @@
+// -----------------------------------------------------------------------------
+// app_config.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines the AKCore API server configuration and resolves
+//   relative API paths against its base URL.
+//
+// -----------------------------------------------------------------------------
+
+/// Holds the AKCore API server configuration.
+///
+/// The server address is selected at build time and shared by API clients.
 class AppConfig {
   const AppConfig({required this.apiBaseUrl});
 
   final Uri apiBaseUrl;
 
+  /// Reads the compile-time `API_BASE_URL` configuration.
+  ///
+  /// Defaults to the production website and rejects URLs that are not
+  /// absolute HTTP(S) addresses.
   factory AppConfig.fromEnvironment() {
     const rawApiBaseUrl = String.fromEnvironment(
       'API_BASE_URL',
@@ -21,6 +38,10 @@ class AppConfig {
     return AppConfig(apiBaseUrl: uri);
   }
 
+  /// Resolves an API path relative to the configured server URL.
+  ///
+  /// Normalizes the base URL and leading path separator so an API path
+  /// does not accidentally replace a configured base path.
   Uri resolve(String path) {
     final normalizedBase = apiBaseUrl.toString().endsWith('/')
         ? apiBaseUrl

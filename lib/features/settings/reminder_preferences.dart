@@ -1,16 +1,29 @@
+// -----------------------------------------------------------------------------
+// reminder_preferences.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines reminder timing preferences and their local persistence.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:shared_preferences/shared_preferences.dart';
 
-const defaultReminderOffsets = [
-  Duration(hours: 5),
-  Duration(hours: 1),
-];
+const defaultReminderOffsets = [Duration(hours: 5), Duration(hours: 1)];
 
+/// Provides the reminder offsets used by notification planning.
+///
+/// Offsets represent the time before an event at which reminders should fire.
 abstract interface class ReminderPreferences {
   Future<List<Duration>> getReminderOffsets();
 
   Future<void> setReminderOffsets(List<Duration> offsets);
 }
 
+/// Persists reminder offsets as positive minute values.
+///
+/// Uses [defaultReminderOffsets] when no preference has been saved.
+/// Invalid stored values are discarded rather than preventing loading.
 class SharedPreferencesReminderPreferences implements ReminderPreferences {
   SharedPreferencesReminderPreferences(this._preferences);
 

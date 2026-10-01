@@ -1,7 +1,24 @@
+// -----------------------------------------------------------------------------
+// secure_credential_store.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Persists refresh tokens using platform secure storage and removes
+//   credentials left by the earlier access-token storage model.
+//
+// Contains:
+//   - SecureCredentialStore: Secure implementation of CredentialStore.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'credential_store.dart';
 
+/// Stores the mobile refresh token in platform secure storage.
+///
+/// Removes the legacy persisted access token during credential operations
+/// so the application retains only the refresh token between launches.
 class SecureCredentialStore implements CredentialStore {
   SecureCredentialStore({FlutterSecureStorage? storage})
     : _storage = storage ?? const FlutterSecureStorage();

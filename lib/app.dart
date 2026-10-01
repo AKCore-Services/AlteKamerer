@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// app.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Configures the root Flutter application, including its theme,
+//   localization, and authentication-dependent content.
+//
+// Contains:
+//   - AlteKamererApp: Root widget and application configuration.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import 'core/diagnostics/diagnostics_service.dart';
@@ -16,6 +29,11 @@ import 'features/settings/reminder_preferences.dart';
 import 'features/settings/settings_backup_file_service.dart';
 import 'features/settings/settings_backup_service.dart';
 
+/// Configures the application shared by authenticated and login screens.
+///
+/// Receives services initialized in main and supplies them to [AuthGate].
+/// Locale changes rebuild the root application without recreating those
+/// services.
 class AlteKamererApp extends StatelessWidget {
   const AlteKamererApp({
     super.key,

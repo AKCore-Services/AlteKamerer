@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// calendar_event_row.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Displays a calendar event with localized times and registration status.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
@@ -5,6 +14,10 @@ import '../settings/calendar_display_preferences.dart';
 import 'calendar_display_formatter.dart';
 import 'calendar_event.dart';
 
+/// Displays a calendar event and the member's registration status.
+///
+/// Formats dates and times using the current display preferences, and
+/// switches to a stacked layout when larger text scaling requires it.
 class CalendarEventRow extends StatelessWidget {
   const CalendarEventRow({
     super.key,

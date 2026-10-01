@@ -1,9 +1,24 @@
+// -----------------------------------------------------------------------------
+// diagnostics_service.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Records bounded local error history and generates diagnostic
+//   reports that can be inspected or shared by the user.
+//
+// -----------------------------------------------------------------------------
+
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'diagnostic_entry.dart';
 
+/// Manages the application's locally persisted error history.
+///
+/// Retains at most [maxEntries] records in shared preferences, sanitizes
+/// recorded text, and produces reports containing application metadata.
+/// Recording is best-effort and must not interrupt the failing operation.
 class DiagnosticsService {
   DiagnosticsService(
     this._preferences, {
@@ -17,6 +32,10 @@ class DiagnosticsService {
   final int maxEntries;
   final DateTime Function() _now;
 
+  /// Records an error without propagating diagnostic-storage failures.
+  ///
+  /// Error details and stack traces are sanitized before persistence.
+  /// When the configured limit is exceeded, the oldest records are discarded.
   Future<void> recordError({
     required String subsystem,
     required String message,
@@ -56,6 +75,8 @@ class DiagnosticsService {
     }
   }
 
+  /// Reads retained diagnostics, returning an empty list when the
+  /// stored data is absent or cannot be decoded.
   Future<List<DiagnosticEntry>> readEntries() async {
     final source = _preferences.getString(_storageKey);
 
@@ -79,10 +100,17 @@ class DiagnosticsService {
     }
   }
 
+  /// Removes the locally persisted diagnostic history.
+  ///
+  /// A storage failure propagates to the caller.
   Future<void> clear() async {
     await _preferences.remove(_storageKey);
   }
 
+  /// Builds a human-readable report from the supplied diagnostic entries.
+  ///
+  /// Includes application version, platform, API server, and generation
+  /// time. Report metadata is sanitized before being included.
   String buildReport({
     required String version,
     required String buildNumber,
