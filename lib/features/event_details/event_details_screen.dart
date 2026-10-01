@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// event_details_screen.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Displays event information and provides access to member registration.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/ak_status_view.dart';
@@ -6,6 +15,10 @@ import '../../l10n/app_localizations.dart';
 import 'event_details.dart';
 import 'event_details_controller.dart';
 
+/// Displays details for an event loaded by [EventDetailsController].
+///
+/// Loads the requested event when the screen opens and delegates registration
+/// navigation to the callback supplied by the parent application.
 class EventDetailsScreen extends StatefulWidget {
   const EventDetailsScreen({
     super.key,

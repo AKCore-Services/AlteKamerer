@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// event_details_controller.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Manages the loading, success, and failure states of event details.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/diagnostics/diagnostic_error_details.dart';
@@ -8,6 +17,10 @@ import 'event_details_api.dart';
 
 enum EventDetailsStatus { loading, loaded, error }
 
+/// Loads event details and exposes their state to the UI.
+///
+/// Loading another event clears the previous result. Failures are exposed
+/// through the error state and recorded when diagnostics are configured.
 class EventDetailsController extends ChangeNotifier {
   EventDetailsController(this._eventDetailsService, {this._diagnostics});
 

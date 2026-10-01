@@ -1,5 +1,18 @@
+// -----------------------------------------------------------------------------
+// locale_preferences.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines the supported language preferences and their
+//   persistent storage representation.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Application language selection, including the device default.
+///
+/// Unknown stored values fall back to [AppLocalePreference.system].
 enum AppLocalePreference {
   system('system'),
   swedish('sv'),
@@ -18,12 +31,16 @@ enum AppLocalePreference {
   }
 }
 
+/// Contract for loading and saving the application language.
 abstract interface class LocalePreferences {
   Future<AppLocalePreference> getLocalePreference();
 
   Future<void> setLocalePreference(AppLocalePreference preference);
 }
 
+/// Stores the language preference using shared preferences.
+///
+/// An absent or unrecognized stored value selects the system language.
 class SharedPreferencesLocalePreferences implements LocalePreferences {
   SharedPreferencesLocalePreferences(this._preferences);
 

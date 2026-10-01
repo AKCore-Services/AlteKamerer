@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// local_notification_service.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Schedules local event reminders and handles notification taps.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
@@ -10,12 +19,18 @@ import 'notification_event_payload.dart';
 import 'notification_navigation_controller.dart';
 import 'notification_plan.dart';
 
+/// Contract for replacing or clearing scheduled event reminders.
 abstract interface class LocalNotificationScheduler {
   Future<void> reconcile(List<NotificationPlan> plans);
 
   Future<void> clear();
 }
 
+/// Manages event reminders through the platform notification plugin.
+///
+/// Schedules reminders in the Stockholm timezone, resolves notification
+/// text using the selected language, and forwards notification taps to
+/// [NotificationNavigationController].
 class LocalNotificationService implements LocalNotificationScheduler {
   LocalNotificationService(
     this._plugin,
@@ -36,6 +51,8 @@ class LocalNotificationService implements LocalNotificationScheduler {
   late final tz.Location _stockholm;
   bool _permissionRequested = false;
 
+  /// Initializes notification scheduling and handles app launches from
+  /// notifications that were tapped while the application was closed.
   Future<void> initialize() async {
     tzdata.initializeTimeZones();
     _stockholm = tz.getLocation('Europe/Stockholm');
@@ -59,6 +76,11 @@ class LocalNotificationService implements LocalNotificationScheduler {
   }
 
   @override
+  /// Replaces all scheduled notifications with the supplied plans.
+  ///
+  /// Requests Android notification permission when reminders are first
+  /// scheduled. Previously scheduled reminders are cancelled before the
+  /// replacement plans are installed.
   Future<void> reconcile(List<NotificationPlan> plans) async {
     await _ensureNotificationChannel();
 
@@ -80,6 +102,7 @@ class LocalNotificationService implements LocalNotificationScheduler {
     }
   }
 
+  /// Cancels all notifications scheduled through the platform plugin.
   @override
   Future<void> clear() async {
     await _plugin.cancelAll();
@@ -127,6 +150,8 @@ class LocalNotificationService implements LocalNotificationScheduler {
     );
   }
 
+  // Combine the event ID and reminder offset so different reminders
+  // for the same event can have distinct notification identifiers.
   int _notificationId(NotificationPlan plan) {
     final minutes = plan.reminderOffset.inMinutes;
 

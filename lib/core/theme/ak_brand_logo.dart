@@ -1,9 +1,22 @@
+// -----------------------------------------------------------------------------
+// ak_brand_logo.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Selects and displays the appropriate AKCore branding asset.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import 'ak_assets.dart';
 
+/// Available organization logo variants and application mark.
 enum AkBrandLogoVariant { full, mobile, alteKamereren, mark }
 
+/// Displays an AKCore branding asset selected by [variant].
+///
+/// Uses the shared asset registry and supplies an accessible image label.
 class AkBrandLogo extends StatelessWidget {
   const AkBrandLogo({
     super.key,

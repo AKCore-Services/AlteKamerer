@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// main.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Initializes application services, restores persisted state, and assembles
+//   the dependencies passed to the root application.
+//
+// Contains:
+//   - main: Application initialization and dependency composition.
+//
+// -----------------------------------------------------------------------------
+
 import 'dart:async';
 import 'dart:ui';
 
@@ -44,6 +57,7 @@ Future<void> main() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   final diagnosticsService = DiagnosticsService(sharedPreferences);
 
+  // Retain Flutter's existing error reporting while recording a diagnostic.
   final previousFlutterErrorHandler = FlutterError.onError;
   FlutterError.onError = (details) {
     unawaited(
@@ -60,6 +74,8 @@ Future<void> main() async {
     }
   };
 
+  // Preserve the platform handler's result so diagnostics do not change
+  // whether an error is considered handled.
   final previousPlatformErrorHandler = PlatformDispatcher.instance.onError;
   PlatformDispatcher.instance.onError = (error, stackTrace) {
     unawaited(
@@ -133,6 +149,8 @@ Future<void> main() async {
     diagnostics: diagnosticsService,
   );
 
+  // Restore persisted credentials before the authentication gate first
+  // renders, so it can select the appropriate initial application state.
   await authController.restoreSession();
 
   apiClient.setRefreshSessionHandler(authController.refreshSession);

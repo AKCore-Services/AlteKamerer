@@ -1,3 +1,13 @@
+// -----------------------------------------------------------------------------
+// settings_backup.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines the versioned JSON format used to export, validate,
+//   and import application preferences.
+//
+// -----------------------------------------------------------------------------
+
 import 'dart:convert';
 
 import 'calendar_display_preferences.dart';
@@ -5,6 +15,10 @@ import 'locale_preferences.dart';
 
 const settingsBackupSchemaVersion = 1;
 
+/// Represents the preferences included in a settings backup.
+///
+/// Fields are optional so imports can update selected settings without
+/// requiring every supported preference to be present.
 class SettingsBackup {
   const SettingsBackup({
     this.locale,
@@ -29,9 +43,17 @@ class SettingsBackupCalendarDisplay {
   final bool? showWeekday;
 }
 
+/// Encodes and validates the versioned settings backup format.
+///
+/// Encodes supported preferences into JSON and rejects malformed documents
+/// or unsupported schema versions before settings are applied.
 class SettingsBackupCodec {
   const SettingsBackupCodec();
 
+  /// Serializes [backup] using the current settings schema version.
+  ///
+  /// Omits absent preferences so partial backups can represent only
+  /// the settings explicitly supplied by the caller.
   String encode(SettingsBackup backup) {
     final settings = <String, Object?>{};
 
@@ -66,6 +88,10 @@ class SettingsBackupCodec {
     });
   }
 
+  /// Validates and decodes a settings backup without applying it.
+  ///
+  /// Throws [SettingsBackupFormatException] for malformed input and
+  /// [SettingsBackupUnsupportedVersionException] for incompatible versions.
   SettingsBackup decode(String source) {
     final Object? decoded;
 

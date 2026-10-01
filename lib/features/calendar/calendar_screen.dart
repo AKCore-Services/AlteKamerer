@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// calendar_screen.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Presents calendar events, date navigation, searching, and filtering.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/ak_status_view.dart';
@@ -9,6 +18,11 @@ import 'calendar_controller.dart';
 import 'calendar_event.dart';
 import 'calendar_event_row.dart';
 
+/// Presents calendar events and the controls used to explore them.
+///
+/// Observes both calendar data and display settings. Filtering and date
+/// selection are delegated to [CalendarController], while event navigation
+/// and refreshing are supplied by the parent application.
 class CalendarScreen extends StatelessWidget {
   const CalendarScreen({
     super.key,

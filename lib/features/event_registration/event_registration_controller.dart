@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// event_registration_controller.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Manages registration form state, validation, and submission.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/diagnostics/diagnostic_error_details.dart';
@@ -8,6 +17,10 @@ import 'event_registration_api.dart';
 
 enum EventRegistrationStatus { idle, saving, saved, error }
 
+/// Coordinates editing and saving a member's event registration.
+///
+/// Initializes the form from [EventDetails], validates the selected
+/// registration choice, and exposes saving and error states to the UI.
 class EventRegistrationController extends ChangeNotifier {
   EventRegistrationController(
     this._registrationService,
@@ -43,6 +56,10 @@ class EventRegistrationController extends ChangeNotifier {
 
   bool get car => _car;
 
+  /// Whether the member needs instrument transport.
+  ///
+  /// The backend `instrument` field uses the opposite boolean meaning,
+  /// so this UI-facing value is intentionally inverted.
   bool get needsInstrumentTransport => !_instrument;
 
   String get comment => _comment;
@@ -73,6 +90,10 @@ class EventRegistrationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sets whether the member needs instrument transport.
+  ///
+  /// The UI-facing [value] is inverted before storage because the backend
+  /// `instrument` field represents the opposite choice.
   void setNeedsInstrumentTransport(bool value) {
     final instrument = !value;
 
@@ -105,6 +126,18 @@ class EventRegistrationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Validates and submits the current registration.
+  ///
+  /// Returns `true` and enters [EventRegistrationStatus.saved] when AKCore
+  /// accepts the registration.
+  ///
+  /// Returns `false` and enters [EventRegistrationStatus.error] if no
+  /// registration choice is selected or the request fails. The failure is
+  /// available through [error]; API failures are also recorded when
+  /// diagnostics are configured.
+  ///
+  /// Submission failures are represented in controller state rather than
+  /// being rethrown to the UI.
   Future<bool> save() async {
     final where = _where;
 
@@ -156,6 +189,7 @@ class EventRegistrationController extends ChangeNotifier {
   }
 }
 
+/// Indicates that the registration form has no selected choice.
 class EventRegistrationValidationError implements Exception {
   const EventRegistrationValidationError();
 }

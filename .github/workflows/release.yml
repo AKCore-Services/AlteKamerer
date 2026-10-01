@@ -45,6 +45,7 @@ jobs:
           storeFile=../altekamerer-release.jks
           EOF_INNER
 
+      # Release tags must match pubspec.yaml before a signed APK is built.
       - name: Verify release version
         run: |
           TAG_VERSION="${GITHUB_REF_NAME#altekamerer-v}"

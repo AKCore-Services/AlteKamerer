@@ -140,6 +140,8 @@ void main() {
     expect(calendarPreferences.writeCount, 0);
   });
 
+  // Import is not an atomic storage transaction. A write failure must
+  // trigger a best-effort restoration of the previous preference values.
   test('failed import attempts to restore previous settings', () async {
     reminderPreferences.failNextWrite = true;
 

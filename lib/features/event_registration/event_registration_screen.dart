@@ -1,3 +1,12 @@
+// -----------------------------------------------------------------------------
+// event_registration_screen.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Provides the member's event registration form and submission feedback.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../core/network/api_exception.dart';
@@ -5,6 +14,11 @@ import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
 import 'event_registration_controller.dart';
 
+/// Presents the registration choices and related form fields.
+///
+/// Uses [EventRegistrationController] for form state, validation, and saving.
+/// The controller also owns the translation between displayed choices and
+/// the registration values submitted to AKCore.
 class EventRegistrationScreen extends StatefulWidget {
   const EventRegistrationScreen({super.key, required this.controller});
 

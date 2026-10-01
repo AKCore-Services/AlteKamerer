@@ -1,5 +1,18 @@
+// -----------------------------------------------------------------------------
+// diagnostic_entry.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Defines a persisted diagnostic record and its JSON representation.
+//
+// -----------------------------------------------------------------------------
+
 enum DiagnosticSeverity { error }
 
+/// Represents one locally retained application diagnostic.
+///
+/// Records when an error occurred, which subsystem reported it, and any
+/// additional details available for a diagnostic report.
 class DiagnosticEntry {
   const DiagnosticEntry({
     required this.timestamp,
@@ -25,6 +38,11 @@ class DiagnosticEntry {
     };
   }
 
+  /// Reconstructs a diagnostic entry from its stored JSON representation.
+  ///
+  /// Returns null when validation fails, including an invalid timestamp,
+  /// unsupported severity, or missing required text fields.
+  /// Unexpected field types may throw during decoding.
   static DiagnosticEntry? fromJson(Object? value) {
     if (value is! Map<String, dynamic>) {
       return null;

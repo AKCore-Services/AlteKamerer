@@ -32,6 +32,7 @@ jobs:
           restore-keys: |
             mobile-${{ runner.os }}-
 
+      # The shared validation script is also available for local runs.
       - name: Validate AlteKamerer
         run: ./scripts/validate-ci.sh
 

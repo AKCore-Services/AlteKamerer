@@ -1,10 +1,28 @@
+// -----------------------------------------------------------------------------
+// calendar_display_formatter.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Formats calendar dates and times using the selected language
+//   and the member's display preferences.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:intl/intl.dart';
 
 import '../settings/calendar_display_preferences.dart';
 
+/// Formats calendar dates and times for display.
+///
+/// Applies the selected locale and date/time preferences while preserving
+/// the original input when it cannot be parsed.
 class CalendarDisplayFormatter {
   const CalendarDisplayFormatter();
 
+  /// Formats an event date using the configured date style.
+  ///
+  /// Optionally prefixes the localized weekday. Invalid date strings
+  /// are returned unchanged.
   String formatDate(
     String value, {
     required String locale,
@@ -32,6 +50,10 @@ class CalendarDisplayFormatter {
     return '$weekday $formattedDate';
   }
 
+  /// Formats a clock time using the configured 12- or 24-hour style.
+  ///
+  /// Accepts valid `H:mm` or `HH:mm` values. Invalid times are returned
+  /// unchanged rather than being replaced with a misleading value.
   String formatTime(
     String value, {
     required String locale,

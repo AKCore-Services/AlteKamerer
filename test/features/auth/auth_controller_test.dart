@@ -29,6 +29,8 @@ void main() {
 
   test('concurrent refresh calls share one token rotation', () async {
     final store = FakeCredentialStore();
+    // Keep the first refresh pending while a second caller arrives, so
+    // the test can verify that both share the same token-rotation request.
     final refreshCompleter = Completer<AuthTokens>();
     final auth = FakeAuthService(
       loginResult: const AuthTokens(

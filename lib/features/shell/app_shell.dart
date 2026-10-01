@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// app_shell.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Provides navigation for authenticated members and coordinates transitions
+//   between the calendar, settings, event details, and registration screens.
+//
+// Contains:
+//   - AppShell: Authenticated application navigation.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../core/diagnostics/diagnostics_service.dart';
@@ -22,6 +35,10 @@ import '../settings/settings_backup_file_service.dart';
 import '../settings/settings_backup_service.dart';
 import '../../l10n/app_localizations.dart';
 
+/// Coordinates navigation within the authenticated application.
+///
+/// Owns the active top-level page, opens event details and registration
+/// screens, and handles event navigation requested by notifications.
 class AppShell extends StatefulWidget {
   const AppShell({
     super.key,
@@ -73,6 +90,8 @@ class _AppShellState extends State<AppShell> {
 
     widget.notificationSync.sync();
 
+    // A notification may have been opened before the authenticated
+    // navigator was available. Process it after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _openPendingNotification();
     });
@@ -181,6 +200,9 @@ class _AppShellState extends State<AppShell> {
     };
   }
 
+  // Notification requests can arrive outside the normal widget build cycle.
+  // Schedule a frame so the pending event opens after the navigator is ready,
+  // rather than attempting to push a route immediately.
   void _handleNotificationNavigation() {
     if (!mounted) {
       return;

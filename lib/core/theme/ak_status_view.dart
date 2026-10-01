@@ -4,6 +4,7 @@ import '../../l10n/app_localizations.dart';
 
 import 'ak_brand_logo.dart';
 
+/// Shared loading state used while authenticated content is fetched.
 class AkLoadingView extends StatelessWidget {
   const AkLoadingView({super.key});
 
@@ -22,6 +23,9 @@ class AkLoadingView extends StatelessWidget {
   }
 }
 
+/// Shared error state with an optional retry action.
+///
+/// Omitting [onRetry] also removes the retry button.
 class AkErrorView extends StatelessWidget {
   const AkErrorView({
     super.key,

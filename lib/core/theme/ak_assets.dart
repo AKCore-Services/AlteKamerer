@@ -1,3 +1,6 @@
+/// Asset paths shared by AKCore-branded widgets.
+///
+/// These paths must remain in sync with the asset declarations in pubspec.yaml.
 abstract final class AkAssets {
   static const String alteKamererenLogo = 'assets/images/ak_logo.png';
   static const String fullLogo = 'assets/images/logo.png';

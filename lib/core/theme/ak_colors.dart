@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+/// AKCore brand colors shared by the application's Material theme.
+///
+/// The accessible red variants provide alternatives for foreground and
+/// border treatments where the primary brand red is unsuitable.
 abstract final class AkColors {
   static const Color red = Color(0xFFB10000);
   static const Color accessibleRed = Color(0xFFE86B6B);

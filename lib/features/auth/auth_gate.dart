@@ -1,3 +1,16 @@
+// -----------------------------------------------------------------------------
+// auth_gate.dart
+// -----------------------------------------------------------------------------
+//
+// Purpose:
+//   Selects the application content according to the current authentication
+//   state and coordinates notification cleanup when a session ends.
+//
+// Contains:
+//   - AuthGate: Authentication-dependent application entry point.
+//
+// -----------------------------------------------------------------------------
+
 import 'package:flutter/material.dart';
 
 import '../../core/diagnostics/diagnostics_service.dart';
@@ -17,6 +30,10 @@ import '../shell/app_shell.dart';
 import 'auth_controller.dart';
 import 'login_screen.dart';
 
+/// Displays the appropriate application content for the current session.
+///
+/// Shows the login screen, authenticated application, or session recovery
+/// state, and clears scheduled notifications when authentication ends.
 class AuthGate extends StatefulWidget {
   const AuthGate({
     super.key,
