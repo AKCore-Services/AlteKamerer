@@ -4,6 +4,7 @@ import 'package:altekamerer/features/auth/auth_api.dart';
 import 'package:altekamerer/features/auth/auth_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
+import 'package:altekamerer/features/calendar/calendar_cache.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
@@ -25,6 +26,172 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('restores calendar cache before initial synchronization', (
+    WidgetTester tester,
+  ) async {
+    final cachedEvent = const CalendarEvent(
+      id: 42,
+      type: 'Kårhusrep',
+      name: 'Cached startup event',
+      place: 'Kårhuset',
+      description: '',
+      internalDescription: '',
+      date: '2026-10-05',
+      halanTime: '18:00',
+      thereTime: '18:30',
+      startsTime: '19:00',
+      playDuration: '',
+      stand: '',
+      signupState: null,
+      coming: 0,
+      notComing: 0,
+      disabled: false,
+    );
+    final cache = _StartupCalendarCache(
+      CachedCalendar(
+        events: [cachedEvent],
+        cachedAt: DateTime.utc(2026, 10, 5, 8),
+      ),
+    );
+    final calendarController = CalendarController(
+      _FakeCalendarService(),
+      cache: cache,
+    );
+    final notificationSync = _StartupOrderNotificationSync(cache);
+    final authController = AuthController(
+      _FakeCredentialStore(),
+      _FakeAuthService(),
+      AccessTokenStore(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AppShell(
+          authController: authController,
+          calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          navigationController: AppNavigationController(),
+          notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+
+    expect(cache.readCompleted, isTrue);
+    expect(notificationSync.syncCount, 1);
+    expect(notificationSync.cacheWasReadWhenSyncStarted, isTrue);
+    expect(calendarController.status, CalendarStatus.loaded);
+    expect(calendarController.events, [cachedEvent]);
+    expect(calendarController.isShowingCachedData, isTrue);
+  });
+
+  testWidgets('short lifecycle interruption does not refresh', (
+    WidgetTester tester,
+  ) async {
+    var now = DateTime(2026, 10, 5, 10);
+    final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
+    final authController = AuthController(
+      _FakeCredentialStore(),
+      _FakeAuthService(),
+      AccessTokenStore(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AppShell(
+          authController: authController,
+          calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          navigationController: AppNavigationController(),
+          notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
+          now: () => now,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(notificationSync.syncCount, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    now = now.add(const Duration(minutes: 4));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(notificationSync.syncCount, 1);
+  });
+
+  testWidgets('resume after five minutes refreshes once', (
+    WidgetTester tester,
+  ) async {
+    var now = DateTime(2026, 10, 5, 10);
+    final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
+    final authController = AuthController(
+      _FakeCredentialStore(),
+      _FakeAuthService(),
+      AccessTokenStore(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AppShell(
+          authController: authController,
+          calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          navigationController: AppNavigationController(),
+          notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
+          now: () => now,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(notificationSync.syncCount, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+
+    now = now.add(const Duration(minutes: 2));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+
+    now = now.add(const Duration(minutes: 3));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+
+    expect(notificationSync.syncCount, 2);
+  });
+
   testWidgets('tapping calendar event opens matching event details', (
     WidgetTester tester,
   ) async {
@@ -69,6 +236,63 @@ void main() {
     expect(find.byType(EventDetailsScreen), findsOneWidget);
     expect(eventDetailsService.requestedEventIds, [42]);
     expect(find.text('Tisdagsrep'), findsOneWidget);
+  });
+
+  testWidgets('resume refreshes currently open event details', (
+    WidgetTester tester,
+  ) async {
+    var now = DateTime(2026, 10, 5, 10);
+    final calendarController = CalendarController(_FakeCalendarService());
+    final notificationSync = _FakeNotificationSync(calendarController);
+    final eventDetailsService = _FakeEventDetailsService();
+    final authController = AuthController(
+      _FakeCredentialStore(),
+      _FakeAuthService(),
+      AccessTokenStore(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: const Locale('sv'),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: AppShell(
+          authController: authController,
+          calendarController: calendarController,
+          calendarDisplayController: _createCalendarDisplayController(),
+          eventDetailsService: eventDetailsService,
+          eventRegistrationService: _FakeEventRegistrationService(),
+          navigationController: AppNavigationController(),
+          notificationSync: notificationSync,
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
+          now: () => now,
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kårhusrep'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EventDetailsScreen), findsOneWidget);
+    expect(eventDetailsService.requestedEventIds, [42]);
+    expect(notificationSync.syncCount, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+
+    now = now.add(const Duration(minutes: 5));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+
+    await tester.pumpAndSettle();
+
+    expect(eventDetailsService.requestedEventIds, [42, 42]);
+    expect(notificationSync.syncCount, 2);
+    expect(find.byType(EventDetailsScreen), findsOneWidget);
   });
 
   testWidgets('reduced motion removes event page transition', (
@@ -544,6 +768,53 @@ class _FakeEventRegistrationService implements EventRegistrationService {
   }
 }
 
+class _StartupCalendarCache implements CalendarCache {
+  _StartupCalendarCache(this.value);
+
+  CachedCalendar? value;
+  bool readCompleted = false;
+
+  @override
+  Future<CachedCalendar?> read() async {
+    readCompleted = true;
+    return value;
+  }
+
+  @override
+  Future<void> write(
+    List<CalendarEvent> events, {
+    required DateTime cachedAt,
+  }) async {
+    value = CachedCalendar(
+      events: List.unmodifiable(events),
+      cachedAt: cachedAt,
+    );
+  }
+
+  @override
+  Future<void> clear() async {
+    value = null;
+  }
+}
+
+class _StartupOrderNotificationSync implements NotificationSync {
+  _StartupOrderNotificationSync(this.cache);
+
+  final _StartupCalendarCache cache;
+
+  int syncCount = 0;
+  bool? cacheWasReadWhenSyncStarted;
+
+  @override
+  Future<void> sync() async {
+    syncCount++;
+    cacheWasReadWhenSyncStarted = cache.readCompleted;
+  }
+
+  @override
+  Future<void> clear() async {}
+}
+
 class _FakeNotificationSync implements NotificationSync {
   _FakeNotificationSync(this._calendarController);
 
@@ -555,7 +826,7 @@ class _FakeNotificationSync implements NotificationSync {
   @override
   Future<void> sync() async {
     syncCount++;
-    await _calendarController.load();
+    await _calendarController.refresh();
   }
 
   @override

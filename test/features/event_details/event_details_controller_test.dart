@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
@@ -7,6 +9,64 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('refresh preserves displayed event while request is pending', () async {
+    final initial = _event();
+    final updated = _event(signupState: 'Direkt');
+    final service = _DeferredEventDetailsService();
+    final controller = EventDetailsController(service);
+
+    final initialLoad = controller.load(42);
+    service.complete(initial);
+    await initialLoad;
+
+    service.reset();
+
+    final refresh = controller.refresh(42);
+
+    expect(controller.status, EventDetailsStatus.loaded);
+    expect(controller.event, same(initial));
+
+    service.complete(updated);
+    await refresh;
+
+    expect(controller.status, EventDetailsStatus.loaded);
+    expect(controller.event, same(updated));
+    expect(controller.event!.signupState, 'Direkt');
+    expect(controller.isShowingCachedData, isFalse);
+  });
+
+  test('failed refresh preserves displayed event', () async {
+    final initial = _event();
+    final service = _MutableEventDetailsService(event: initial);
+    final controller = EventDetailsController(service);
+
+    await controller.load(42);
+
+    service.error = StateError('refresh failed');
+    await controller.refresh(42);
+
+    expect(controller.status, EventDetailsStatus.loaded);
+    expect(controller.event, same(initial));
+    expect(controller.error, isNull);
+  });
+
+  test('successful refresh updates event-details cache', () async {
+    final initial = _event();
+    final updated = _event(signupState: 'Direkt');
+    final cache = _FakeEventDetailsCache();
+    final service = _MutableEventDetailsService(event: initial);
+    final controller = EventDetailsController(service, cache: cache);
+
+    await controller.load(42);
+
+    service.event = updated;
+    await controller.refresh(42);
+
+    expect(cache.value, isNotNull);
+    expect(cache.value!.event, same(updated));
+    expect(controller.event!.signupState, 'Direkt');
+  });
+
   test('load exposes loaded event', () async {
     final event = _event();
     final controller = EventDetailsController(
@@ -102,6 +162,7 @@ EventDetails _event({
   String type = 'Rep',
   String halanTime = '18:00',
   String thereTime = '18:30',
+  String? signupState = 'Hålan',
 }) {
   return EventDetails(
     id: 42,
@@ -116,7 +177,7 @@ EventDetails _event({
     startsTime: '19:00',
     playDuration: '120',
     stand: '',
-    signupState: 'Hålan',
+    signupState: signupState,
     coming: 12,
     notComing: 3,
     disabled: false,
@@ -166,6 +227,39 @@ class _FakeEventDetailsCache implements EventDetailsCache {
   @override
   Future<void> clear() async {
     value = null;
+  }
+}
+
+class _MutableEventDetailsService implements EventDetailsService {
+  _MutableEventDetailsService({required this.event});
+
+  EventDetails event;
+  Object? error;
+
+  @override
+  Future<EventDetails> getEvent(int eventId) async {
+    if (error != null) {
+      throw error!;
+    }
+
+    return event;
+  }
+}
+
+class _DeferredEventDetailsService implements EventDetailsService {
+  Completer<EventDetails> _completer = Completer<EventDetails>();
+
+  void complete(EventDetails event) {
+    _completer.complete(event);
+  }
+
+  void reset() {
+    _completer = Completer<EventDetails>();
+  }
+
+  @override
+  Future<EventDetails> getEvent(int eventId) {
+    return _completer.future;
   }
 }
 

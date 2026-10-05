@@ -53,7 +53,7 @@ class NotificationSyncService implements NotificationSync {
   /// Subsequent synchronization failures are recorded when diagnostics are
   /// available and do not propagate to the calendar UI.
   Future<void> sync() async {
-    await _calendarController.load();
+    await _calendarController.refresh();
 
     if (_calendarController.status != CalendarStatus.loaded) {
       return;

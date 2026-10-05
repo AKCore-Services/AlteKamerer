@@ -273,23 +273,12 @@ class CalendarController extends ChangeNotifier {
       final events = await _calendarService.getCalendar();
 
       _events = events;
+      _error = null;
       _isShowingCachedData = false;
       _cachedAt = null;
       _status = CalendarStatus.loaded;
 
-      final cache = _cache;
-
-      if (cache != null) {
-        try {
-          await cache.write(events, cachedAt: _now().toUtc());
-        } catch (error, stackTrace) {
-          await _diagnostics?.recordError(
-            subsystem: 'Calendar',
-            message: 'Calendar cache update failed',
-            error: diagnosticErrorDetails(error, stackTrace),
-          );
-        }
-      }
+      await _updateCache(events);
     } catch (error, stackTrace) {
       await _diagnostics?.recordError(
         subsystem: 'Calendar',
@@ -297,23 +286,11 @@ class CalendarController extends ChangeNotifier {
         error: diagnosticErrorDetails(error, stackTrace),
       );
 
-      CachedCalendar? cached;
-      final cache = _cache;
-
-      if (cache != null) {
-        try {
-          cached = await cache.read();
-        } catch (cacheError, cacheStackTrace) {
-          await _diagnostics?.recordError(
-            subsystem: 'Calendar',
-            message: 'Calendar cache loading failed',
-            error: diagnosticErrorDetails(cacheError, cacheStackTrace),
-          );
-        }
-      }
+      final cached = await _readCache();
 
       if (cached != null) {
         _events = cached.events;
+        _error = null;
         _isShowingCachedData = true;
         _cachedAt = cached.cachedAt;
         _status = CalendarStatus.loaded;
@@ -327,6 +304,97 @@ class CalendarController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Restores the most recently cached calendar without contacting AKCore.
+  ///
+  /// Returns whether usable cached data was available. A restored calendar is
+  /// explicitly marked as cached until a later backend refresh succeeds.
+  Future<bool> restoreCached() async {
+    final cached = await _readCache();
+
+    if (cached == null) {
+      return false;
+    }
+
+    _events = cached.events;
+    _error = null;
+    _isShowingCachedData = true;
+    _cachedAt = cached.cachedAt;
+    _status = CalendarStatus.loaded;
+    notifyListeners();
+
+    return true;
+  }
+
+  /// Refreshes calendar data without hiding an already displayed calendar.
+  ///
+  /// When no calendar is currently loaded, this uses the normal [load]
+  /// behavior. Otherwise the current data remains visible while AKCore is
+  /// queried. A failed refresh preserves that data instead of replacing the
+  /// screen with a loading or error state.
+  Future<void> refresh() async {
+    if (_status != CalendarStatus.loaded) {
+      await load();
+      return;
+    }
+
+    try {
+      final events = await _calendarService.getCalendar();
+
+      _events = events;
+      _error = null;
+      _isShowingCachedData = false;
+      _cachedAt = null;
+      _status = CalendarStatus.loaded;
+
+      await _updateCache(events);
+      notifyListeners();
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Calendar',
+        message: 'Calendar background refresh failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+    }
+  }
+
+  Future<CachedCalendar?> _readCache() async {
+    final cache = _cache;
+
+    if (cache == null) {
+      return null;
+    }
+
+    try {
+      return await cache.read();
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Calendar',
+        message: 'Calendar cache loading failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+
+      return null;
+    }
+  }
+
+  Future<void> _updateCache(List<CalendarEvent> events) async {
+    final cache = _cache;
+
+    if (cache == null) {
+      return;
+    }
+
+    try {
+      await cache.write(events, cachedAt: _now().toUtc());
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Calendar',
+        message: 'Calendar cache update failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+    }
   }
 
   DateTime get _today {

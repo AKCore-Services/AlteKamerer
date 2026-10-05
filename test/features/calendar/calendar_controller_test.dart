@@ -33,7 +33,105 @@ class FakeCalendarCache implements CalendarCache {
   }
 }
 
+class _TrackingCalendarService implements CalendarService {
+  int callCount = 0;
+
+  @override
+  Future<List<CalendarEvent>> getCalendar() async {
+    callCount++;
+    return const [];
+  }
+}
+
 void main() {
+  test(
+    'restoreCached exposes cached calendar without contacting AKCore',
+    () async {
+      final cachedEvent = _event(id: 42, name: 'Cached event');
+      final cachedAt = DateTime.utc(2026, 10, 5, 8);
+      final cache = FakeCalendarCache(
+        value: CachedCalendar(events: [cachedEvent], cachedAt: cachedAt),
+      );
+      final service = _TrackingCalendarService();
+      final controller = CalendarController(service, cache: cache);
+
+      final restored = await controller.restoreCached();
+
+      expect(restored, isTrue);
+      expect(service.callCount, 0);
+      expect(controller.status, CalendarStatus.loaded);
+      expect(controller.events, [cachedEvent]);
+      expect(controller.isShowingCachedData, isTrue);
+      expect(controller.cachedAt, cachedAt);
+    },
+  );
+
+  test('restoreCached leaves initial state unchanged without cache', () async {
+    final service = _TrackingCalendarService();
+    final controller = CalendarController(service, cache: FakeCalendarCache());
+
+    final restored = await controller.restoreCached();
+
+    expect(restored, isFalse);
+    expect(service.callCount, 0);
+    expect(controller.status, CalendarStatus.loading);
+    expect(controller.events, isEmpty);
+  });
+
+  test(
+    'refresh preserves cached calendar while backend request is pending',
+    () async {
+      final cachedEvent = _event(id: 42, name: 'Cached event');
+      final freshEvent = _event(id: 84, name: 'Fresh event');
+      final cache = FakeCalendarCache(
+        value: CachedCalendar(
+          events: [cachedEvent],
+          cachedAt: DateTime.utc(2026, 10, 5, 8),
+        ),
+      );
+      final service = DeferredCalendarService();
+      final controller = CalendarController(service, cache: cache);
+
+      await controller.restoreCached();
+
+      final refresh = controller.refresh();
+
+      expect(controller.status, CalendarStatus.loaded);
+      expect(controller.events, [cachedEvent]);
+      expect(controller.isShowingCachedData, isTrue);
+
+      service.complete([freshEvent]);
+      await refresh;
+
+      expect(controller.status, CalendarStatus.loaded);
+      expect(controller.events, [freshEvent]);
+      expect(controller.isShowingCachedData, isFalse);
+      expect(controller.cachedAt, isNull);
+      expect(cache.value!.events, [freshEvent]);
+    },
+  );
+
+  test('failed refresh preserves currently displayed calendar', () async {
+    final cachedEvent = _event(id: 42, name: 'Cached event');
+    final cache = FakeCalendarCache(
+      value: CachedCalendar(
+        events: [cachedEvent],
+        cachedAt: DateTime.utc(2026, 10, 5, 8),
+      ),
+    );
+    final service = FakeCalendarService(events: const [])
+      ..error = StateError('refresh failed');
+    final controller = CalendarController(service, cache: cache);
+
+    await controller.restoreCached();
+    await controller.refresh();
+
+    expect(controller.status, CalendarStatus.loaded);
+    expect(controller.events, [cachedEvent]);
+    expect(controller.error, isNull);
+    expect(controller.isShowingCachedData, isTrue);
+  });
+
   test('load exposes successful calendar result', () async {
     final event = _event();
     final controller = CalendarController(FakeCalendarService(events: [event]));

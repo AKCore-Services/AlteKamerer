@@ -73,21 +73,12 @@ class EventDetailsController extends ChangeNotifier {
       final event = await _eventDetailsService.getEvent(eventId);
 
       _event = event;
+      _error = null;
+      _isShowingCachedData = false;
+      _cachedAt = null;
       _status = EventDetailsStatus.loaded;
 
-      final cache = _cache;
-
-      if (cache != null) {
-        try {
-          await cache.write(event, cachedAt: _now().toUtc());
-        } catch (error, stackTrace) {
-          await _diagnostics?.recordError(
-            subsystem: 'Event details',
-            message: 'Event details cache update failed',
-            error: diagnosticErrorDetails(error, stackTrace),
-          );
-        }
-      }
+      await _updateCache(event);
     } catch (error, stackTrace) {
       await _diagnostics?.recordError(
         subsystem: 'Event details',
@@ -95,23 +86,11 @@ class EventDetailsController extends ChangeNotifier {
         error: diagnosticErrorDetails(error, stackTrace),
       );
 
-      CachedEventDetails? cached;
-      final cache = _cache;
-
-      if (cache != null) {
-        try {
-          cached = await cache.read(eventId);
-        } catch (cacheError, cacheStackTrace) {
-          await _diagnostics?.recordError(
-            subsystem: 'Event details',
-            message: 'Event details cache loading failed',
-            error: diagnosticErrorDetails(cacheError, cacheStackTrace),
-          );
-        }
-      }
+      final cached = await _readCache(eventId);
 
       if (cached != null) {
         _event = cached.event;
+        _error = null;
         _isShowingCachedData = true;
         _cachedAt = cached.cachedAt;
         _status = EventDetailsStatus.loaded;
@@ -123,5 +102,74 @@ class EventDetailsController extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  /// Refreshes an already displayed event without hiding its current details.
+  ///
+  /// If this controller has not successfully loaded the requested event yet,
+  /// normal [load] behavior is used. A failed background refresh preserves the
+  /// currently displayed event and registration state.
+  Future<void> refresh(int eventId) async {
+    if (_status != EventDetailsStatus.loaded || _event?.id != eventId) {
+      await load(eventId);
+      return;
+    }
+
+    try {
+      final event = await _eventDetailsService.getEvent(eventId);
+
+      _event = event;
+      _error = null;
+      _isShowingCachedData = false;
+      _cachedAt = null;
+      _status = EventDetailsStatus.loaded;
+
+      await _updateCache(event);
+      notifyListeners();
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Event details',
+        message: 'Event details background refresh failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+    }
+  }
+
+  Future<CachedEventDetails?> _readCache(int eventId) async {
+    final cache = _cache;
+
+    if (cache == null) {
+      return null;
+    }
+
+    try {
+      return await cache.read(eventId);
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Event details',
+        message: 'Event details cache loading failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+
+      return null;
+    }
+  }
+
+  Future<void> _updateCache(EventDetails event) async {
+    final cache = _cache;
+
+    if (cache == null) {
+      return;
+    }
+
+    try {
+      await cache.write(event, cachedAt: _now().toUtc());
+    } catch (error, stackTrace) {
+      await _diagnostics?.recordError(
+        subsystem: 'Event details',
+        message: 'Event details cache update failed',
+        error: diagnosticErrorDetails(error, stackTrace),
+      );
+    }
   }
 }

@@ -11,6 +11,8 @@
 //
 // -----------------------------------------------------------------------------
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/diagnostics/diagnostics_service.dart';
@@ -57,6 +59,7 @@ class AppShell extends StatefulWidget {
     required this.settingsBackupFileService,
     this.diagnosticsService,
     this.apiServer,
+    this.now,
   });
 
   final AuthController authController;
@@ -73,6 +76,7 @@ class AppShell extends StatefulWidget {
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
   final String? apiServer;
+  final DateTime Function()? now;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -80,16 +84,34 @@ class AppShell extends StatefulWidget {
 
 enum _ShellPage { calendar, settings }
 
-class _AppShellState extends State<AppShell> {
+class _ActiveEventDetailsRoute {
+  const _ActiveEventDetailsRoute({
+    required this.eventId,
+    required this.controller,
+  });
+
+  final int eventId;
+  final EventDetailsController controller;
+}
+
+class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
+  static const _resumeRefreshInterval = Duration(minutes: 5);
+
   _ShellPage _currentPage = _ShellPage.calendar;
+  final List<_ActiveEventDetailsRoute> _activeEventDetailsRoutes = [];
+  DateTime? _inactiveAt;
+  bool _initializationComplete = false;
+
+  DateTime get _now => widget.now?.call() ?? DateTime.now();
 
   @override
   void initState() {
     super.initState();
 
+    WidgetsBinding.instance.addObserver(this);
     widget.navigationController.addListener(_handleAppNavigation);
 
-    widget.notificationSync.sync();
+    unawaited(_initializeCalendar());
 
     // Navigation may have been requested before the authenticated
     // navigator was available. Process it after the first frame.
@@ -98,8 +120,53 @@ class _AppShellState extends State<AppShell> {
     });
   }
 
+  Future<void> _initializeCalendar() async {
+    try {
+      await widget.calendarController.restoreCached();
+
+      if (!mounted) {
+        return;
+      }
+
+      await widget.notificationSync.sync();
+    } finally {
+      _initializationComplete = true;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final now = _now;
+
+    if (state == AppLifecycleState.resumed) {
+      final inactiveAt = _inactiveAt;
+      _inactiveAt = null;
+
+      if (!_initializationComplete || inactiveAt == null) {
+        return;
+      }
+
+      if (now.difference(inactiveAt) >= _resumeRefreshInterval) {
+        unawaited(widget.notificationSync.sync());
+
+        if (_activeEventDetailsRoutes.isNotEmpty) {
+          final activeEvent = _activeEventDetailsRoutes.last;
+
+          if (activeEvent.controller.status != EventDetailsStatus.loading) {
+            unawaited(activeEvent.controller.refresh(activeEvent.eventId));
+          }
+        }
+      }
+
+      return;
+    }
+
+    _inactiveAt ??= now;
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     widget.navigationController.removeListener(_handleAppNavigation);
 
     super.dispose();
@@ -284,21 +351,31 @@ class _AppShellState extends State<AppShell> {
       cache: widget.eventDetailsCache,
       diagnostics: widget.diagnosticsService,
     );
-
-    Navigator.of(context).push(
-      _AccessibleMaterialPageRoute<void>(
-        disableAnimations: MediaQuery.disableAnimationsOf(context),
-        builder: (context) {
-          return EventDetailsScreen(
-            eventId: eventId,
-            controller: controller,
-            onRegistrationPressed: (details) {
-              _openRegistration(details, controller);
-            },
-          );
-        },
-      ),
+    final activeRoute = _ActiveEventDetailsRoute(
+      eventId: eventId,
+      controller: controller,
     );
+
+    _activeEventDetailsRoutes.add(activeRoute);
+
+    Navigator.of(context)
+        .push(
+          _AccessibleMaterialPageRoute<void>(
+            disableAnimations: MediaQuery.disableAnimationsOf(context),
+            builder: (context) {
+              return EventDetailsScreen(
+                eventId: eventId,
+                controller: controller,
+                onRegistrationPressed: (details) {
+                  _openRegistration(details, controller);
+                },
+              );
+            },
+          ),
+        )
+        .whenComplete(() {
+          _activeEventDetailsRoutes.remove(activeRoute);
+        });
   }
 
   Future<void> _openRegistration(
@@ -321,7 +398,7 @@ class _AppShellState extends State<AppShell> {
     );
 
     if (saved == true) {
-      await eventDetailsController.load(event.id);
+      await eventDetailsController.refresh(event.id);
       await widget.notificationSync.sync();
 
       if (!mounted) {
