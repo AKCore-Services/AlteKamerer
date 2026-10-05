@@ -195,6 +195,17 @@
   "akCoreConnectionFailed": "Kunde inte ansluta till AKCore. Försök igen.",
   "calendarLoadFailed": "Kunde inte hämta kalendern",
   "calendarLoadFailedMessage": "AlteKamerer kunde inte hämta kommande aktiviteter från AKCore.",
+  "calendarCachedTitle": "(Använder cache från {date} - {time})",
+  "@calendarCachedTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "calendarDate": "Datum",
   "calendarTime": "Tid",
   "calendarType": "Typ",
@@ -238,6 +249,17 @@
   "activity": "Aktivitet",
   "eventLoadFailed": "Kunde inte hämta aktiviteten",
   "eventLoadFailedMessage": "AlteKamerer kunde inte hämta aktiviteten från AKCore.",
+  "eventCachedTitle": "(Använder cache från {date} - {time})",
+  "@eventCachedTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "eventDisplayFailed": "Kunde inte visa aktiviteten",
   "eventInfoMissing": "Aktivitetsinformationen saknas.",
   "eventOnSite": "På plats",
@@ -251,6 +273,7 @@
   "registrationCounts": "{coming} kommer · {notComing} kommer inte",
   "registrationClosed": "Anmälan är stängd för den här aktiviteten.",
   "registrationUnavailable": "Det går inte längre att ändra anmälan för den här aktiviteten.",
+  "registrationRequiresOnline": "Anslut till AKCore för att ändra anmälan.",
   "changeRegistration": "Ändra anmälan",
   "signUp": "Anmäl dig",
   "hasCar": "Har bil",

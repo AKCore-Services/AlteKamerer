@@ -18,6 +18,7 @@ import '../../core/theme/ak_status_view.dart';
 import '../../l10n/app_localizations.dart';
 import '../calendar/calendar_controller.dart';
 import '../event_details/event_details_api.dart';
+import '../event_details/event_details_cache.dart';
 import '../event_registration/event_registration_api.dart';
 import '../notifications/notification_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
@@ -33,7 +34,8 @@ import 'login_screen.dart';
 /// Displays the appropriate application content for the current session.
 ///
 /// Shows the login screen, authenticated application, or session recovery
-/// state, and clears scheduled notifications when authentication ends.
+/// state, and clears session-scoped cached data and notifications when
+/// authentication ends.
 class AuthGate extends StatefulWidget {
   const AuthGate({
     super.key,
@@ -41,6 +43,7 @@ class AuthGate extends StatefulWidget {
     required this.calendarController,
     required this.eventDetailsService,
     required this.eventRegistrationService,
+    this.eventDetailsCache,
     required this.notificationNavigationController,
     required this.notificationSync,
     required this.reminderPreferences,
@@ -56,6 +59,7 @@ class AuthGate extends StatefulWidget {
   final CalendarController calendarController;
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
+  final EventDetailsCache? eventDetailsCache;
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
@@ -81,7 +85,7 @@ class _AuthGateState extends State<AuthGate> {
     widget.authController.addListener(_handleAuthChanged);
 
     if (widget.authController.status == AuthStatus.unauthenticated) {
-      _clearNotifications();
+      _clearSessionData();
     }
   }
 
@@ -96,13 +100,25 @@ class _AuthGateState extends State<AuthGate> {
 
     if (status == AuthStatus.unauthenticated &&
         _previousStatus != AuthStatus.unauthenticated) {
-      _clearNotifications();
+      _clearSessionData();
     }
 
     _previousStatus = status;
   }
 
-  Future<void> _clearNotifications() async {
+  Future<void> _clearSessionData() async {
+    try {
+      await widget.calendarController.clearSessionData();
+    } catch (_) {
+      // Authentication state must not depend on calendar cleanup.
+    }
+
+    try {
+      await widget.eventDetailsCache?.clear();
+    } catch (_) {
+      // Authentication state must not depend on event-details cleanup.
+    }
+
     try {
       await widget.notificationSync.clear();
     } catch (_) {
@@ -129,6 +145,7 @@ class _AuthGateState extends State<AuthGate> {
             calendarController: widget.calendarController,
             eventDetailsService: widget.eventDetailsService,
             eventRegistrationService: widget.eventRegistrationService,
+            eventDetailsCache: widget.eventDetailsCache,
             notificationNavigationController:
                 widget.notificationNavigationController,
             notificationSync: widget.notificationSync,

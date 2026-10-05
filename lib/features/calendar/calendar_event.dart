@@ -52,6 +52,28 @@ class CalendarEvent {
     );
   }
 
+  /// Serializes this event for secure offline caching.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'name': name,
+      'place': place,
+      'description': description,
+      'internalDescription': internalDescription,
+      'date': date,
+      'halanTime': halanTime,
+      'thereTime': thereTime,
+      'startsTime': startsTime,
+      'playDuration': playDuration,
+      'stand': stand,
+      'signupState': signupState,
+      'coming': coming,
+      'notComing': notComing,
+      'disabled': disabled,
+    };
+  }
+
   final int id;
   final String type;
   final String name;

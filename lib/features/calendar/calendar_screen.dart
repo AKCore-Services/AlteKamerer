@@ -118,14 +118,13 @@ class _CalendarToolbar extends StatelessWidget {
 
     return Row(
       children: [
-        OutlinedButton.icon(
+        IconButton.outlined(
           key: const ValueKey('calendar-filters-button'),
-          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+          tooltip: l10n.calendarFilter,
           onPressed: () => _showFilters(context),
           icon: Icon(
             hasActiveFilters ? Icons.filter_alt : Icons.filter_alt_outlined,
           ),
-          label: Text(l10n.calendarFilter),
         ),
         const SizedBox(width: 8),
         Expanded(child: _CalendarViewSelector(controller: controller)),

@@ -25,8 +25,10 @@ import 'core/storage/secure_credential_store.dart';
 import 'features/auth/auth_api.dart';
 import 'features/auth/auth_controller.dart';
 import 'features/calendar/calendar_api.dart';
+import 'features/calendar/calendar_cache.dart';
 import 'features/calendar/calendar_controller.dart';
 import 'features/event_details/event_details_api.dart';
+import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
 import 'features/me/me_api.dart';
 import 'features/notifications/local_notification_service.dart';
@@ -116,12 +118,15 @@ Future<void> main() async {
   final apiClient = ApiClient(config, accessTokenStore);
   final authApi = AuthApi(apiClient);
   final calendarApi = CalendarApi(apiClient);
+  final calendarCache = SecureCalendarCache();
   final calendarController = CalendarController(
     calendarApi,
+    cache: calendarCache,
     diagnostics: diagnosticsService,
   );
   final meApi = MeApi(apiClient);
   final eventDetailsApi = EventDetailsApi(apiClient);
+  final eventDetailsCache = SecureEventDetailsCache();
   final eventRegistrationApi = EventRegistrationApi(apiClient);
   final notificationNavigationController = NotificationNavigationController();
 
@@ -161,6 +166,7 @@ Future<void> main() async {
       calendarController: calendarController,
       eventDetailsService: eventDetailsApi,
       eventRegistrationService: eventRegistrationApi,
+      eventDetailsCache: eventDetailsCache,
       notificationNavigationController: notificationNavigationController,
       notificationSync: notificationSync,
       reminderPreferences: reminderPreferences,

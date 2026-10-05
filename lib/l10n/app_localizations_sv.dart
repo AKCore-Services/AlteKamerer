@@ -617,6 +617,11 @@ class AppLocalizationsSv extends AppLocalizations {
       'AlteKamerer kunde inte hämta kommande aktiviteter från AKCore.';
 
   @override
+  String calendarCachedTitle(String date, String time) {
+    return '(Använder cache från $date - $time)';
+  }
+
+  @override
   String get calendarDate => 'Datum';
 
   @override
@@ -747,6 +752,11 @@ class AppLocalizationsSv extends AppLocalizations {
       'AlteKamerer kunde inte hämta aktiviteten från AKCore.';
 
   @override
+  String eventCachedTitle(String date, String time) {
+    return '(Använder cache från $date - $time)';
+  }
+
+  @override
   String get eventDisplayFailed => 'Kunde inte visa aktiviteten';
 
   @override
@@ -789,6 +799,10 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get registrationUnavailable =>
       'Det går inte längre att ändra anmälan för den här aktiviteten.';
+
+  @override
+  String get registrationRequiresOnline =>
+      'Anslut till AKCore för att ändra anmälan.';
 
   @override
   String get changeRegistration => 'Ändra anmälan';

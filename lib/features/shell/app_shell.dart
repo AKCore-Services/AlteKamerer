@@ -19,6 +19,7 @@ import '../calendar/calendar_controller.dart';
 import '../calendar/calendar_event.dart';
 import '../calendar/calendar_screen.dart';
 import '../event_details/event_details_api.dart';
+import '../event_details/event_details_cache.dart';
 import '../event_details/event_details_controller.dart';
 import '../event_details/event_details_screen.dart';
 import '../event_details/event_details.dart';
@@ -46,6 +47,7 @@ class AppShell extends StatefulWidget {
     required this.calendarController,
     required this.eventDetailsService,
     required this.eventRegistrationService,
+    this.eventDetailsCache,
     required this.notificationNavigationController,
     required this.notificationSync,
     required this.reminderPreferences,
@@ -61,6 +63,7 @@ class AppShell extends StatefulWidget {
   final CalendarController calendarController;
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
+  final EventDetailsCache? eventDetailsCache;
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
@@ -121,7 +124,16 @@ class _AppShellState extends State<AppShell> {
         });
       },
       child: Scaffold(
-        appBar: AppBar(title: Text(_pageTitle(l10n))),
+        appBar: AppBar(
+          title: _currentPage == _ShellPage.calendar
+              ? ListenableBuilder(
+                  listenable: widget.calendarController,
+                  builder: (context, child) {
+                    return _calendarTitle(context, l10n);
+                  },
+                )
+              : Text(_pageTitle(l10n)),
+        ),
         drawer: Drawer(
           child: SafeArea(
             child: Column(
@@ -169,6 +181,36 @@ class _AppShellState extends State<AppShell> {
         ),
         body: SafeArea(child: _pageBody),
       ),
+    );
+  }
+
+  Widget _calendarTitle(BuildContext context, AppLocalizations l10n) {
+    final controller = widget.calendarController;
+    final cachedAt = controller.cachedAt;
+
+    if (!controller.isShowingCachedData || cachedAt == null) {
+      return Text(l10n.calendar);
+    }
+
+    final localCachedAt = cachedAt.toLocal();
+    final material = MaterialLocalizations.of(context);
+    final date = material.formatShortDate(localCachedAt);
+    final time = material.formatTimeOfDay(
+      TimeOfDay.fromDateTime(localCachedAt),
+    );
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: l10n.calendar),
+          TextSpan(
+            text: '  ${l10n.calendarCachedTitle(date, time)}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -235,6 +277,7 @@ class _AppShellState extends State<AppShell> {
   void _openEventById(int eventId) {
     final controller = EventDetailsController(
       widget.eventDetailsService,
+      cache: widget.eventDetailsCache,
       diagnostics: widget.diagnosticsService,
     );
 

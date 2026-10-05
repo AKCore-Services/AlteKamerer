@@ -2,10 +2,36 @@ import 'dart:async';
 
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
+import 'package:altekamerer/features/calendar/calendar_cache.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+class FakeCalendarCache implements CalendarCache {
+  FakeCalendarCache({this.value});
+
+  CachedCalendar? value;
+
+  @override
+  Future<CachedCalendar?> read() async => value;
+
+  @override
+  Future<void> write(
+    List<CalendarEvent> events, {
+    required DateTime cachedAt,
+  }) async {
+    value = CachedCalendar(
+      events: List.unmodifiable(events),
+      cachedAt: cachedAt,
+    );
+  }
+
+  @override
+  Future<void> clear() async {
+    value = null;
+  }
+}
 
 void main() {
   test('load exposes successful calendar result', () async {
@@ -29,6 +55,46 @@ void main() {
     expect(controller.status, CalendarStatus.loaded);
     expect(controller.events, isEmpty);
     expect(controller.error, isNull);
+  });
+
+  test('successful load updates offline cache with retrieval time', () async {
+    final event = _event();
+    final cache = FakeCalendarCache();
+    final now = DateTime(2026, 10, 5, 8, 30);
+
+    final controller = CalendarController(
+      FakeCalendarService(events: [event]),
+      cache: cache,
+      now: () => now,
+    );
+
+    await controller.load();
+
+    expect(cache.value, isNotNull);
+    expect(cache.value!.events, [event]);
+    expect(cache.value!.cachedAt, now.toUtc());
+    expect(controller.isShowingCachedData, isFalse);
+    expect(controller.cachedAt, isNull);
+  });
+
+  test('failed load falls back to cached calendar', () async {
+    final cachedEvent = _event(id: 42, name: 'Cached event');
+    final cachedAt = DateTime.utc(2026, 10, 4, 18);
+    final cache = FakeCalendarCache(
+      value: CachedCalendar(events: [cachedEvent], cachedAt: cachedAt),
+    );
+    final service = FakeCalendarService(events: const [])
+      ..error = StateError('calendar failed');
+
+    final controller = CalendarController(service, cache: cache);
+
+    await controller.load();
+
+    expect(controller.status, CalendarStatus.loaded);
+    expect(controller.events, [cachedEvent]);
+    expect(controller.error, isNull);
+    expect(controller.isShowingCachedData, isTrue);
+    expect(controller.cachedAt, cachedAt);
   });
 
   test('load exposes error and clears stale events', () async {
@@ -55,6 +121,29 @@ void main() {
     expect(entries.single.subsystem, 'Calendar');
     expect(entries.single.message, 'Calendar loading failed');
     expect(entries.single.details, contains('StateError'));
+  });
+
+  test('clearSessionData removes loaded and cached member data', () async {
+    final event = _event();
+    final cache = FakeCalendarCache();
+    final controller = CalendarController(
+      FakeCalendarService(events: [event]),
+      cache: cache,
+    );
+
+    await controller.load();
+
+    expect(controller.events, [event]);
+    expect(cache.value, isNotNull);
+
+    await controller.clearSessionData();
+
+    expect(controller.status, CalendarStatus.loading);
+    expect(controller.events, isEmpty);
+    expect(controller.error, isNull);
+    expect(controller.isShowingCachedData, isFalse);
+    expect(controller.cachedAt, isNull);
+    expect(cache.value, isNull);
   });
 
   test('load returns to loading before retry completes', () async {

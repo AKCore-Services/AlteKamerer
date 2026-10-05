@@ -1268,6 +1268,12 @@ abstract class AppLocalizations {
   /// **'AlteKamerer could not load upcoming activities from AKCore.'**
   String get calendarLoadFailedMessage;
 
+  /// No description provided for @calendarCachedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'(Using cache from {date} - {time})'**
+  String calendarCachedTitle(String date, String time);
+
   /// No description provided for @calendarDate.
   ///
   /// In en, this message translates to:
@@ -1526,6 +1532,12 @@ abstract class AppLocalizations {
   /// **'AlteKamerer could not load the activity from AKCore.'**
   String get eventLoadFailedMessage;
 
+  /// No description provided for @eventCachedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'(Using cache from {date} - {time})'**
+  String eventCachedTitle(String date, String time);
+
   /// No description provided for @eventDisplayFailed.
   ///
   /// In en, this message translates to:
@@ -1603,6 +1615,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registration can no longer be changed for this activity.'**
   String get registrationUnavailable;
+
+  /// No description provided for @registrationRequiresOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to AKCore to change the registration.'**
+  String get registrationRequiresOnline;
 
   /// No description provided for @changeRegistration.
   ///

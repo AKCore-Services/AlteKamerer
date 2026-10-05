@@ -13,6 +13,7 @@ import '../../core/diagnostics/diagnostic_error_details.dart';
 import '../../core/diagnostics/diagnostics_service.dart';
 
 import 'calendar_api.dart';
+import 'calendar_cache.dart';
 import 'calendar_event.dart';
 
 enum CalendarStatus { loading, loaded, error }
@@ -30,17 +31,21 @@ enum CalendarRegistrationFilter { all, coming, notRegistered, notComing }
 class CalendarController extends ChangeNotifier {
   CalendarController(
     this._calendarService, {
+    this._cache,
     DateTime Function()? now,
     this._diagnostics,
   }) : _now = now ?? DateTime.now;
 
   final CalendarService _calendarService;
+  final CalendarCache? _cache;
   final DateTime Function() _now;
   final DiagnosticsService? _diagnostics;
 
   CalendarStatus _status = CalendarStatus.loading;
   List<CalendarEvent> _events = const [];
   Object? _error;
+  bool _isShowingCachedData = false;
+  DateTime? _cachedAt;
 
   CalendarView _view = CalendarView.upcoming;
 
@@ -66,6 +71,14 @@ class CalendarController extends ChangeNotifier {
   List<CalendarEvent> get events => _events;
 
   Object? get error => _error;
+
+  /// Whether the currently displayed calendar came from offline cache.
+  bool get isShowingCachedData => _isShowingCachedData;
+
+  /// When the displayed cached calendar was last retrieved from AKCore.
+  ///
+  /// Null while displaying fresh backend data.
+  DateTime? get cachedAt => _cachedAt;
 
   CalendarView get view => _view;
 
@@ -231,27 +244,86 @@ class CalendarController extends ChangeNotifier {
     setFocusedDate(_today);
   }
 
+  /// Clears calendar data associated with the authenticated session.
+  ///
+  /// Removes both the secure offline cache and any currently loaded member
+  /// calendar so data cannot carry across authenticated sessions.
+  Future<void> clearSessionData() async {
+    _events = const [];
+    _error = null;
+    _isShowingCachedData = false;
+    _cachedAt = null;
+    _status = CalendarStatus.loading;
+    notifyListeners();
+
+    await _cache?.clear();
+  }
+
   /// Reloads calendar events from the backend.
   ///
-  /// A failed request clears the previous event collection, exposes the
-  /// error state, and records a diagnostic when diagnostics are configured.
+  /// Successful responses replace the secure offline cache. If the backend
+  /// request fails, a previously cached calendar is exposed as stale data.
+  /// Without usable cached data, the controller enters the error state.
   Future<void> load() async {
     _status = CalendarStatus.loading;
     _error = null;
     notifyListeners();
 
     try {
-      _events = await _calendarService.getCalendar();
+      final events = await _calendarService.getCalendar();
+
+      _events = events;
+      _isShowingCachedData = false;
+      _cachedAt = null;
       _status = CalendarStatus.loaded;
+
+      final cache = _cache;
+
+      if (cache != null) {
+        try {
+          await cache.write(events, cachedAt: _now().toUtc());
+        } catch (error, stackTrace) {
+          await _diagnostics?.recordError(
+            subsystem: 'Calendar',
+            message: 'Calendar cache update failed',
+            error: diagnosticErrorDetails(error, stackTrace),
+          );
+        }
+      }
     } catch (error, stackTrace) {
-      _events = const [];
-      _error = error;
-      _status = CalendarStatus.error;
       await _diagnostics?.recordError(
         subsystem: 'Calendar',
         message: 'Calendar loading failed',
         error: diagnosticErrorDetails(error, stackTrace),
       );
+
+      CachedCalendar? cached;
+      final cache = _cache;
+
+      if (cache != null) {
+        try {
+          cached = await cache.read();
+        } catch (cacheError, cacheStackTrace) {
+          await _diagnostics?.recordError(
+            subsystem: 'Calendar',
+            message: 'Calendar cache loading failed',
+            error: diagnosticErrorDetails(cacheError, cacheStackTrace),
+          );
+        }
+      }
+
+      if (cached != null) {
+        _events = cached.events;
+        _isShowingCachedData = true;
+        _cachedAt = cached.cachedAt;
+        _status = CalendarStatus.loaded;
+      } else {
+        _events = const [];
+        _error = error;
+        _isShowingCachedData = false;
+        _cachedAt = null;
+        _status = CalendarStatus.error;
+      }
     }
 
     notifyListeners();

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
+import 'package:altekamerer/features/event_details/event_details_cache.dart';
 import 'package:altekamerer/features/event_details/event_details_controller.dart';
 import 'package:altekamerer/features/event_details/event_details_screen.dart';
 import 'package:altekamerer/l10n/app_localizations.dart';
@@ -77,6 +78,53 @@ void main() {
     expect(find.text('Din status: Hålan'), findsOneWidget);
     expect(find.text('12 kommer · 3 kommer inte'), findsOneWidget);
   });
+
+  testWidgets(
+    'cached event identifies cache age and disables registration changes',
+    (WidgetTester tester) async {
+      final cachedAt = DateTime.utc(2026, 10, 5, 6, 30);
+      final controller = EventDetailsController(
+        FakeEventDetailsService(error: StateError('event failed')),
+        cache: _FakeEventDetailsCache(
+          value: CachedEventDetails(
+            event: _event(signupState: 'Direkt'),
+            cachedAt: cachedAt,
+          ),
+        ),
+      );
+
+      await tester.pumpWidget(
+        _TestApp(
+          controller: controller,
+          onRegistrationPressed: (_) {
+            fail('Cached registration action must remain disabled.');
+          },
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(controller.isShowingCachedData, isTrue);
+      expect(
+        find.textContaining('Använder cache från', findRichText: true),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(find.text('Ändra anmälan'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Anslut till AKCore för att ändra anmälan.'),
+        findsOneWidget,
+      );
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Ändra anmälan'),
+      );
+
+      expect(button.onPressed, isNull);
+    },
+  );
 
   testWidgets('large text reflows event detail rows', (
     WidgetTester tester,
@@ -282,6 +330,33 @@ EventDetails _event({
     ),
     attendees: const [],
   );
+}
+
+class _FakeEventDetailsCache implements EventDetailsCache {
+  _FakeEventDetailsCache({this.value});
+
+  CachedEventDetails? value;
+
+  @override
+  Future<CachedEventDetails?> read(int eventId) async {
+    final value = this.value;
+
+    if (value == null || value.event.id != eventId) {
+      return null;
+    }
+
+    return value;
+  }
+
+  @override
+  Future<void> write(EventDetails event, {required DateTime cachedAt}) async {
+    value = CachedEventDetails(event: event, cachedAt: cachedAt);
+  }
+
+  @override
+  Future<void> clear() async {
+    value = null;
+  }
 }
 
 class FakeEventDetailsService implements EventDetailsService {

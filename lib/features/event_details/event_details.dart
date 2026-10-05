@@ -75,6 +75,31 @@ class EventDetails {
     );
   }
 
+  /// Serializes these event details for secure offline caching.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'name': name,
+      'place': place,
+      'description': description,
+      'internalDescription': internalDescription,
+      'date': date,
+      'halanTime': halanTime,
+      'thereTime': thereTime,
+      'startsTime': startsTime,
+      'playDuration': playDuration,
+      'stand': stand,
+      'signupState': signupState,
+      'coming': coming,
+      'notComing': notComing,
+      'disabled': disabled,
+      'registrationAvailable': registrationAvailable,
+      'registration': registration.toJson(),
+      'attendees': attendees.map((attendee) => attendee.toJson()).toList(),
+    };
+  }
+
   final int id;
   final String type;
   final String name;
@@ -146,6 +171,17 @@ class EventRegistrationSelection {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'where': where,
+      'car': car,
+      'instrument': instrument,
+      'comment': comment,
+      'selectedInstrument': selectedInstrument,
+      'availableInstruments': availableInstruments,
+    };
+  }
+
   final String? where;
   final bool car;
   final bool instrument;
@@ -174,6 +210,17 @@ class EventAttendee {
       instrumentName: json['instrumentName'] as String?,
       comment: json['comment'] as String? ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'personName': personName,
+      'where': where,
+      'car': car,
+      'instrument': instrument,
+      'instrumentName': instrumentName,
+      'comment': comment,
+    };
   }
 
   final String personName;
