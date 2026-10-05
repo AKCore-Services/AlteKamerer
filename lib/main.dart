@@ -14,6 +14,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
 import 'app.dart';
@@ -32,7 +33,8 @@ import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
 import 'features/me/me_api.dart';
 import 'features/notifications/local_notification_service.dart';
-import 'features/notifications/notification_navigation_controller.dart';
+import 'features/navigation/akcore_link_parser.dart';
+import 'features/navigation/app_navigation_controller.dart';
 import 'features/notifications/notification_planner.dart';
 import 'features/notifications/notification_sync_service.dart';
 import 'features/settings/calendar_display_controller.dart';
@@ -50,6 +52,12 @@ import 'package:timezone/timezone.dart' as tz;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Instantiate AppLinks before other asynchronous startup work so the
+  // platform can retain a cold-start link until the navigation controller
+  // is ready to receive it.
+  final appLinks = AppLinks();
+
   tzdata.initializeTimeZones();
   final stockholm = tz.getLocation('Europe/Stockholm');
 
@@ -128,11 +136,32 @@ Future<void> main() async {
   final eventDetailsApi = EventDetailsApi(apiClient);
   final eventDetailsCache = SecureEventDetailsCache();
   final eventRegistrationApi = EventRegistrationApi(apiClient);
-  final notificationNavigationController = NotificationNavigationController();
+  final navigationController = AppNavigationController();
+
+  // Both the initial cold-start link and links received while the app is
+  // already running enter the same authenticated navigation queue used by
+  // notification taps.
+  appLinks.uriLinkStream.listen(
+    (uri) {
+      final request = AkCoreLinkParser.tryParse(uri);
+
+      if (request != null) {
+        navigationController.openRequest(request);
+      }
+    },
+    onError: (Object error, StackTrace stackTrace) {
+      unawaited(
+        diagnosticsService.recordError(
+          subsystem: 'Navigation',
+          message: 'Failed to receive external app link',
+        ),
+      );
+    },
+  );
 
   final localNotificationService = LocalNotificationService(
     FlutterLocalNotificationsPlugin(),
-    notificationNavigationController,
+    navigationController,
     localeController,
   );
 
@@ -167,7 +196,7 @@ Future<void> main() async {
       eventDetailsService: eventDetailsApi,
       eventRegistrationService: eventRegistrationApi,
       eventDetailsCache: eventDetailsCache,
-      notificationNavigationController: notificationNavigationController,
+      navigationController: navigationController,
       notificationSync: notificationSync,
       reminderPreferences: reminderPreferences,
       localeController: localeController,

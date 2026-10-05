@@ -20,7 +20,7 @@ import '../calendar/calendar_controller.dart';
 import '../event_details/event_details_api.dart';
 import '../event_details/event_details_cache.dart';
 import '../event_registration/event_registration_api.dart';
-import '../notifications/notification_navigation_controller.dart';
+import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
 import '../settings/locale_controller.dart';
@@ -44,7 +44,7 @@ class AuthGate extends StatefulWidget {
     required this.eventDetailsService,
     required this.eventRegistrationService,
     this.eventDetailsCache,
-    required this.notificationNavigationController,
+    required this.navigationController,
     required this.notificationSync,
     required this.reminderPreferences,
     required this.localeController,
@@ -60,7 +60,7 @@ class AuthGate extends StatefulWidget {
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
   final EventDetailsCache? eventDetailsCache;
-  final NotificationNavigationController notificationNavigationController;
+  final AppNavigationController navigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
@@ -146,8 +146,7 @@ class _AuthGateState extends State<AuthGate> {
             eventDetailsService: widget.eventDetailsService,
             eventRegistrationService: widget.eventRegistrationService,
             eventDetailsCache: widget.eventDetailsCache,
-            notificationNavigationController:
-                widget.notificationNavigationController,
+            navigationController: widget.navigationController,
             notificationSync: widget.notificationSync,
             reminderPreferences: widget.reminderPreferences,
             localeController: widget.localeController,

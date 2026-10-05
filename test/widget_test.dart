@@ -13,7 +13,7 @@ import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_details/event_details_cache.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
-import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
+import 'package:altekamerer/features/navigation/app_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
 import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
@@ -44,7 +44,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: localeController,
@@ -76,7 +76,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: localeController,
@@ -108,7 +108,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: localeController,
@@ -150,7 +150,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: localeController,
@@ -187,7 +187,7 @@ void main() {
           calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
-          notificationNavigationController: NotificationNavigationController(),
+          navigationController: AppNavigationController(),
           notificationSync: _FakeNotificationSync(),
           reminderPreferences: _FakeReminderPreferences(),
           localeController: localeController,
@@ -215,7 +215,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -243,7 +243,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -276,7 +276,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -313,7 +313,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -359,7 +359,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -396,7 +396,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -442,7 +442,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         eventDetailsCache: eventDetailsCache,
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -489,7 +489,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         eventDetailsCache: eventDetailsCache,
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -531,7 +531,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         eventDetailsCache: eventDetailsCache,
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -586,7 +586,7 @@ void main() {
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
         eventDetailsCache: eventDetailsCache,
-        notificationNavigationController: NotificationNavigationController(),
+        navigationController: AppNavigationController(),
         notificationSync: notificationSync,
         reminderPreferences: _FakeReminderPreferences(),
         localeController: await _createLocaleController(),
@@ -621,10 +621,9 @@ void main() {
   });
 
   testWidgets(
-    'notification waits for authentication before opening app shell',
+    'calendar navigation waits for authentication before opening app shell',
     (WidgetTester tester) async {
-      final notificationNavigationController =
-          NotificationNavigationController()..openEvent(42);
+      final navigationController = AppNavigationController()..openCalendar();
 
       final controller = _createController(
         loginResult: const AuthTokens(
@@ -642,7 +641,7 @@ void main() {
           calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
-          notificationNavigationController: notificationNavigationController,
+          navigationController: navigationController,
           notificationSync: _FakeNotificationSync(),
           reminderPreferences: _FakeReminderPreferences(),
           localeController: await _createLocaleController(),
@@ -652,7 +651,56 @@ void main() {
       );
 
       expect(find.byType(LoginScreen), findsOneWidget);
-      expect(notificationNavigationController.pendingEventId, 42);
+      expect(
+        navigationController.pendingRequest,
+        isA<CalendarNavigationRequest>(),
+      );
+
+      await controller.login(username: 'member', password: 'password');
+
+      // First frame rebuilds AuthGate with the authenticated AppShell.
+      // The second processes the shell's deferred navigation callback.
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(AppShell), findsOneWidget);
+      expect(find.text('Kalender'), findsWidgets);
+      expect(navigationController.pendingRequest, isNull);
+    },
+  );
+
+  testWidgets(
+    'notification waits for authentication before opening app shell',
+    (WidgetTester tester) async {
+      final navigationController = AppNavigationController()..openEvent(42);
+
+      final controller = _createController(
+        loginResult: const AuthTokens(
+          accessToken: 'access',
+          refreshToken: 'refresh',
+        ),
+      );
+
+      await controller.restoreSession();
+
+      await tester.pumpWidget(
+        AlteKamererApp(
+          authController: controller,
+          calendarController: _createCalendarController(),
+          calendarDisplayController: _createCalendarDisplayController(),
+          eventDetailsService: _FakeEventDetailsService(),
+          eventRegistrationService: _FakeEventRegistrationService(),
+          navigationController: navigationController,
+          notificationSync: _FakeNotificationSync(),
+          reminderPreferences: _FakeReminderPreferences(),
+          localeController: await _createLocaleController(),
+          settingsBackupService: _createSettingsBackupService(),
+          settingsBackupFileService: _FakeSettingsBackupFileService(),
+        ),
+      );
+
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(navigationController.pendingEventId, 42);
 
       await controller.login(username: 'member', password: 'password');
 
@@ -660,7 +708,7 @@ void main() {
 
       expect(find.byType(AppShell), findsNothing);
       expect(find.text('Test event'), findsOneWidget);
-      expect(notificationNavigationController.pendingEventId, isNull);
+      expect(navigationController.pendingEventId, isNull);
     },
   );
 }

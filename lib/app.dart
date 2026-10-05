@@ -21,7 +21,7 @@ import 'features/calendar/calendar_controller.dart';
 import 'features/event_details/event_details_api.dart';
 import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
-import 'features/notifications/notification_navigation_controller.dart';
+import 'features/navigation/app_navigation_controller.dart';
 import 'features/notifications/notification_sync_service.dart';
 import 'features/settings/calendar_display_controller.dart';
 import 'features/settings/locale_controller.dart';
@@ -43,7 +43,7 @@ class AlteKamererApp extends StatelessWidget {
     required this.eventDetailsService,
     required this.eventRegistrationService,
     this.eventDetailsCache,
-    required this.notificationNavigationController,
+    required this.navigationController,
     required this.notificationSync,
     required this.reminderPreferences,
     required this.localeController,
@@ -59,7 +59,7 @@ class AlteKamererApp extends StatelessWidget {
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
   final EventDetailsCache? eventDetailsCache;
-  final NotificationNavigationController notificationNavigationController;
+  final AppNavigationController navigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
@@ -94,7 +94,7 @@ class AlteKamererApp extends StatelessWidget {
             eventDetailsService: eventDetailsService,
             eventRegistrationService: eventRegistrationService,
             eventDetailsCache: eventDetailsCache,
-            notificationNavigationController: notificationNavigationController,
+            navigationController: navigationController,
             notificationSync: notificationSync,
             reminderPreferences: reminderPreferences,
             localeController: localeController,
