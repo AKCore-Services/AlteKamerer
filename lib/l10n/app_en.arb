@@ -195,6 +195,17 @@
   "akCoreConnectionFailed": "Could not connect to AKCore. Try again.",
   "calendarLoadFailed": "Could not load the calendar",
   "calendarLoadFailedMessage": "AlteKamerer could not load upcoming activities from AKCore.",
+  "calendarCachedTitle": "(Using cache from {date} - {time})",
+  "@calendarCachedTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "calendarDate": "Date",
   "calendarTime": "Time",
   "calendarType": "Type",
@@ -238,6 +249,17 @@
   "activity": "Activity",
   "eventLoadFailed": "Could not load activity",
   "eventLoadFailedMessage": "AlteKamerer could not load the activity from AKCore.",
+  "eventCachedTitle": "(Using cache from {date} - {time})",
+  "@eventCachedTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "eventDisplayFailed": "Could not display activity",
   "eventInfoMissing": "Activity information is missing.",
   "eventOnSite": "On site",
@@ -251,6 +273,7 @@
   "registrationCounts": "{coming} attending · {notComing} not attending",
   "registrationClosed": "Registration is closed for this activity.",
   "registrationUnavailable": "Registration can no longer be changed for this activity.",
+  "registrationRequiresOnline": "Connect to AKCore to change the registration.",
   "changeRegistration": "Change registration",
   "signUp": "Sign up",
   "hasCar": "Has car",

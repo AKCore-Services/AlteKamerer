@@ -19,6 +19,7 @@ import 'features/auth/auth_controller.dart';
 import 'features/auth/auth_gate.dart';
 import 'features/calendar/calendar_controller.dart';
 import 'features/event_details/event_details_api.dart';
+import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
 import 'features/notifications/notification_navigation_controller.dart';
 import 'features/notifications/notification_sync_service.dart';
@@ -41,6 +42,7 @@ class AlteKamererApp extends StatelessWidget {
     required this.calendarController,
     required this.eventDetailsService,
     required this.eventRegistrationService,
+    this.eventDetailsCache,
     required this.notificationNavigationController,
     required this.notificationSync,
     required this.reminderPreferences,
@@ -56,6 +58,7 @@ class AlteKamererApp extends StatelessWidget {
   final CalendarController calendarController;
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
+  final EventDetailsCache? eventDetailsCache;
   final NotificationNavigationController notificationNavigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
@@ -90,6 +93,7 @@ class AlteKamererApp extends StatelessWidget {
             calendarController: calendarController,
             eventDetailsService: eventDetailsService,
             eventRegistrationService: eventRegistrationService,
+            eventDetailsCache: eventDetailsCache,
             notificationNavigationController: notificationNavigationController,
             notificationSync: notificationSync,
             reminderPreferences: reminderPreferences,

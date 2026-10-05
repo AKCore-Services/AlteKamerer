@@ -14,22 +14,33 @@ import '../../core/diagnostics/diagnostics_service.dart';
 
 import 'event_details.dart';
 import 'event_details_api.dart';
+import 'event_details_cache.dart';
 
 enum EventDetailsStatus { loading, loaded, error }
 
 /// Loads event details and exposes their state to the UI.
 ///
-/// Loading another event clears the previous result. Failures are exposed
-/// through the error state and recorded when diagnostics are configured.
+/// Loading another event clears the previous result. Failed backend requests
+/// fall back to cached details when available; otherwise the error state is
+/// exposed. Failures are recorded when diagnostics are configured.
 class EventDetailsController extends ChangeNotifier {
-  EventDetailsController(this._eventDetailsService, {this._diagnostics});
+  EventDetailsController(
+    this._eventDetailsService, {
+    this._cache,
+    DateTime Function()? now,
+    this._diagnostics,
+  }) : _now = now ?? DateTime.now;
 
   final EventDetailsService _eventDetailsService;
+  final EventDetailsCache? _cache;
+  final DateTime Function() _now;
   final DiagnosticsService? _diagnostics;
 
   EventDetailsStatus _status = EventDetailsStatus.loading;
   EventDetails? _event;
   Object? _error;
+  bool _isShowingCachedData = false;
+  DateTime? _cachedAt;
 
   EventDetailsStatus get status => _status;
 
@@ -37,24 +48,78 @@ class EventDetailsController extends ChangeNotifier {
 
   Object? get error => _error;
 
+  /// Whether the displayed event details came from offline cache.
+  bool get isShowingCachedData => _isShowingCachedData;
+
+  /// When the displayed cached details were last retrieved from AKCore.
+  ///
+  /// Null while displaying fresh backend data.
+  DateTime? get cachedAt => _cachedAt;
+
+  /// Loads event details from AKCore, falling back to secure cached data.
+  ///
+  /// Successful responses replace the cached copy for this event. Failed
+  /// requests expose the last cached details when available; otherwise the
+  /// controller enters the error state.
   Future<void> load(int eventId) async {
     _status = EventDetailsStatus.loading;
     _event = null;
     _error = null;
+    _isShowingCachedData = false;
+    _cachedAt = null;
     notifyListeners();
 
     try {
-      _event = await _eventDetailsService.getEvent(eventId);
+      final event = await _eventDetailsService.getEvent(eventId);
+
+      _event = event;
       _status = EventDetailsStatus.loaded;
+
+      final cache = _cache;
+
+      if (cache != null) {
+        try {
+          await cache.write(event, cachedAt: _now().toUtc());
+        } catch (error, stackTrace) {
+          await _diagnostics?.recordError(
+            subsystem: 'Event details',
+            message: 'Event details cache update failed',
+            error: diagnosticErrorDetails(error, stackTrace),
+          );
+        }
+      }
     } catch (error, stackTrace) {
-      _event = null;
-      _error = error;
-      _status = EventDetailsStatus.error;
       await _diagnostics?.recordError(
         subsystem: 'Event details',
         message: 'Event details loading failed',
         error: diagnosticErrorDetails(error, stackTrace),
       );
+
+      CachedEventDetails? cached;
+      final cache = _cache;
+
+      if (cache != null) {
+        try {
+          cached = await cache.read(eventId);
+        } catch (cacheError, cacheStackTrace) {
+          await _diagnostics?.recordError(
+            subsystem: 'Event details',
+            message: 'Event details cache loading failed',
+            error: diagnosticErrorDetails(cacheError, cacheStackTrace),
+          );
+        }
+      }
+
+      if (cached != null) {
+        _event = cached.event;
+        _isShowingCachedData = true;
+        _cachedAt = cached.cachedAt;
+        _status = EventDetailsStatus.loaded;
+      } else {
+        _event = null;
+        _error = error;
+        _status = EventDetailsStatus.error;
+      }
     }
 
     notifyListeners();

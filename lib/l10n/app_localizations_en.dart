@@ -617,6 +617,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'AlteKamerer could not load upcoming activities from AKCore.';
 
   @override
+  String calendarCachedTitle(String date, String time) {
+    return '(Using cache from $date - $time)';
+  }
+
+  @override
   String get calendarDate => 'Date';
 
   @override
@@ -748,6 +753,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'AlteKamerer could not load the activity from AKCore.';
 
   @override
+  String eventCachedTitle(String date, String time) {
+    return '(Using cache from $date - $time)';
+  }
+
+  @override
   String get eventDisplayFailed => 'Could not display activity';
 
   @override
@@ -790,6 +800,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get registrationUnavailable =>
       'Registration can no longer be changed for this activity.';
+
+  @override
+  String get registrationRequiresOnline =>
+      'Connect to AKCore to change the registration.';
 
   @override
   String get changeRegistration => 'Change registration';

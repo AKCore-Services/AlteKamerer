@@ -47,7 +47,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.activity)),
+      appBar: AppBar(
+        title: ListenableBuilder(
+          listenable: widget.controller,
+          builder: (context, child) => _buildTitle(context),
+        ),
+      ),
       body: SafeArea(
         child: ListenableBuilder(
           listenable: widget.controller,
@@ -66,6 +71,36 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildTitle(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final cachedAt = widget.controller.cachedAt;
+
+    if (!widget.controller.isShowingCachedData || cachedAt == null) {
+      return Text(l10n.activity);
+    }
+
+    final localCachedAt = cachedAt.toLocal();
+    final material = MaterialLocalizations.of(context);
+    final date = material.formatShortDate(localCachedAt);
+    final time = material.formatTimeOfDay(
+      TimeOfDay.fromDateTime(localCachedAt),
+    );
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: l10n.activity),
+          TextSpan(
+            text: '  ${l10n.eventCachedTitle(date, time)}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -169,7 +204,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
         const SizedBox(height: 16),
         _RegistrationCard(
           event: event,
-          onPressed: widget.onRegistrationPressed == null
+          isShowingCachedData: widget.controller.isShowingCachedData,
+          onPressed:
+              widget.controller.isShowingCachedData ||
+                  widget.onRegistrationPressed == null
               ? null
               : () {
                   widget.onRegistrationPressed!(event);
@@ -246,9 +284,14 @@ class _DetailRow extends StatelessWidget {
 }
 
 class _RegistrationCard extends StatelessWidget {
-  const _RegistrationCard({required this.event, required this.onPressed});
+  const _RegistrationCard({
+    required this.event,
+    required this.isShowingCachedData,
+    required this.onPressed,
+  });
 
   final EventDetails event;
+  final bool isShowingCachedData;
   final VoidCallback? onPressed;
 
   @override
@@ -285,6 +328,13 @@ class _RegistrationCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ] else ...[
+            if (isShowingCachedData) ...[
+              const SizedBox(height: 16),
+              Text(
+                l10n.registrationRequiresOnline,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
             const SizedBox(height: 20),
             FilledButton(
               onPressed: onPressed,

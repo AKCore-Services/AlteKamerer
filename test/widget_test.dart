@@ -6,10 +6,12 @@ import 'package:altekamerer/features/auth/auth_api.dart';
 import 'package:altekamerer/features/auth/auth_controller.dart';
 import 'package:altekamerer/features/auth/login_screen.dart';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
+import 'package:altekamerer/features/calendar/calendar_cache.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
+import 'package:altekamerer/features/event_details/event_details_cache.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
@@ -287,6 +289,94 @@ void main() {
     expect(find.byType(LoginScreen), findsNothing);
   });
 
+  testWidgets('fresh calendar keeps plain calendar app bar title', (
+    WidgetTester tester,
+  ) async {
+    final authController = _createController(
+      refreshToken: 'stored-refresh',
+      refreshResult: const AuthTokens(
+        accessToken: 'access',
+        refreshToken: 'rotated-refresh',
+      ),
+    );
+    final calendarController = CalendarController(
+      FakeCalendarService(events: const []),
+    );
+
+    await authController.restoreSession();
+    await calendarController.load();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: authController,
+        calendarController: calendarController,
+        calendarDisplayController: _createCalendarDisplayController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
+        settingsBackupService: _createSettingsBackupService(),
+        settingsBackupFileService: _FakeSettingsBackupFileService(),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(find.text('Kalender'), findsOneWidget);
+    expect(
+      find.textContaining('Använder cache från', findRichText: true),
+      findsNothing,
+    );
+  });
+
+  testWidgets('cached fallback is identified in calendar app bar title', (
+    WidgetTester tester,
+  ) async {
+    final authController = _createController(
+      refreshToken: 'stored-refresh',
+      refreshResult: const AuthTokens(
+        accessToken: 'access',
+        refreshToken: 'rotated-refresh',
+      ),
+    );
+    final cachedAt = DateTime.utc(2026, 10, 5, 6, 30);
+    final calendarController = CalendarController(
+      FakeCalendarService(error: StateError('calendar failed')),
+      cache: _FakeCalendarCache(
+        value: CachedCalendar(events: const [], cachedAt: cachedAt),
+      ),
+    );
+
+    await authController.restoreSession();
+    await calendarController.load();
+
+    await tester.pumpWidget(
+      AlteKamererApp(
+        authController: authController,
+        calendarController: calendarController,
+        calendarDisplayController: _createCalendarDisplayController(),
+        eventDetailsService: _FakeEventDetailsService(),
+        eventRegistrationService: _FakeEventRegistrationService(),
+        notificationNavigationController: NotificationNavigationController(),
+        notificationSync: _FakeNotificationSync(),
+        reminderPreferences: _FakeReminderPreferences(),
+        localeController: await _createLocaleController(),
+        settingsBackupService: _createSettingsBackupService(),
+        settingsBackupFileService: _FakeSettingsBackupFileService(),
+      ),
+    );
+
+    await tester.pump();
+
+    expect(calendarController.isShowingCachedData, isTrue);
+    expect(
+      find.textContaining('Använder cache från', findRichText: true),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('authentication state change replaces login with app shell', (
     WidgetTester tester,
   ) async {
@@ -340,6 +430,7 @@ void main() {
       refreshToken: 'stored-refresh',
       authService: auth,
     );
+    final eventDetailsCache = _TrackingEventDetailsCache();
 
     await controller.restoreSession();
 
@@ -350,6 +441,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
+        eventDetailsCache: eventDetailsCache,
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
@@ -363,11 +455,13 @@ void main() {
     expect(find.text('Försök igen'), findsOneWidget);
     expect(find.byType(LoginScreen), findsNothing);
     expect(find.byType(AppShell), findsNothing);
+    expect(eventDetailsCache.clearCount, 0);
 
     await tester.tap(find.text('Försök igen'));
     await tester.pump();
 
     expect(auth.refreshCalls, ['stored-refresh', 'stored-refresh']);
+    expect(eventDetailsCache.clearCount, 0);
   });
 
   testWidgets('revoked stored session returns to login', (
@@ -385,6 +479,8 @@ void main() {
 
     await controller.restoreSession();
 
+    final eventDetailsCache = _TrackingEventDetailsCache();
+
     await tester.pumpWidget(
       AlteKamererApp(
         authController: controller,
@@ -392,6 +488,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
+        eventDetailsCache: eventDetailsCache,
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
@@ -403,6 +500,9 @@ void main() {
 
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(AppShell), findsNothing);
+
+    await tester.pump();
+    expect(eventDetailsCache.clearCount, 1);
   });
 
   testWidgets('logout returns authenticated app to login', (
@@ -419,6 +519,7 @@ void main() {
       refreshToken: 'stored-refresh',
       authService: auth,
     );
+    final eventDetailsCache = _TrackingEventDetailsCache();
 
     await controller.restoreSession();
 
@@ -429,6 +530,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
+        eventDetailsCache: eventDetailsCache,
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: _FakeNotificationSync(),
         reminderPreferences: _FakeReminderPreferences(),
@@ -453,6 +555,7 @@ void main() {
     expect(auth.logoutCalls, ['rotated-refresh']);
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(AppShell), findsNothing);
+    expect(eventDetailsCache.clearCount, 1);
   });
 
   testWidgets('failed session refresh clears scheduled notifications', (
@@ -471,6 +574,7 @@ void main() {
 
     final controller = _createController(authService: auth);
     final notificationSync = _FakeNotificationSync();
+    final eventDetailsCache = _TrackingEventDetailsCache();
 
     await controller.restoreSession();
 
@@ -481,6 +585,7 @@ void main() {
         calendarDisplayController: _createCalendarDisplayController(),
         eventDetailsService: _FakeEventDetailsService(),
         eventRegistrationService: _FakeEventRegistrationService(),
+        eventDetailsCache: eventDetailsCache,
         notificationNavigationController: NotificationNavigationController(),
         notificationSync: notificationSync,
         reminderPreferences: _FakeReminderPreferences(),
@@ -501,6 +606,7 @@ void main() {
     expect(find.byType(AppShell), findsOneWidget);
 
     final clearCountBeforeRefresh = notificationSync.clearCount;
+    final cacheClearCountBeforeRefresh = eventDetailsCache.clearCount;
 
     final refreshed = await controller.refreshSession();
 
@@ -511,6 +617,7 @@ void main() {
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(AppShell), findsNothing);
     expect(notificationSync.clearCount, clearCountBeforeRefresh + 1);
+    expect(eventDetailsCache.clearCount, cacheClearCountBeforeRefresh + 1);
   });
 
   testWidgets(
@@ -659,9 +766,58 @@ class FakeAuthService implements AuthService {
 }
 
 class FakeCalendarService implements CalendarService {
+  FakeCalendarService({this.events = const [], this.error});
+
+  final List<CalendarEvent> events;
+  final Object? error;
+
   @override
   Future<List<CalendarEvent>> getCalendar() async {
-    return const [];
+    if (error != null) {
+      throw error!;
+    }
+
+    return events;
+  }
+}
+
+class _FakeCalendarCache implements CalendarCache {
+  _FakeCalendarCache({this.value});
+
+  CachedCalendar? value;
+
+  @override
+  Future<CachedCalendar?> read() async => value;
+
+  @override
+  Future<void> write(
+    List<CalendarEvent> events, {
+    required DateTime cachedAt,
+  }) async {
+    value = CachedCalendar(
+      events: List.unmodifiable(events),
+      cachedAt: cachedAt,
+    );
+  }
+
+  @override
+  Future<void> clear() async {
+    value = null;
+  }
+}
+
+class _TrackingEventDetailsCache implements EventDetailsCache {
+  int clearCount = 0;
+
+  @override
+  Future<CachedEventDetails?> read(int eventId) async => null;
+
+  @override
+  Future<void> write(EventDetails event, {required DateTime cachedAt}) async {}
+
+  @override
+  Future<void> clear() async {
+    clearCount++;
   }
 }
 

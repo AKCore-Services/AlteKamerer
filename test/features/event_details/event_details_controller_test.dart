@@ -1,6 +1,7 @@
 import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
+import 'package:altekamerer/features/event_details/event_details_cache.dart';
 import 'package:altekamerer/features/event_details/event_details_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -17,6 +18,45 @@ void main() {
     expect(controller.status, EventDetailsStatus.loaded);
     expect(controller.event, same(event));
     expect(controller.error, isNull);
+  });
+
+  test('successful load updates event-details cache', () async {
+    final event = _event();
+    final cache = _FakeEventDetailsCache();
+    final now = DateTime(2026, 10, 5, 8, 30);
+    final controller = EventDetailsController(
+      _FakeEventDetailsService(event: event),
+      cache: cache,
+      now: () => now,
+    );
+
+    await controller.load(42);
+
+    expect(cache.value, isNotNull);
+    expect(cache.value!.event, same(event));
+    expect(cache.value!.cachedAt, now.toUtc());
+    expect(controller.isShowingCachedData, isFalse);
+    expect(controller.cachedAt, isNull);
+  });
+
+  test('failed load falls back to cached event details', () async {
+    final event = _event();
+    final cachedAt = DateTime.utc(2026, 10, 4, 18);
+    final cache = _FakeEventDetailsCache(
+      value: CachedEventDetails(event: event, cachedAt: cachedAt),
+    );
+    final controller = EventDetailsController(
+      _FakeEventDetailsService(error: Exception('failed')),
+      cache: cache,
+    );
+
+    await controller.load(42);
+
+    expect(controller.status, EventDetailsStatus.loaded);
+    expect(controller.event, same(event));
+    expect(controller.error, isNull);
+    expect(controller.isShowingCachedData, isTrue);
+    expect(controller.cachedAt, cachedAt);
   });
 
   test('load exposes error state when service fails', () async {
@@ -100,6 +140,33 @@ EventDetails _event({
       ),
     ],
   );
+}
+
+class _FakeEventDetailsCache implements EventDetailsCache {
+  _FakeEventDetailsCache({this.value});
+
+  CachedEventDetails? value;
+
+  @override
+  Future<CachedEventDetails?> read(int eventId) async {
+    final value = this.value;
+
+    if (value == null || value.event.id != eventId) {
+      return null;
+    }
+
+    return value;
+  }
+
+  @override
+  Future<void> write(EventDetails event, {required DateTime cachedAt}) async {
+    value = CachedEventDetails(event: event, cachedAt: cachedAt);
+  }
+
+  @override
+  Future<void> clear() async {
+    value = null;
+  }
 }
 
 class _FakeEventDetailsService implements EventDetailsService {

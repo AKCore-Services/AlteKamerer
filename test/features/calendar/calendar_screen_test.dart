@@ -326,6 +326,8 @@ void main() {
       find.byKey(const ValueKey('calendar-filters-button')),
       findsOneWidget,
     );
+    expect(find.byTooltip('Filter'), findsOneWidget);
+    expect(find.text('Filter'), findsNothing);
     expect(
       find.byKey(const ValueKey('calendar-activity-filter')),
       findsNothing,
