@@ -1,5 +1,5 @@
 import 'package:altekamerer/features/notifications/local_notification_service.dart';
-import 'package:altekamerer/features/notifications/notification_navigation_controller.dart';
+import 'package:altekamerer/features/navigation/app_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_plan.dart';
 import 'package:altekamerer/features/settings/locale_controller.dart';
 import 'package:altekamerer/features/settings/locale_preferences.dart';
@@ -97,7 +97,7 @@ Future<LocalNotificationService> _createService(
 
   return LocalNotificationService(
     FlutterLocalNotificationsPlugin(),
-    NotificationNavigationController(),
+    AppNavigationController(),
     controller,
     systemLocale: () => systemLocale,
   );

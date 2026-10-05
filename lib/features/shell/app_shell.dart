@@ -26,7 +26,7 @@ import '../event_details/event_details.dart';
 import '../event_registration/event_registration_api.dart';
 import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
-import '../notifications/notification_navigation_controller.dart';
+import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
 import '../settings/reminder_preferences.dart';
@@ -48,7 +48,7 @@ class AppShell extends StatefulWidget {
     required this.eventDetailsService,
     required this.eventRegistrationService,
     this.eventDetailsCache,
-    required this.notificationNavigationController,
+    required this.navigationController,
     required this.notificationSync,
     required this.reminderPreferences,
     required this.localeController,
@@ -64,7 +64,7 @@ class AppShell extends StatefulWidget {
   final EventDetailsService eventDetailsService;
   final EventRegistrationService eventRegistrationService;
   final EventDetailsCache? eventDetailsCache;
-  final NotificationNavigationController notificationNavigationController;
+  final AppNavigationController navigationController;
   final NotificationSync notificationSync;
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
@@ -87,24 +87,20 @@ class _AppShellState extends State<AppShell> {
   void initState() {
     super.initState();
 
-    widget.notificationNavigationController.addListener(
-      _handleNotificationNavigation,
-    );
+    widget.navigationController.addListener(_handleAppNavigation);
 
     widget.notificationSync.sync();
 
-    // A notification may have been opened before the authenticated
+    // Navigation may have been requested before the authenticated
     // navigator was available. Process it after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _openPendingNotification();
+      _openPendingNavigation();
     });
   }
 
   @override
   void dispose() {
-    widget.notificationNavigationController.removeListener(
-      _handleNotificationNavigation,
-    );
+    widget.navigationController.removeListener(_handleAppNavigation);
 
     super.dispose();
   }
@@ -242,32 +238,40 @@ class _AppShellState extends State<AppShell> {
     };
   }
 
-  // Notification requests can arrive outside the normal widget build cycle.
-  // Schedule a frame so the pending event opens after the navigator is ready,
-  // rather than attempting to push a route immediately.
-  void _handleNotificationNavigation() {
+  // Navigation requests can arrive outside the normal widget build cycle.
+  // Schedule a frame so the pending destination opens after the navigator is
+  // ready rather than attempting to navigate immediately.
+  void _handleAppNavigation() {
     if (!mounted) {
       return;
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _openPendingNotification();
+        _openPendingNavigation();
       }
     });
 
     WidgetsBinding.instance.scheduleFrame();
   }
 
-  void _openPendingNotification() {
-    final eventId = widget.notificationNavigationController
-        .consumePendingEventId();
+  void _openPendingNavigation() {
+    final request = widget.navigationController.consumePendingRequest();
 
-    if (eventId == null) {
+    if (request == null) {
       return;
     }
 
-    _openEventById(eventId);
+    switch (request) {
+      case CalendarNavigationRequest():
+        if (_currentPage != _ShellPage.calendar) {
+          setState(() {
+            _currentPage = _ShellPage.calendar;
+          });
+        }
+      case EventNavigationRequest(:final eventId):
+        _openEventById(eventId);
+    }
   }
 
   void _openEvent(CalendarEvent event) {

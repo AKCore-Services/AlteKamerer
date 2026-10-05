@@ -16,7 +16,7 @@ import '../../l10n/app_localizations.dart';
 import '../settings/locale_controller.dart';
 import '../settings/locale_preferences.dart';
 import 'notification_event_payload.dart';
-import 'notification_navigation_controller.dart';
+import '../navigation/app_navigation_controller.dart';
 import 'notification_plan.dart';
 
 /// Contract for replacing or clearing scheduled event reminders.
@@ -30,7 +30,7 @@ abstract interface class LocalNotificationScheduler {
 ///
 /// Schedules reminders in the Stockholm timezone, resolves notification
 /// text using the selected language, and forwards notification taps to
-/// [NotificationNavigationController].
+/// [AppNavigationController].
 class LocalNotificationService implements LocalNotificationScheduler {
   LocalNotificationService(
     this._plugin,
@@ -44,7 +44,7 @@ class LocalNotificationService implements LocalNotificationScheduler {
   static const _channelId = 'event-reminders';
 
   final FlutterLocalNotificationsPlugin _plugin;
-  final NotificationNavigationController _navigationController;
+  final AppNavigationController _navigationController;
   final LocaleController _localeController;
   final Locale Function() _systemLocale;
 
