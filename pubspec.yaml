@@ -74,6 +74,7 @@ flutter:
     - assets/images/ak_logo.png
     - assets/images/logo.png
     - assets/images/mobillogo.png
+    - assets/images/error-icon.png
     - assets/images/android-chrome-192x192.png
     - assets/images/android-chrome-512x512.png
     - assets/images/apple-touch-icon.png
