@@ -772,7 +772,7 @@ class AppLocalizationsSv extends AppLocalizations {
   String get eventPlayDuration => 'Speltid';
 
   @override
-  String get eventMusicStand => 'Notställ';
+  String get eventPerformanceType => 'Speltyp';
 
   @override
   String get information => 'Information';
@@ -782,6 +782,9 @@ class AppLocalizationsSv extends AppLocalizations {
 
   @override
   String get eventRegistration => 'Anmälan';
+
+  @override
+  String get eventAttendees => 'Deltagare';
 
   @override
   String yourStatus(String status) {

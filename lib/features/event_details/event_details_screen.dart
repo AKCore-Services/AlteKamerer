@@ -170,7 +170,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                 if (event.stand.isNotEmpty)
                   _DetailRow(
                     icon: Icons.music_note,
-                    label: l10n.eventMusicStand,
+                    label: l10n.eventPerformanceType,
                     value: event.stand,
                   ),
               ],
@@ -216,6 +216,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     widget.onRegistrationPressed!(event);
                   },
           ),
+          if (event.attendees.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _AttendeeCard(event: event),
+          ],
         ],
       ),
     );
@@ -318,11 +322,6 @@ class _RegistrationCard extends StatelessWidget {
                 ? l10n.notRegistered
                 : l10n.yourStatus(stateLabel),
           ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.registrationCounts(event.coming, event.notComing),
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
           if (!event.registrationAvailable) ...[
             const SizedBox(height: 16),
             Text(
@@ -351,6 +350,180 @@ class _RegistrationCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AttendeeCard extends StatelessWidget {
+  const _AttendeeCard({required this.event});
+
+  final EventDetails event;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final attending = event.attendees
+        .where((attendee) => attendee.where != 'Kan inte komma')
+        .toList();
+    final notAttending = event.attendees
+        .where((attendee) => attendee.where == 'Kan inte komma')
+        .toList();
+
+    final grouped = <String?, List<EventAttendee>>{};
+    for (final attendee in attending) {
+      grouped.putIfAbsent(attendee.instrumentName, () => []).add(attendee);
+    }
+
+    return AkSurfaceCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.eventAttendees,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            l10n.registrationCounts(event.coming, event.notComing),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          if (attending.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              l10n.registrationAttending,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 12),
+            for (final entry in grouped.entries) ...[
+              _AttendeeGroup(instrumentName: entry.key, attendees: entry.value),
+              if (entry.key != grouped.keys.last) const SizedBox(height: 16),
+            ],
+          ],
+          if (notAttending.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text(
+              l10n.registrationNotAttending,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            const SizedBox(height: 12),
+            for (var index = 0; index < notAttending.length; index++) ...[
+              _AttendeeRow(
+                attendee: notAttending[index],
+                showArrivalDetails: false,
+              ),
+              if (index != notAttending.length - 1) const Divider(height: 24),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AttendeeGroup extends StatelessWidget {
+  const _AttendeeGroup({required this.instrumentName, required this.attendees});
+
+  final String? instrumentName;
+  final List<EventAttendee> attendees;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _instrumentLabel(
+      AppLocalizations.of(context),
+      instrumentName,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$label · ${attendees.length}',
+          style: Theme.of(context).textTheme.labelLarge,
+        ),
+        const SizedBox(height: 8),
+        for (var index = 0; index < attendees.length; index++) ...[
+          _AttendeeRow(attendee: attendees[index], showArrivalDetails: true),
+          if (index != attendees.length - 1) const Divider(height: 24),
+        ],
+      ],
+    );
+  }
+}
+
+class _AttendeeRow extends StatelessWidget {
+  const _AttendeeRow({
+    required this.attendee,
+    required this.showArrivalDetails,
+  });
+
+  final EventAttendee attendee;
+  final bool showArrivalDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final instrument = _instrumentLabel(l10n, attendee.instrumentName);
+    final practicalDetails = _attendeeDetails(l10n, attendee);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          attendee.personName.replaceAll("\\", ""),
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 4),
+        Text(instrument, style: Theme.of(context).textTheme.bodyMedium),
+        if (showArrivalDetails && practicalDetails.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(practicalDetails, style: Theme.of(context).textTheme.bodyMedium),
+        ],
+        if (attendee.comment.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(attendee.comment, style: Theme.of(context).textTheme.bodySmall),
+        ],
+      ],
+    );
+  }
+}
+
+String _attendeeDetails(AppLocalizations l10n, EventAttendee attendee) {
+  final details = <String>[];
+
+  if (attendee.where != null && attendee.where!.isNotEmpty) {
+    details.add(_signupStateLabel(l10n, attendee.where));
+  }
+
+  if (!attendee.instrument) {
+    details.add(l10n.needsInstrumentTransport);
+  }
+
+  if (attendee.car) {
+    details.add(l10n.hasCar);
+  }
+
+  return details.join(' · ');
+}
+
+String _instrumentLabel(AppLocalizations l10n, String? instrumentName) {
+  return switch (instrumentName) {
+    'Altsax' => l10n.akInstrumentAltsax,
+    'Balett' => l10n.akInstrumentBalett,
+    'Banjo' => l10n.akInstrumentBanjo,
+    'Barytonsax' => l10n.akInstrumentBarytonsax,
+    'Dragspel' => l10n.akInstrumentDragspel,
+    'Euphonium' => l10n.akInstrumentEuphonium,
+    'Flöjt' => l10n.akInstrumentFlojt,
+    'Horn' => l10n.akInstrumentHorn,
+    'Klarinett' => l10n.akInstrumentKlarinett,
+    'Oboe' => l10n.akInstrumentOboe,
+    'Slagverk' => l10n.akInstrumentSlagverk,
+    'Tenorsax' => l10n.akInstrumentTenorsax,
+    'Trombon' => l10n.akInstrumentTrombon,
+    'Trumpet' => l10n.akInstrumentTrumpet,
+    'Tuba' => l10n.akInstrumentTuba,
+    null => l10n.akSignupNoInstrument,
+    '' => l10n.akSignupNoInstrument,
+    _ => instrumentName,
+  };
 }
 
 String _signupStateLabel(AppLocalizations l10n, String? signupState) {
