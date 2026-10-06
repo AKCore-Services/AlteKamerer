@@ -140,7 +140,8 @@ class _AuthGateState extends State<AuthGate> {
           AuthStatus.unauthenticated => LoginScreen(
             authController: widget.authController,
           ),
-          AuthStatus.authenticated => AppShell(
+          AuthStatus.authenticated ||
+          AuthStatus.offlineAuthenticated => AppShell(
             authController: widget.authController,
             calendarController: widget.calendarController,
             eventDetailsService: widget.eventDetailsService,

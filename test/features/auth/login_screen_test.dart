@@ -105,6 +105,12 @@ class FakeCredentialStore implements CredentialStore {
   }
 
   @override
+  Future<DateTime?> readLastOnlineAuthAt() async => null;
+
+  @override
+  Future<void> writeLastOnlineAuthAt(DateTime authenticatedAt) async {}
+
+  @override
   Future<void> clear() async {
     refreshToken = null;
   }

@@ -3,8 +3,8 @@
 // -----------------------------------------------------------------------------
 //
 // Purpose:
-//   Persists refresh tokens using platform secure storage and removes
-//   credentials left by the earlier access-token storage model.
+//   Persists refresh tokens and recent online-auth timestamps using platform
+//   secure storage, and removes credentials from the earlier storage model.
 //
 // Contains:
 //   - SecureCredentialStore: Secure implementation of CredentialStore.
@@ -15,15 +15,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'credential_store.dart';
 
-/// Stores the mobile refresh token in platform secure storage.
+/// Stores mobile session-restoration data in platform secure storage.
 ///
-/// Removes the legacy persisted access token during credential operations
-/// so the application retains only the refresh token between launches.
+/// Removes the legacy persisted access token during credential operations.
 class SecureCredentialStore implements CredentialStore {
   SecureCredentialStore({FlutterSecureStorage? storage})
     : _storage = storage ?? const FlutterSecureStorage();
 
   static const _refreshTokenKey = 'mobile_refresh_token';
+  static const _lastOnlineAuthAtKey = 'mobile_last_online_auth_at';
 
   // ALTEKAMERE-7 temporarily persisted access tokens. Remove any such
   // credential when the new refresh-only model touches secure storage.
@@ -51,8 +51,28 @@ class SecureCredentialStore implements CredentialStore {
   }
 
   @override
+  Future<DateTime?> readLastOnlineAuthAt() async {
+    final source = await _storage.read(key: _lastOnlineAuthAtKey);
+
+    if (source == null || source.isEmpty) {
+      return null;
+    }
+
+    return DateTime.tryParse(source)?.toUtc();
+  }
+
+  @override
+  Future<void> writeLastOnlineAuthAt(DateTime authenticatedAt) async {
+    await _storage.write(
+      key: _lastOnlineAuthAtKey,
+      value: authenticatedAt.toUtc().toIso8601String(),
+    );
+  }
+
+  @override
   Future<void> clear() async {
     await _storage.delete(key: _legacyAccessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
+    await _storage.delete(key: _lastOnlineAuthAtKey);
   }
 }

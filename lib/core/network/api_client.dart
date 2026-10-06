@@ -11,6 +11,7 @@
 //
 // -----------------------------------------------------------------------------
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -26,12 +27,17 @@ import 'api_exception.dart';
 /// once if refresh succeeds. Other unsuccessful responses become
 /// [ApiException]s.
 class ApiClient {
-  ApiClient(this._config, this._accessTokenStore, {http.Client? httpClient})
-    : _httpClient = httpClient ?? http.Client();
+  ApiClient(
+    this._config,
+    this._accessTokenStore, {
+    http.Client? httpClient,
+    this._requestTimeout = const Duration(seconds: 10),
+  }) : _httpClient = httpClient ?? http.Client();
 
   final AppConfig _config;
   final AccessTokenStore _accessTokenStore;
   final http.Client _httpClient;
+  final Duration _requestTimeout;
 
   Future<bool> Function()? _refreshSession;
 
@@ -45,7 +51,8 @@ class ApiClient {
     String path, {
     bool authenticated = true,
   }) async {
-    var response = await _httpClient.get(
+    var response = await _sendRequest(
+      'GET',
       _config.resolve(path),
       headers: _headers(authenticated: authenticated),
     );
@@ -54,7 +61,8 @@ class ApiClient {
       final refreshed = await _refreshAfterUnauthorized();
 
       if (refreshed) {
-        response = await _httpClient.get(
+        response = await _sendRequest(
+          'GET',
           _config.resolve(path),
           headers: _headers(authenticated: true),
         );
@@ -78,7 +86,8 @@ class ApiClient {
   }) async {
     final encodedBody = jsonEncode(body ?? <String, dynamic>{});
 
-    var response = await _httpClient.post(
+    var response = await _sendRequest(
+      'POST',
       _config.resolve(path),
       headers: _headers(authenticated: authenticated),
       body: encodedBody,
@@ -88,7 +97,8 @@ class ApiClient {
       final refreshed = await _refreshAfterUnauthorized();
 
       if (refreshed) {
-        response = await _httpClient.post(
+        response = await _sendRequest(
+          'POST',
           _config.resolve(path),
           headers: _headers(authenticated: true),
           body: encodedBody,
@@ -113,7 +123,8 @@ class ApiClient {
   }) async {
     final encodedBody = jsonEncode(body ?? <String, dynamic>{});
 
-    var response = await _httpClient.put(
+    var response = await _sendRequest(
+      'PUT',
       _config.resolve(path),
       headers: _headers(authenticated: authenticated),
       body: encodedBody,
@@ -123,7 +134,8 @@ class ApiClient {
       final refreshed = await _refreshAfterUnauthorized();
 
       if (refreshed) {
-        response = await _httpClient.put(
+        response = await _sendRequest(
+          'PUT',
           _config.resolve(path),
           headers: _headers(authenticated: true),
           body: encodedBody,
@@ -132,6 +144,40 @@ class ApiClient {
     }
 
     return _decodeJsonResponse(response);
+  }
+
+  Future<http.Response> _sendRequest(
+    String method,
+    Uri uri, {
+    required Map<String, String> headers,
+    String? body,
+  }) async {
+    final abortCompleter = Completer<void>();
+    final timeoutTimer = Timer(_requestTimeout, abortCompleter.complete);
+
+    final request = http.AbortableRequest(
+      method,
+      uri,
+      abortTrigger: abortCompleter.future,
+    )..headers.addAll(headers);
+
+    if (body != null) {
+      request.body = body;
+    }
+
+    try {
+      final streamedResponse = await _httpClient.send(request);
+      return await http.Response.fromStream(streamedResponse);
+    } on http.RequestAbortedException {
+      throw const ApiException(statusCode: 408, message: 'Request timed out.');
+    } on http.ClientException {
+      throw const ApiException(
+        statusCode: 503,
+        message: 'Network request failed.',
+      );
+    } finally {
+      timeoutTimer.cancel();
+    }
   }
 
   Future<bool> _refreshAfterUnauthorized() async {

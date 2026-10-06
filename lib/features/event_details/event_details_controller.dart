@@ -56,11 +56,11 @@ class EventDetailsController extends ChangeNotifier {
   /// Null while displaying fresh backend data.
   DateTime? get cachedAt => _cachedAt;
 
-  /// Loads event details from AKCore, falling back to secure cached data.
+  /// Loads event details using cached data first when available.
   ///
-  /// Successful responses replace the cached copy for this event. Failed
-  /// requests expose the last cached details when available; otherwise the
-  /// controller enters the error state.
+  /// Cached details are exposed immediately while AKCore is refreshed in the
+  /// background. A successful refresh replaces the cached copy. If no cache
+  /// exists, the controller remains loading until AKCore responds.
   Future<void> load(int eventId) async {
     _status = EventDetailsStatus.loading;
     _event = null;
@@ -68,6 +68,17 @@ class EventDetailsController extends ChangeNotifier {
     _isShowingCachedData = false;
     _cachedAt = null;
     notifyListeners();
+
+    final cached = await _readCache(eventId);
+
+    if (cached != null) {
+      _event = cached.event;
+      _error = null;
+      _isShowingCachedData = true;
+      _cachedAt = cached.cachedAt;
+      _status = EventDetailsStatus.loaded;
+      notifyListeners();
+    }
 
     try {
       final event = await _eventDetailsService.getEvent(eventId);
@@ -79,29 +90,23 @@ class EventDetailsController extends ChangeNotifier {
       _status = EventDetailsStatus.loaded;
 
       await _updateCache(event);
+      notifyListeners();
     } catch (error, stackTrace) {
       await _diagnostics?.recordError(
         subsystem: 'Event details',
-        message: 'Event details loading failed',
+        message: cached == null
+            ? 'Event details loading failed'
+            : 'Event details background refresh failed',
         error: diagnosticErrorDetails(error, stackTrace),
       );
 
-      final cached = await _readCache(eventId);
-
-      if (cached != null) {
-        _event = cached.event;
-        _error = null;
-        _isShowingCachedData = true;
-        _cachedAt = cached.cachedAt;
-        _status = EventDetailsStatus.loaded;
-      } else {
+      if (cached == null) {
         _event = null;
         _error = error;
         _status = EventDetailsStatus.error;
+        notifyListeners();
       }
     }
-
-    notifyListeners();
   }
 
   /// Refreshes an already displayed event without hiding its current details.

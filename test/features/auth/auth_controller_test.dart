@@ -63,6 +63,7 @@ void main() {
   });
 
   test('restoreSession refreshes and rotates stored credentials', () async {
+    final now = DateTime.utc(2026, 10, 6, 10);
     final store = FakeCredentialStore(refreshToken: 'old-refresh');
     final auth = FakeAuthService(
       refreshResult: const AuthTokens(
@@ -71,18 +72,27 @@ void main() {
       ),
     );
     final accessTokens = AccessTokenStore();
-    final controller = AuthController(store, auth, accessTokens);
+    final controller = AuthController(
+      store,
+      auth,
+      accessTokens,
+      now: () => now,
+    );
 
     await controller.restoreSession();
 
     expect(auth.refreshCalls, ['old-refresh']);
     expect(store.refreshToken, 'new-refresh');
+    expect(store.lastOnlineAuthAt, now);
     expect(accessTokens.accessToken, 'new-access');
     expect(controller.status, AuthStatus.authenticated);
   });
 
   test('revoked stored session clears credentials', () async {
-    final store = FakeCredentialStore(refreshToken: 'revoked-refresh');
+    final store = FakeCredentialStore(
+      refreshToken: 'revoked-refresh',
+      lastOnlineAuthAt: DateTime.utc(2026, 10, 6, 9),
+    );
     final auth = FakeAuthService(
       refreshError: const ApiException(
         statusCode: 401,
@@ -95,26 +105,108 @@ void main() {
     await controller.restoreSession();
 
     expect(store.refreshToken, isNull);
+    expect(store.lastOnlineAuthAt, isNull);
     expect(accessTokens.accessToken, isNull);
     expect(controller.status, AuthStatus.unauthenticated);
   });
 
-  test('temporary restore failure preserves refresh credential', () async {
-    final store = FakeCredentialStore(refreshToken: 'valid-refresh');
+  test(
+    'temporary restore failure opens offline session within 24-hour grace',
+    () async {
+      final now = DateTime.utc(2026, 10, 6, 10);
+      final store = FakeCredentialStore(
+        refreshToken: 'valid-refresh',
+        lastOnlineAuthAt: now.subtract(const Duration(hours: 23)),
+      );
+      final auth = FakeAuthService(
+        refreshError: const ApiException(
+          statusCode: 503,
+          message: 'Service unavailable.',
+        ),
+      );
+      final accessTokens = AccessTokenStore();
+      final controller = AuthController(
+        store,
+        auth,
+        accessTokens,
+        now: () => now,
+      );
+
+      await controller.restoreSession();
+
+      expect(store.refreshToken, 'valid-refresh');
+      expect(accessTokens.accessToken, isNull);
+      expect(controller.status, AuthStatus.offlineAuthenticated);
+      expect(controller.isAuthenticated, isTrue);
+    },
+  );
+
+  test('temporary restore failure rejects expired offline grace', () async {
+    final now = DateTime.utc(2026, 10, 6, 10);
+    final store = FakeCredentialStore(
+      refreshToken: 'valid-refresh',
+      lastOnlineAuthAt: now.subtract(const Duration(hours: 24)),
+    );
     final auth = FakeAuthService(
       refreshError: const ApiException(
         statusCode: 503,
         message: 'Service unavailable.',
       ),
     );
-    final accessTokens = AccessTokenStore();
-    final controller = AuthController(store, auth, accessTokens);
+    final controller = AuthController(
+      store,
+      auth,
+      AccessTokenStore(),
+      now: () => now,
+    );
 
     await controller.restoreSession();
 
     expect(store.refreshToken, 'valid-refresh');
-    expect(accessTokens.accessToken, isNull);
     expect(controller.status, AuthStatus.restoreFailed);
+    expect(controller.isAuthenticated, isFalse);
+  });
+
+  test(
+    'temporary restore failure rejects missing online-auth timestamp',
+    () async {
+      final store = FakeCredentialStore(refreshToken: 'valid-refresh');
+      final auth = FakeAuthService(
+        refreshError: const ApiException(
+          statusCode: 503,
+          message: 'Service unavailable.',
+        ),
+      );
+      final controller = AuthController(
+        store,
+        auth,
+        AccessTokenStore(),
+        now: () => DateTime.utc(2026, 10, 6, 10),
+      );
+
+      await controller.restoreSession();
+
+      expect(store.refreshToken, 'valid-refresh');
+      expect(controller.status, AuthStatus.restoreFailed);
+      expect(controller.isAuthenticated, isFalse);
+    },
+  );
+
+  test('non-temporary restore failure requires recovery UI', () async {
+    final store = FakeCredentialStore(refreshToken: 'valid-refresh');
+    final auth = FakeAuthService(
+      refreshError: const ApiException(
+        statusCode: 400,
+        message: 'Invalid request.',
+      ),
+    );
+    final controller = AuthController(store, auth, AccessTokenStore());
+
+    await controller.restoreSession();
+
+    expect(store.refreshToken, 'valid-refresh');
+    expect(controller.status, AuthStatus.restoreFailed);
+    expect(controller.isAuthenticated, isFalse);
   });
 
   test('non-401 login failure is recorded without server message', () async {
@@ -169,28 +261,41 @@ void main() {
     expect(await diagnostics.readEntries(), isEmpty);
   });
 
-  test('login stores refresh token and keeps access token in memory', () async {
-    final store = FakeCredentialStore();
-    final auth = FakeAuthService(
-      loginResult: const AuthTokens(
-        accessToken: 'access',
-        refreshToken: 'refresh',
-      ),
-    );
-    final accessTokens = AccessTokenStore();
-    final controller = AuthController(store, auth, accessTokens);
+  test(
+    'login stores refresh token, auth timestamp, and access token',
+    () async {
+      final now = DateTime.utc(2026, 10, 6, 10);
+      final store = FakeCredentialStore();
+      final auth = FakeAuthService(
+        loginResult: const AuthTokens(
+          accessToken: 'access',
+          refreshToken: 'refresh',
+        ),
+      );
+      final accessTokens = AccessTokenStore();
+      final controller = AuthController(
+        store,
+        auth,
+        accessTokens,
+        now: () => now,
+      );
 
-    await controller.login(username: 'member', password: 'password');
+      await controller.login(username: 'member', password: 'password');
 
-    expect(auth.loginUsername, 'member');
-    expect(auth.loginPassword, 'password');
-    expect(store.refreshToken, 'refresh');
-    expect(accessTokens.accessToken, 'access');
-    expect(controller.status, AuthStatus.authenticated);
-  });
+      expect(auth.loginUsername, 'member');
+      expect(auth.loginPassword, 'password');
+      expect(store.refreshToken, 'refresh');
+      expect(store.lastOnlineAuthAt, now);
+      expect(accessTokens.accessToken, 'access');
+      expect(controller.status, AuthStatus.authenticated);
+    },
+  );
 
   test('logout revokes refresh token and clears local session', () async {
-    final store = FakeCredentialStore(refreshToken: 'refresh');
+    final store = FakeCredentialStore(
+      refreshToken: 'refresh',
+      lastOnlineAuthAt: DateTime.utc(2026, 10, 6, 9),
+    );
     final auth = FakeAuthService(
       refreshResult: const AuthTokens(
         accessToken: 'access',
@@ -205,6 +310,7 @@ void main() {
 
     expect(auth.logoutCalls, ['rotated-refresh']);
     expect(store.refreshToken, isNull);
+    expect(store.lastOnlineAuthAt, isNull);
     expect(accessTokens.accessToken, isNull);
     expect(controller.status, AuthStatus.unauthenticated);
   });
@@ -235,9 +341,10 @@ void main() {
 }
 
 class FakeCredentialStore implements CredentialStore {
-  FakeCredentialStore({this.refreshToken});
+  FakeCredentialStore({this.refreshToken, this.lastOnlineAuthAt});
 
   String? refreshToken;
+  DateTime? lastOnlineAuthAt;
 
   @override
   Future<String?> readRefreshToken() async => refreshToken;
@@ -248,8 +355,17 @@ class FakeCredentialStore implements CredentialStore {
   }
 
   @override
+  Future<DateTime?> readLastOnlineAuthAt() async => lastOnlineAuthAt;
+
+  @override
+  Future<void> writeLastOnlineAuthAt(DateTime authenticatedAt) async {
+    lastOnlineAuthAt = authenticatedAt.toUtc();
+  }
+
+  @override
   Future<void> clear() async {
     refreshToken = null;
+    lastOnlineAuthAt = null;
   }
 }
 

@@ -174,18 +174,12 @@ Future<void> main() async {
     diagnostics: diagnosticsService,
   );
 
-  await localNotificationService.initialize();
-
   final authController = AuthController(
     credentialStore,
     authApi,
     accessTokenStore,
     diagnostics: diagnosticsService,
   );
-
-  // Restore persisted credentials before the authentication gate first
-  // renders, so it can select the appropriate initial application state.
-  await authController.restoreSession();
 
   apiClient.setRefreshSessionHandler(authController.refreshSession);
 
@@ -207,4 +201,38 @@ Future<void> main() async {
       apiServer: config.apiBaseUrl.origin,
     ),
   );
+
+  // Render the existing authentication loading state immediately instead of
+  // holding the first Flutter frame behind notification/plugin initialization,
+  // secure credential access, and a possible network session refresh.
+  //
+  // Notification initialization remains ahead of session restoration so an
+  // authenticated AppShell cannot begin notification reconciliation before
+  // the platform notification service is ready.
+  unawaited(
+    _completeStartup(
+      localNotificationService: localNotificationService,
+      authController: authController,
+      diagnosticsService: diagnosticsService,
+    ),
+  );
+}
+
+Future<void> _completeStartup({
+  required LocalNotificationService localNotificationService,
+  required AuthController authController,
+  required DiagnosticsService diagnosticsService,
+}) async {
+  try {
+    await localNotificationService.initialize();
+  } catch (error, stackTrace) {
+    await diagnosticsService.recordError(
+      subsystem: 'Notifications',
+      message: 'Notification initialization failed during startup',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+
+  await authController.restoreSession();
 }
