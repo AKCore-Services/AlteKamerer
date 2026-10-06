@@ -115,105 +115,109 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        AkSurfaceCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(event.type, style: Theme.of(context).textTheme.labelLarge),
-              const SizedBox(height: 6),
-              Text(
-                event.name,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 20),
-              _DetailRow(
-                icon: Icons.calendar_today,
-                label: l10n.calendarDate,
-                value: _formatDate(event.date),
-              ),
-              if (event.place.isNotEmpty)
-                _DetailRow(
-                  icon: Icons.location_on_outlined,
-                  label: l10n.calendarPlace,
-                  value: event.place,
-                ),
-              if (event.halanTime.isNotEmpty)
-                _DetailRow(
-                  icon: Icons.schedule,
-                  label: l10n.akSignupHalan,
-                  value: event.halanTime,
-                ),
-              if (event.effectiveThereTime.isNotEmpty)
-                _DetailRow(
-                  icon: Icons.schedule,
-                  label: l10n.eventOnSite,
-                  value: event.effectiveThereTime,
-                ),
-              if (event.startsTime.isNotEmpty)
-                _DetailRow(
-                  icon: Icons.play_arrow,
-                  label: l10n.eventStart,
-                  value: event.startsTime,
-                ),
-              if (event.playDuration.isNotEmpty)
-                _DetailRow(
-                  icon: Icons.timelapse,
-                  label: l10n.eventPlayDuration,
-                  value: event.playDuration,
-                ),
-              if (event.stand.isNotEmpty)
-                _DetailRow(
-                  icon: Icons.music_note,
-                  label: l10n.eventMusicStand,
-                  value: event.stand,
-                ),
-            ],
-          ),
-        ),
-        if (event.description.isNotEmpty ||
-            event.internalDescription.isNotEmpty) ...[
-          const SizedBox(height: 16),
+    return RefreshIndicator(
+      onRefresh: () => widget.controller.refresh(widget.eventId),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
           AkSurfaceCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(event.type, style: Theme.of(context).textTheme.labelLarge),
+                const SizedBox(height: 6),
                 Text(
-                  l10n.information,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  event.name,
+                  style: Theme.of(context).textTheme.headlineSmall,
                 ),
-                if (event.description.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(event.description),
-                ],
-                if (event.internalDescription.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    l10n.internalInformation,
-                    style: Theme.of(context).textTheme.titleSmall,
+                const SizedBox(height: 20),
+                _DetailRow(
+                  icon: Icons.calendar_today,
+                  label: l10n.calendarDate,
+                  value: _formatDate(event.date),
+                ),
+                if (event.place.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.location_on_outlined,
+                    label: l10n.calendarPlace,
+                    value: event.place,
                   ),
-                  const SizedBox(height: 6),
-                  Text(event.internalDescription),
-                ],
+                if (event.halanTime.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.schedule,
+                    label: l10n.akSignupHalan,
+                    value: event.halanTime,
+                  ),
+                if (event.effectiveThereTime.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.schedule,
+                    label: l10n.eventOnSite,
+                    value: event.effectiveThereTime,
+                  ),
+                if (event.startsTime.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.play_arrow,
+                    label: l10n.eventStart,
+                    value: event.startsTime,
+                  ),
+                if (event.playDuration.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.timelapse,
+                    label: l10n.eventPlayDuration,
+                    value: event.playDuration,
+                  ),
+                if (event.stand.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.music_note,
+                    label: l10n.eventMusicStand,
+                    value: event.stand,
+                  ),
               ],
             ),
           ),
+          if (event.description.isNotEmpty ||
+              event.internalDescription.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            AkSurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.information,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (event.description.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(event.description),
+                  ],
+                  if (event.internalDescription.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.internalInformation,
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(event.internalDescription),
+                  ],
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          _RegistrationCard(
+            event: event,
+            isShowingCachedData: widget.controller.isShowingCachedData,
+            onPressed:
+                widget.controller.isShowingCachedData ||
+                    widget.onRegistrationPressed == null
+                ? null
+                : () {
+                    widget.onRegistrationPressed!(event);
+                  },
+          ),
         ],
-        const SizedBox(height: 16),
-        _RegistrationCard(
-          event: event,
-          isShowingCachedData: widget.controller.isShowingCachedData,
-          onPressed:
-              widget.controller.isShowingCachedData ||
-                  widget.onRegistrationPressed == null
-              ? null
-              : () {
-                  widget.onRegistrationPressed!(event);
-                },
-        ),
-      ],
+      ),
     );
   }
 

@@ -7,14 +7,15 @@
 //   authenticated sessions.
 //
 // Contains:
-//   - CredentialStore: Refresh-token persistence interface.
+//   - CredentialStore: Refresh-token and recent-auth persistence interface.
 //
 // -----------------------------------------------------------------------------
 
-/// Defines persistent storage for the mobile refresh token.
+/// Defines persistent storage for mobile session restoration.
 ///
-/// The authentication controller uses this interface to restore sessions
-/// across app launches. Access tokens are managed separately in memory.
+/// The authentication controller persists the refresh token together with the
+/// time of the most recent successful online authentication. Access tokens are
+/// managed separately in memory.
 abstract interface class CredentialStore {
   /// Reads the persisted refresh token, or returns null when absent.
   Future<String?> readRefreshToken();
@@ -22,6 +23,12 @@ abstract interface class CredentialStore {
   /// Persists [refreshToken] for subsequent session restoration.
   Future<void> writeRefreshToken(String refreshToken);
 
-  /// Removes the persisted refresh token.
+  /// Reads when the session was last successfully authenticated online.
+  Future<DateTime?> readLastOnlineAuthAt();
+
+  /// Persists when the session was successfully authenticated online.
+  Future<void> writeLastOnlineAuthAt(DateTime authenticatedAt);
+
+  /// Removes all persisted session-restoration data.
   Future<void> clear();
 }

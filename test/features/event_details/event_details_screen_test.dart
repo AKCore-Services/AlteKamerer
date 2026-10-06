@@ -126,6 +126,26 @@ void main() {
     },
   );
 
+  testWidgets('pull to refresh reloads the displayed event', (
+    WidgetTester tester,
+  ) async {
+    final service = FakeEventDetailsService(event: _event());
+    final controller = EventDetailsController(service);
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pump();
+
+    expect(find.text('Inte anmäld'), findsOneWidget);
+
+    service.event = _event(signupState: 'Direkt');
+
+    await tester.drag(find.byType(ListView), const Offset(0, 300));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Din status: Direkt'), findsOneWidget);
+  });
+
   testWidgets('large text reflows event detail rows', (
     WidgetTester tester,
   ) async {

@@ -416,7 +416,7 @@ void main() {
     expect(find.byType(AppShell), findsOneWidget);
   });
 
-  testWidgets('temporary restore failure shows retryable error state', (
+  testWidgets('temporary restore failure opens cached app shell', (
     WidgetTester tester,
   ) async {
     final auth = FakeAuthService(
@@ -451,16 +451,14 @@ void main() {
       ),
     );
 
-    expect(find.text('Kunde inte ansluta'), findsOneWidget);
-    expect(find.text('Försök igen'), findsOneWidget);
-    expect(find.byType(LoginScreen), findsNothing);
-    expect(find.byType(AppShell), findsNothing);
-    expect(eventDetailsCache.clearCount, 0);
-
-    await tester.tap(find.text('Försök igen'));
     await tester.pump();
 
-    expect(auth.refreshCalls, ['stored-refresh', 'stored-refresh']);
+    expect(controller.status, AuthStatus.offlineAuthenticated);
+    expect(find.byType(LoginScreen), findsNothing);
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(find.text('Kunde inte ansluta'), findsNothing);
+    expect(find.text('Försök igen'), findsNothing);
+    expect(auth.refreshCalls, ['stored-refresh']);
     expect(eventDetailsCache.clearCount, 0);
   });
 
@@ -758,9 +756,11 @@ AuthController _createController({
 }
 
 class FakeCredentialStore implements CredentialStore {
-  FakeCredentialStore({this.refreshToken});
+  FakeCredentialStore({this.refreshToken})
+    : lastOnlineAuthAt = refreshToken == null ? null : DateTime.now().toUtc();
 
   String? refreshToken;
+  DateTime? lastOnlineAuthAt;
 
   @override
   Future<String?> readRefreshToken() async => refreshToken;
@@ -771,8 +771,17 @@ class FakeCredentialStore implements CredentialStore {
   }
 
   @override
+  Future<DateTime?> readLastOnlineAuthAt() async => lastOnlineAuthAt;
+
+  @override
+  Future<void> writeLastOnlineAuthAt(DateTime authenticatedAt) async {
+    lastOnlineAuthAt = authenticatedAt.toUtc();
+  }
+
+  @override
   Future<void> clear() async {
     refreshToken = null;
+    lastOnlineAuthAt = null;
   }
 }
 

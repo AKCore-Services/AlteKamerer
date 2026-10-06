@@ -189,6 +189,26 @@ void main() {
     expect(refreshCalls, 0);
   });
 
+  test('stalled request is aborted at the request timeout', () async {
+    final client = ApiClient(
+      AppConfig(apiBaseUrl: Uri.parse('https://akcore.example')),
+      AccessTokenStore(),
+      httpClient: _AbortAwareClient(),
+      requestTimeout: const Duration(milliseconds: 20),
+    );
+
+    await expectLater(
+      client.getJson('/api/v1/example'),
+      throwsA(
+        isA<ApiException>().having(
+          (exception) => exception.statusCode,
+          'statusCode',
+          408,
+        ),
+      ),
+    );
+  });
+
   test('authenticated PUT refreshes once and retries with new token', () async {
     final requests = <http.Request>[];
     final accessTokens = AccessTokenStore()..set('expired-access');
@@ -241,4 +261,16 @@ void main() {
 
     expect(requests[1].body, requests[0].body);
   });
+}
+
+class _AbortAwareClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request is! http.AbortableRequest || request.abortTrigger == null) {
+      throw StateError('Expected an abortable HTTP request.');
+    }
+
+    await request.abortTrigger;
+    throw http.RequestAbortedException(request.url);
+  }
 }

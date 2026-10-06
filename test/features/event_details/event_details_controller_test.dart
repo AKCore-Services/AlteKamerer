@@ -99,6 +99,38 @@ void main() {
     expect(controller.cachedAt, isNull);
   });
 
+  test(
+    'load exposes cached details before network refresh completes',
+    () async {
+      final event = _event();
+      final cachedAt = DateTime.utc(2026, 10, 4, 18);
+      final cache = _FakeEventDetailsCache(
+        value: CachedEventDetails(event: event, cachedAt: cachedAt),
+      );
+      final service = _DeferredEventDetailsService();
+      final controller = EventDetailsController(service, cache: cache);
+
+      final load = controller.load(42);
+
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.status, EventDetailsStatus.loaded);
+      expect(controller.event, same(event));
+      expect(controller.isShowingCachedData, isTrue);
+      expect(controller.cachedAt, cachedAt);
+
+      final refreshed = _event(signupState: 'Direkt');
+      service.complete(refreshed);
+      await load;
+
+      expect(controller.status, EventDetailsStatus.loaded);
+      expect(controller.event, same(refreshed));
+      expect(controller.event!.signupState, 'Direkt');
+      expect(controller.isShowingCachedData, isFalse);
+      expect(controller.cachedAt, isNull);
+    },
+  );
+
   test('failed load falls back to cached event details', () async {
     final event = _event();
     final cachedAt = DateTime.utc(2026, 10, 4, 18);

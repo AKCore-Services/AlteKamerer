@@ -25,7 +25,13 @@ import 'auth_api.dart';
 ///
 /// [restoreFailed] distinguishes a failed session check from a confirmed
 /// unauthenticated session, allowing the user to retry restoration.
-enum AuthStatus { loading, unauthenticated, authenticated, restoreFailed }
+enum AuthStatus {
+  loading,
+  unauthenticated,
+  authenticated,
+  offlineAuthenticated,
+  restoreFailed,
+}
 
 /// Coordinates authentication and the lifetime of mobile credentials.
 ///
@@ -38,12 +44,16 @@ class AuthController extends ChangeNotifier {
     this._authService,
     this._accessTokenStore, {
     this._diagnostics,
-  });
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
+
+  static const _offlineGracePeriod = Duration(hours: 24);
 
   final CredentialStore _credentialStore;
   final AuthService _authService;
   final AccessTokenStore _accessTokenStore;
   final DiagnosticsService? _diagnostics;
+  final DateTime Function() _now;
 
   AuthStatus _status = AuthStatus.loading;
   String? _refreshToken;
@@ -51,29 +61,40 @@ class AuthController extends ChangeNotifier {
 
   AuthStatus get status => _status;
 
-  bool get isAuthenticated => _status == AuthStatus.authenticated;
+  bool get isAuthenticated =>
+      _status == AuthStatus.authenticated ||
+      _status == AuthStatus.offlineAuthenticated;
 
   String? get accessToken => _accessTokenStore.accessToken;
 
   /// Attempts to restore a session using the persisted refresh token.
   ///
   /// A missing or rejected token produces an unauthenticated state.
-  /// Other failures retain the stored credentials and enter [AuthStatus.restoreFailed]
-  /// so restoration can be retried.
+  /// Temporary connection or server failures permit cached read-only access
+  /// only within 24 hours of the last successful online authentication.
+  /// Other failures enter [AuthStatus.restoreFailed] so restoration can be
+  /// retried when connectivity returns.
   Future<void> restoreSession() async {
     _status = AuthStatus.loading;
     notifyListeners();
 
-    final refreshToken = await _credentialStore.readRefreshToken();
-
-    if (refreshToken == null) {
-      _clearMemorySession();
-      _status = AuthStatus.unauthenticated;
-      notifyListeners();
-      return;
-    }
+    DateTime? lastOnlineAuthAt;
 
     try {
+      final refreshToken = await _credentialStore.readRefreshToken();
+      lastOnlineAuthAt = await _credentialStore.readLastOnlineAuthAt();
+
+      if (refreshToken == null) {
+        _clearMemorySession();
+        _status = AuthStatus.unauthenticated;
+        notifyListeners();
+        return;
+      }
+
+      // Retain the stored credential while offline so restoration can be
+      // retried later without inventing an access token.
+      _refreshToken = refreshToken;
+
       final tokens = await _authService.refresh(refreshToken);
       await _setSession(tokens);
     } on ApiException catch (exception, stackTrace) {
@@ -87,6 +108,15 @@ class AuthController extends ChangeNotifier {
         message: 'Session restore failed',
         error: diagnosticErrorDetails(exception, stackTrace),
       );
+
+      if (_isTemporaryRestoreFailure(exception) &&
+          _isWithinOfflineGrace(lastOnlineAuthAt)) {
+        _accessTokenStore.clear();
+        _status = AuthStatus.offlineAuthenticated;
+        notifyListeners();
+        return;
+      }
+
       _clearMemorySession();
       _status = AuthStatus.restoreFailed;
       notifyListeners();
@@ -146,6 +176,27 @@ class AuthController extends ChangeNotifier {
   /// or rejected; other failures are propagated.
   Future<bool> refreshSession() {
     return _refreshInFlight ??= _refreshSessionSingleFlight();
+  }
+
+  bool _isTemporaryRestoreFailure(ApiException exception) {
+    return exception.statusCode == 408 ||
+        exception.statusCode == 429 ||
+        exception.statusCode >= 500;
+  }
+
+  bool _isWithinOfflineGrace(DateTime? lastOnlineAuthAt) {
+    if (lastOnlineAuthAt == null) {
+      return false;
+    }
+
+    final now = _now().toUtc();
+    final authenticatedAt = lastOnlineAuthAt.toUtc();
+
+    if (authenticatedAt.isAfter(now)) {
+      return false;
+    }
+
+    return now.difference(authenticatedAt) < _offlineGracePeriod;
   }
 
   Future<bool> _refreshSessionSingleFlight() async {
@@ -215,6 +266,7 @@ class AuthController extends ChangeNotifier {
 
   Future<void> _setSession(AuthTokens tokens) async {
     await _credentialStore.writeRefreshToken(tokens.refreshToken);
+    await _credentialStore.writeLastOnlineAuthAt(_now().toUtc());
 
     _accessTokenStore.set(tokens.accessToken);
     _refreshToken = tokens.refreshToken;
