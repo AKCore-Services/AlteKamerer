@@ -2,6 +2,46 @@
 
 Alla betydande AlteKamerer-releaser dokumenteras här.
 
+## 1.2.0
+
+En uppdatering med bättre stöd för användning utan nätverk, förbättrad
+länkhantering, bakgrundsuppdatering och snabbare återkoppling i appen.
+
+### Offline och cache
+
+- Kalender och aktivitetsdetaljer kan visas från lokalt sparad data när
+  AKCore inte kan nås.
+- Aktivitetsdetaljer visas från cache direkt när sådan data finns och
+  uppdateras därefter mot AKCore.
+- Cachad aktivitetsinformation kan uppdateras manuellt genom att dra nedåt
+  i aktivitetsvyn.
+- Cachad medlemsdata förblir skrivskyddad när appen är offline; anmälningar
+  kräver fortsatt bekräftelse från AKCore.
+- En tidigare verifierad session kan ge tillgång till cachad information i
+  upp till 24 timmar utan nätverksanslutning.
+
+### Länkar och navigering
+
+- Förbättrad hantering av länkar till aktiviteter.
+- Länkar hanteras mer tillförlitligt även när appen behöver startas eller
+  återställa sin session innan aktiviteten kan öppnas.
+
+### Uppdatering
+
+- Appen uppdaterar relevant data när den återgår till aktiv användning.
+- Öppnade aktivitetsdetaljer kan uppdateras efter återgång till appen utan
+  att användaren först behöver navigera tillbaka till kalendern.
+
+### Prestanda och nätverk
+
+- Startgränssnittet visas tidigare medan notifieringar och session
+  initieras i bakgrunden.
+- Nätverksanrop har en begränsad väntetid och avbryts när tidsgränsen nås.
+- Befintliga HTTP-anslutningar återanvänds och onödiga väntetider vid
+  nätverksfel har minskats.
+- Befintlig cache används tidigare i flödet för att ge snabbare
+  återkoppling.
+
 ## 1.1.1
 
 En mindre funktions- och kvalitetsuppdatering med förbättrade inställningar,
