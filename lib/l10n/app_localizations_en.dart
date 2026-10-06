@@ -773,7 +773,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventPlayDuration => 'Play time';
 
   @override
-  String get eventMusicStand => 'Music stand';
+  String get eventPerformanceType => 'Performance type';
 
   @override
   String get information => 'Information';
@@ -783,6 +783,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get eventRegistration => 'Registration';
+
+  @override
+  String get eventAttendees => 'Attendees';
 
   @override
   String yourStatus(String status) {

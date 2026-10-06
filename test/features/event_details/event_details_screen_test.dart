@@ -54,6 +54,7 @@ void main() {
         event: _event(
           signupState: 'Hålan',
           internalDescription: 'Ta med marschmapp.',
+          stand: 'Stå och gå',
         ),
       ),
     );
@@ -68,6 +69,10 @@ void main() {
     expect(find.text('18:00'), findsOneWidget);
     expect(find.text('18:30'), findsOneWidget);
     expect(find.text('19:00'), findsOneWidget);
+    expect(find.text('Speltid'), findsOneWidget);
+    expect(find.text('120 min'), findsOneWidget);
+    expect(find.text('Speltyp'), findsOneWidget);
+    expect(find.text('Stå och gå'), findsOneWidget);
     expect(find.text('Ordinarie repetition'), findsOneWidget);
     expect(find.text('Intern information'), findsOneWidget);
     expect(find.text('Ta med marschmapp.'), findsOneWidget);
@@ -76,7 +81,84 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Din status: Hålan'), findsOneWidget);
-    expect(find.text('12 kommer · 3 kommer inte'), findsOneWidget);
+    expect(find.text('12 kommer · 3 kommer inte'), findsNothing);
+  });
+
+  testWidgets('shows attendees grouped like the AKCore event page', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventDetailsController(
+      FakeEventDetailsService(
+        event: _event(
+          attendees: const [
+            EventAttendee(
+              personName: 'Anna Altsax',
+              where: 'Direkt',
+              car: false,
+              instrument: true,
+              instrumentName: 'Altsax',
+              comment: '',
+            ),
+            EventAttendee(
+              personName: 'Bertil Altsax',
+              where: 'Hålan',
+              car: true,
+              instrument: false,
+              instrumentName: 'Altsax',
+              comment: 'Tar med notställ.',
+            ),
+            EventAttendee(
+              personName: 'Cecilia Balett',
+              where: 'Hålan',
+              car: false,
+              instrument: true,
+              instrumentName: 'Balett',
+              comment: '',
+            ),
+            EventAttendee(
+              personName: r'David \Frånvarande',
+              where: 'Kan inte komma',
+              car: false,
+              instrument: true,
+              instrumentName: 'Trumpet',
+              comment: 'Bortrest.',
+            ),
+          ],
+        ),
+      ),
+    );
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Deltagare'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Deltagare'), findsOneWidget);
+    expect(find.text('Kommer'), findsOneWidget);
+    expect(find.text('Kommer inte'), findsOneWidget);
+
+    expect(find.text('Altsax · 2'), findsOneWidget);
+    expect(find.text('Balett · 1'), findsOneWidget);
+
+    expect(find.text('Anna Altsax'), findsOneWidget);
+    expect(find.text('Direkt'), findsOneWidget);
+
+    expect(find.text('Bertil Altsax'), findsOneWidget);
+    expect(
+      find.text('Hålan · Behöver transport av instrument · Har bil'),
+      findsOneWidget,
+    );
+    expect(find.text('Tar med notställ.'), findsOneWidget);
+
+    expect(find.text('Cecilia Balett'), findsOneWidget);
+
+    expect(find.text('David Frånvarande'), findsOneWidget);
+    expect(find.text('Bortrest.'), findsOneWidget);
   });
 
   testWidgets(
@@ -319,8 +401,10 @@ EventDetails _event({
   String internalDescription = '',
   String halanTime = '18:00',
   String thereTime = '18:30',
+  String stand = '',
   bool disabled = false,
   bool registrationAvailable = true,
+  List<EventAttendee> attendees = const [],
 }) {
   return EventDetails(
     id: 42,
@@ -334,7 +418,7 @@ EventDetails _event({
     thereTime: '18:30',
     startsTime: '19:00',
     playDuration: '120 min',
-    stand: '',
+    stand: stand,
     signupState: signupState,
     coming: 12,
     notComing: 3,
@@ -348,7 +432,7 @@ EventDetails _event({
       selectedInstrument: 'Flöjt',
       availableInstruments: const ['Flöjt'],
     ),
-    attendees: const [],
+    attendees: attendees,
   );
 }
 

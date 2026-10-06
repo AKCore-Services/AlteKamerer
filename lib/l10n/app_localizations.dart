@@ -1568,11 +1568,11 @@ abstract class AppLocalizations {
   /// **'Play time'**
   String get eventPlayDuration;
 
-  /// No description provided for @eventMusicStand.
+  /// No description provided for @eventPerformanceType.
   ///
   /// In en, this message translates to:
-  /// **'Music stand'**
-  String get eventMusicStand;
+  /// **'Performance type'**
+  String get eventPerformanceType;
 
   /// No description provided for @information.
   ///
@@ -1591,6 +1591,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Registration'**
   String get eventRegistration;
+
+  /// No description provided for @eventAttendees.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendees'**
+  String get eventAttendees;
 
   /// No description provided for @yourStatus.
   ///
