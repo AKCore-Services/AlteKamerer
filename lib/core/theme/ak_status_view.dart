@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
 
+import 'ak_assets.dart';
 import 'ak_brand_logo.dart';
 
 /// Shared loading state used while authenticated content is fetched.
@@ -51,7 +52,21 @@ class AkErrorView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline, size: 48),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final imageSize = (constraints.maxWidth * 0.32).clamp(
+                    96.0,
+                    160.0,
+                  );
+
+                  return Image.asset(
+                    AkAssets.errorIcon,
+                    width: imageSize,
+                    height: imageSize,
+                    fit: BoxFit.contain,
+                  );
+                },
+              ),
               const SizedBox(height: 16),
               Text(
                 title,

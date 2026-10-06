@@ -1,3 +1,4 @@
+import 'package:altekamerer/core/theme/ak_assets.dart';
 import 'package:altekamerer/core/theme/ak_brand_logo.dart';
 import 'package:altekamerer/core/theme/ak_status_view.dart';
 import 'package:altekamerer/core/theme/app_theme.dart';
@@ -42,7 +43,10 @@ void main() {
         ),
       ),
     );
+    final image = tester.widget<Image>(find.byType(Image));
+    final provider = image.image as AssetImage;
 
+    expect(provider.assetName, AkAssets.errorIcon);
     expect(find.text('Något gick fel'), findsOneWidget);
     expect(find.text('Det gick inte att hämta informationen.'), findsOneWidget);
     expect(find.text('Försök igen'), findsNothing);
