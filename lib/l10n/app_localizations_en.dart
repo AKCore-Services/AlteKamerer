@@ -776,6 +776,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get eventPerformanceType => 'Performance type';
 
   @override
+  String get eventFikaAssignment => 'Fika and cleaning';
+
+  @override
   String get information => 'Information';
 
   @override
@@ -880,6 +883,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get calendarShowWeekdayDescription =>
       'Show the localized weekday abbreviation before the date.';
+
+  @override
+  String get calendarFikaAssignments => 'Fika assignments';
+
+  @override
+  String get calendarFikaAssignmentsDescription =>
+      'Choose which fika assignments are shown in the calendar.';
+
+  @override
+  String get calendarFikaVisibility => 'Show fika assignments';
+
+  @override
+  String get calendarFikaVisibilityDontShow => 'Don\'t show';
+
+  @override
+  String get calendarFikaVisibilityMySection => 'Show my section';
+
+  @override
+  String get calendarFikaVisibilityAll => 'Show all';
+
+  @override
+  String get calendarFikaEmojiDescription =>
+      'Choose one symbol for each section. Clear a field to restore its default.';
+
+  @override
+  String get calendarFikaResetEmojis => 'Reset fika symbols';
 
   @override
   String get reminders => 'Reminders';

@@ -775,6 +775,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get eventPerformanceType => 'Speltyp';
 
   @override
+  String get eventFikaAssignment => 'Fika och städning';
+
+  @override
   String get information => 'Information';
 
   @override
@@ -879,6 +882,32 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get calendarShowWeekdayDescription =>
       'Visa den lokaliserade förkortningen för veckodagen före datumet.';
+
+  @override
+  String get calendarFikaAssignments => 'Fikaansvar';
+
+  @override
+  String get calendarFikaAssignmentsDescription =>
+      'Välj vilka fikaansvar som visas i kalendern.';
+
+  @override
+  String get calendarFikaVisibility => 'Visa fikaansvar';
+
+  @override
+  String get calendarFikaVisibilityDontShow => 'Visa inte';
+
+  @override
+  String get calendarFikaVisibilityMySection => 'Visa min sektion';
+
+  @override
+  String get calendarFikaVisibilityAll => 'Visa alla';
+
+  @override
+  String get calendarFikaEmojiDescription =>
+      'Välj en symbol för varje sektion. Töm ett fält för att återställa standardvärdet.';
+
+  @override
+  String get calendarFikaResetEmojis => 'Återställ fikasymboler';
 
   @override
   String get reminders => 'Påminnelser';

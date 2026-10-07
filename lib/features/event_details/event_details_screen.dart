@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
+import '../fika/fika_section.dart';
 import 'event_details.dart';
 import 'event_details_controller.dart';
 
@@ -115,6 +116,10 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
       );
     }
 
+    final fikaAssignment = parseFikaCollection(event.fikaCollection)
+        .map((section) => section.backendValue)
+        .join(', ');
+
     return RefreshIndicator(
       onRefresh: () => widget.controller.refresh(widget.eventId),
       child: ListView(
@@ -172,6 +177,12 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                     icon: Icons.music_note,
                     label: l10n.eventPerformanceType,
                     value: event.stand,
+                  ),
+                if (fikaAssignment.isNotEmpty)
+                  _DetailRow(
+                    icon: Icons.local_cafe_outlined,
+                    label: l10n.eventFikaAssignment,
+                    value: fikaAssignment,
                   ),
               ],
             ),

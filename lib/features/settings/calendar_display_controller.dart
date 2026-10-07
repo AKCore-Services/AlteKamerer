@@ -10,6 +10,7 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../fika/fika_section.dart';
 import 'calendar_display_preferences.dart';
 
 /// Exposes the calendar display settings used by the UI.
@@ -43,6 +44,29 @@ class CalendarDisplayController extends ChangeNotifier {
 
   Future<void> setShowWeekday(bool showWeekday) async {
     await _update(_settings.copyWith(showWeekday: showWeekday));
+  }
+
+  Future<void> setFikaVisibility(FikaVisibility visibility) async {
+    await _update(_settings.copyWith(fikaVisibility: visibility));
+  }
+
+  Future<void> setFikaEmoji(FikaSection section, String value) async {
+    final emojis = Map<FikaSection, String>.from(_settings.fikaEmojis);
+    final normalized = value.trim();
+
+    emojis[section] = normalized.isEmpty
+        ? defaultFikaEmojis[section]!
+        : normalized;
+
+    await _update(_settings.copyWith(fikaEmojis: emojis));
+  }
+
+  Future<void> resetFikaEmojis() async {
+    await _update(
+      _settings.copyWith(
+        fikaEmojis: Map<FikaSection, String>.from(defaultFikaEmojis),
+      ),
+    );
   }
 
   Future<void> _update(CalendarDisplaySettings settings) async {

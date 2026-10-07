@@ -28,6 +28,7 @@ import '../event_details/event_details.dart';
 import '../event_registration/event_registration_api.dart';
 import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
+import '../me/current_member_controller.dart';
 import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
@@ -55,6 +56,7 @@ class AppShell extends StatefulWidget {
     required this.reminderPreferences,
     required this.localeController,
     required this.calendarDisplayController,
+    this.currentMemberController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
@@ -72,6 +74,7 @@ class AppShell extends StatefulWidget {
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final CurrentMemberController? currentMemberController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
@@ -289,6 +292,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
       _ShellPage.calendar => CalendarScreen(
         controller: widget.calendarController,
         displayController: widget.calendarDisplayController,
+        currentMemberController: widget.currentMemberController,
         onOpenEvent: _openEvent,
         onRefresh: widget.notificationSync.sync,
       ),

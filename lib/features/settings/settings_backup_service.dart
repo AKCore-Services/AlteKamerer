@@ -52,6 +52,8 @@ class SettingsBackupService {
           dateFormat: snapshot.calendarDisplay.dateFormat,
           timeFormat: snapshot.calendarDisplay.timeFormat,
           showWeekday: snapshot.calendarDisplay.showWeekday,
+          fikaVisibility: snapshot.calendarDisplay.fikaVisibility,
+          fikaEmojis: snapshot.calendarDisplay.fikaEmojis,
         ),
       ),
     );
@@ -119,6 +121,13 @@ class SettingsBackupService {
         showWeekday:
             importedCalendar?.showWeekday ??
             current.calendarDisplay.showWeekday,
+        fikaVisibility:
+            importedCalendar?.fikaVisibility ??
+            current.calendarDisplay.fikaVisibility,
+        fikaEmojis: {
+          ...current.calendarDisplay.fikaEmojis,
+          ...?importedCalendar?.fikaEmojis,
+        },
       ),
     );
   }

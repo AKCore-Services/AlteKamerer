@@ -12,6 +12,9 @@ import 'package:flutter/material.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
+import '../fika/fika_section.dart';
+import '../fika/fika_section_mapper.dart';
+import '../me/current_member_controller.dart';
 import '../settings/calendar_display_controller.dart';
 import '../settings/calendar_display_preferences.dart';
 import 'calendar_controller.dart';
@@ -28,19 +31,25 @@ class CalendarScreen extends StatelessWidget {
     super.key,
     required this.controller,
     required this.displayController,
+    this.currentMemberController,
     required this.onOpenEvent,
     required this.onRefresh,
   });
 
   final CalendarController controller;
   final CalendarDisplayController displayController;
+  final CurrentMemberController? currentMemberController;
   final ValueChanged<CalendarEvent> onOpenEvent;
   final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: Listenable.merge([controller, displayController]),
+      listenable: Listenable.merge([
+        controller,
+        displayController,
+        ?currentMemberController,
+      ]),
       builder: (context, child) {
         final l10n = AppLocalizations.of(context);
 
@@ -63,6 +72,10 @@ class CalendarScreen extends StatelessWidget {
     }
 
     final events = controller.visibleEvents;
+    final member = currentMemberController?.member;
+    final memberFikaSections = member == null
+        ? const <FikaSection>{}
+        : fikaSectionsForInstruments(member.availableInstruments);
 
     return RefreshIndicator(
       onRefresh: onRefresh,
@@ -89,6 +102,7 @@ class CalendarScreen extends StatelessWidget {
                     CalendarEventRow(
                       event: events[index],
                       displaySettings: displayController.settings,
+                      memberFikaSections: memberFikaSections,
                       onTap: () {
                         onOpenEvent(events[index]);
                       },
@@ -445,6 +459,8 @@ class _CalendarHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final style = Theme.of(context).textTheme.labelMedium
         ?.copyWith(fontWeight: FontWeight.w600);
+    final showFikaColumn =
+        displaySettings.fikaVisibility != FikaVisibility.dontShow;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -455,8 +471,34 @@ class _CalendarHeader extends StatelessWidget {
             child: Text(l10n.calendarDate, style: style),
           ),
           SizedBox(width: 54, child: Text(l10n.calendarTime, style: style)),
-          SizedBox(width: 92, child: Text(l10n.calendarType, style: style)),
-          Expanded(child: Text(l10n.calendarPlace, style: style)),
+          Expanded(
+            flex: 2,
+            child: Text(
+              l10n.calendarType,
+              style: style,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              l10n.calendarPlace,
+              style: style,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (showFikaColumn)
+            SizedBox(
+              width: CalendarEventRow.fikaColumnWidth,
+              child: Text(
+                '☕',
+                key: const ValueKey('calendar-fika-header'),
+                style: style,
+                textAlign: TextAlign.center,
+              ),
+            ),
           const SizedBox(width: 32),
         ],
       ),

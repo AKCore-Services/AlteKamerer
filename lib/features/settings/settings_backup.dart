@@ -10,6 +10,9 @@
 
 import 'dart:convert';
 
+import 'package:characters/characters.dart';
+
+import '../fika/fika_section.dart';
 import 'calendar_display_preferences.dart';
 import 'locale_preferences.dart';
 
@@ -36,11 +39,15 @@ class SettingsBackupCalendarDisplay {
     this.dateFormat,
     this.timeFormat,
     this.showWeekday,
+    this.fikaVisibility,
+    this.fikaEmojis,
   });
 
   final CalendarDateFormat? dateFormat;
   final CalendarTimeFormat? timeFormat;
   final bool? showWeekday;
+  final FikaVisibility? fikaVisibility;
+  final Map<FikaSection, String>? fikaEmojis;
 }
 
 /// Encodes and validates the versioned settings backup format.
@@ -79,6 +86,12 @@ class SettingsBackupCodec {
         if (calendarDisplay.timeFormat case final timeFormat?)
           'timeFormat': timeFormat.storageValue,
         'showWeekday': ?calendarDisplay.showWeekday,
+        if (calendarDisplay.fikaVisibility case final fikaVisibility?)
+          'fikaVisibility': fikaVisibility.storageValue,
+        if (calendarDisplay.fikaEmojis case final fikaEmojis?)
+          'fikaEmojis': {
+            for (final entry in fikaEmojis.entries) entry.key.name: entry.value,
+          },
       };
     }
 
@@ -216,8 +229,14 @@ class SettingsBackupCodec {
     final hasDateFormat = calendar.containsKey('dateFormat');
     final hasTimeFormat = calendar.containsKey('timeFormat');
     final hasShowWeekday = calendar.containsKey('showWeekday');
+    final hasFikaVisibility = calendar.containsKey('fikaVisibility');
+    final hasFikaEmojis = calendar.containsKey('fikaEmojis');
 
-    if (!hasDateFormat && !hasTimeFormat && !hasShowWeekday) {
+    if (!hasDateFormat &&
+        !hasTimeFormat &&
+        !hasShowWeekday &&
+        !hasFikaVisibility &&
+        !hasFikaEmojis) {
       return null;
     }
 
@@ -231,7 +250,76 @@ class SettingsBackupCodec {
       showWeekday: hasShowWeekday
           ? _decodeShowWeekday(calendar['showWeekday'])
           : null,
+      fikaVisibility: hasFikaVisibility
+          ? _decodeFikaVisibility(calendar['fikaVisibility'])
+          : null,
+      fikaEmojis: hasFikaEmojis
+          ? _decodeFikaEmojis(calendar['fikaEmojis'])
+          : null,
     );
+  }
+
+  FikaVisibility _decodeFikaVisibility(Object? value) {
+    if (value is! String) {
+      throw const SettingsBackupFormatException(
+        'The calendar fika visibility setting must be a string.',
+      );
+    }
+
+    return switch (value) {
+      'dont-show' => FikaVisibility.dontShow,
+      'my-section' => FikaVisibility.mySection,
+      'all' => FikaVisibility.all,
+      _ => throw const SettingsBackupFormatException(
+        'The calendar fika visibility setting is not supported.',
+      ),
+    };
+  }
+
+  Map<FikaSection, String> _decodeFikaEmojis(Object? value) {
+    if (value is! Map<String, dynamic>) {
+      throw const SettingsBackupFormatException(
+        'The calendar fika symbols setting must be an object.',
+      );
+    }
+
+    final emojis = <FikaSection, String>{};
+
+    for (final entry in value.entries) {
+      FikaSection? section;
+
+      for (final candidate in FikaSection.values) {
+        if (candidate.name == entry.key) {
+          section = candidate;
+          break;
+        }
+      }
+
+      if (section == null) {
+        throw const SettingsBackupFormatException(
+          'The calendar fika symbols contain an unsupported section.',
+        );
+      }
+
+      final symbol = entry.value;
+      if (symbol is! String) {
+        throw const SettingsBackupFormatException(
+          'Calendar fika symbols must be strings.',
+        );
+      }
+
+      final normalized = symbol.trim();
+
+      if (normalized.characters.length > 1) {
+        throw const SettingsBackupFormatException(
+          'Calendar fika symbols must contain at most one symbol.',
+        );
+      }
+
+      emojis[section] = normalized;
+    }
+
+    return emojis;
   }
 
   CalendarDateFormat _decodeDateFormat(Object? value) {

@@ -4,6 +4,10 @@ import 'package:altekamerer/core/theme/app_theme.dart';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
+import 'package:altekamerer/features/calendar/calendar_event_row.dart';
+import 'package:altekamerer/features/fika/fika_section.dart';
+import 'package:altekamerer/features/me/current_member_controller.dart';
+import 'package:altekamerer/features/me/me.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
 import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
 import 'package:altekamerer/features/calendar/calendar_screen.dart';
@@ -85,6 +89,165 @@ void main() {
     expect(find.text('Spelning'), findsOneWidget);
     expect(find.text('Kungmarken'), findsOneWidget);
     expect(find.byTooltip('Anmäld: Direkt'), findsOneWidget);
+  });
+
+  testWidgets('fika column is hidden by default', (WidgetTester tester) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event(fikaCollection: 'Flöjt,Sax')]),
+    );
+
+    await controller.load();
+    await tester.pumpWidget(_TestApp(controller: controller));
+
+    expect(find.byKey(const ValueKey('calendar-fika-header')), findsNothing);
+    expect(find.byKey(const ValueKey('calendar-fika-1')), findsNothing);
+  });
+
+  testWidgets('show all renders assigned fika section symbols', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event(fikaCollection: 'Flöjt,Sax')]),
+    );
+    final displayController = _createDisplayController(
+      const CalendarDisplaySettings(fikaVisibility: FikaVisibility.all),
+    );
+
+    await controller.load();
+    await displayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(controller: controller, displayController: displayController),
+    );
+
+    expect(find.byKey(const ValueKey('calendar-fika-header')), findsOneWidget);
+    expect(find.text('☕'), findsOneWidget);
+    expect(find.text('🪈🎷'), findsOneWidget);
+  });
+
+  testWidgets('show my section filters fika by member instruments', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event(fikaCollection: 'Flöjt,Sax')]),
+    );
+    final displayController = _createDisplayController(
+      const CalendarDisplaySettings(fikaVisibility: FikaVisibility.mySection),
+    );
+    final currentMemberController = CurrentMemberController()
+      ..update(
+        const Me(
+          displayName: 'Test',
+          isMember: true,
+          isBallet: false,
+          availableInstruments: ['Altsax'],
+        ),
+      );
+
+    await controller.load();
+    await displayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(
+        controller: controller,
+        displayController: displayController,
+        currentMemberController: currentMemberController,
+      ),
+    );
+
+    expect(find.text('🎷'), findsOneWidget);
+    expect(find.text('🪈🎷'), findsNothing);
+  });
+
+  testWidgets('calendar uses customized fika section symbol', (
+    WidgetTester tester,
+  ) async {
+    final controller = CalendarController(
+      FakeCalendarService(events: [_event(fikaCollection: 'Sax')]),
+    );
+    final displayController = _createDisplayController(
+      CalendarDisplaySettings(
+        fikaVisibility: FikaVisibility.all,
+        fikaEmojis: {...defaultFikaEmojis, FikaSection.sax: '⭐'},
+      ),
+    );
+
+    await controller.load();
+    await displayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(controller: controller, displayController: displayController),
+    );
+
+    expect(find.text('⭐'), findsOneWidget);
+    expect(find.text('🎷'), findsNothing);
+  });
+
+  testWidgets('fika column remains compact without increasing row height', (
+    WidgetTester tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = CalendarController(
+      FakeCalendarService(
+        events: [
+          _event(
+            type: 'Very long event type that must stay on one line',
+            place: 'Very long place name that must stay on one line',
+            fikaCollection:
+                'Balett,Flöjt,Klarinett,Komp,Sax,Horn,Grovbrass,Trumpet',
+          ),
+        ],
+      ),
+    );
+
+    await controller.load();
+
+    final hiddenDisplayController = _createDisplayController();
+    await hiddenDisplayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(
+        controller: controller,
+        displayController: hiddenDisplayController,
+      ),
+    );
+
+    final hiddenHeight = tester.getSize(find.byType(CalendarEventRow)).height;
+
+    final visibleDisplayController = _createDisplayController(
+      const CalendarDisplaySettings(fikaVisibility: FikaVisibility.all),
+    );
+    await visibleDisplayController.load();
+
+    await tester.pumpWidget(
+      _TestApp(
+        controller: controller,
+        displayController: visibleDisplayController,
+      ),
+    );
+    await tester.pump();
+
+    final visibleHeight = tester.getSize(find.byType(CalendarEventRow)).height;
+    final fikaText = tester.widget<Text>(
+      find.byKey(const ValueKey('calendar-fika-1')),
+    );
+    final typeText = tester.widget<Text>(
+      find.text('Very long event type that must stay on one line'),
+    );
+    final placeText = tester.widget<Text>(
+      find.text('Very long place name that must stay on one line'),
+    );
+
+    expect(visibleHeight, hiddenHeight);
+    expect(fikaText.maxLines, 1);
+    expect(fikaText.overflow, TextOverflow.ellipsis);
+    expect(typeText.maxLines, 1);
+    expect(typeText.overflow, TextOverflow.ellipsis);
+    expect(placeText.maxLines, 1);
+    expect(placeText.overflow, TextOverflow.ellipsis);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('large text uses adaptive calendar event layout', (
@@ -775,12 +938,14 @@ class _TestApp extends StatelessWidget {
   _TestApp({
     required this.controller,
     CalendarDisplayController? displayController,
+    this.currentMemberController,
     this.onOpenEvent,
     this.locale = const Locale('sv'),
   }) : displayController = displayController ?? _createDisplayController();
 
   final CalendarController controller;
   final CalendarDisplayController displayController;
+  final CurrentMemberController? currentMemberController;
   final ValueChanged<CalendarEvent>? onOpenEvent;
   final Locale locale;
 
@@ -795,6 +960,7 @@ class _TestApp extends StatelessWidget {
         body: CalendarScreen(
           controller: controller,
           displayController: displayController,
+          currentMemberController: currentMemberController,
           onOpenEvent: onOpenEvent ?? (_) {},
           onRefresh: controller.load,
         ),
@@ -829,6 +995,7 @@ CalendarEvent _event({
   String name = 'Event',
   String place = 'Kårhuset',
   String description = '',
+  String fikaCollection = '',
   String? signupState,
   String date = '2026-09-15',
 }) {
@@ -839,6 +1006,7 @@ CalendarEvent _event({
     place: place,
     description: description,
     internalDescription: '',
+    fikaCollection: fikaCollection,
     date: date,
     halanTime: '18:00',
     thereTime: '18:30',

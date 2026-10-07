@@ -2,6 +2,7 @@ import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
 import 'package:altekamerer/features/calendar/calendar_api.dart';
 import 'package:altekamerer/features/calendar/calendar_controller.dart';
 import 'package:altekamerer/features/calendar/calendar_event.dart';
+import 'package:altekamerer/features/me/current_member_controller.dart';
 import 'package:altekamerer/features/me/me.dart';
 import 'package:altekamerer/features/me/me_api.dart';
 import 'package:altekamerer/features/notifications/local_notification_service.dart';
@@ -56,6 +57,58 @@ void main() {
       ]);
     },
   );
+
+  test('sync exposes member data from the existing member request', () async {
+    final calendarController = CalendarController(_FakeCalendarService());
+    final scheduler = _FakeNotificationScheduler();
+    final currentMemberController = CurrentMemberController();
+
+    final service = NotificationSyncService(
+      _FakeMeService(availableInstruments: const ['Altsax', 'Trumpet']),
+      calendarController,
+      NotificationPlanner(stockholm),
+      scheduler,
+      _FakeReminderPreferences(defaultReminderOffsets),
+      currentMemberController: currentMemberController,
+      now: () => DateTime.utc(2026, 9, 20, 6),
+    );
+
+    await service.sync();
+
+    expect(currentMemberController.member, isNotNull);
+    expect(currentMemberController.member!.availableInstruments, [
+      'Altsax',
+      'Trumpet',
+    ]);
+  });
+
+  test('failed member lookup leaves existing member state unchanged', () async {
+    final calendarController = CalendarController(_FakeCalendarService());
+    final scheduler = _FakeNotificationScheduler();
+    final currentMemberController = CurrentMemberController()
+      ..update(
+        const Me(
+          displayName: 'Existing',
+          isMember: true,
+          isBallet: false,
+          availableInstruments: ['Horn'],
+        ),
+      );
+
+    final service = NotificationSyncService(
+      _FailingMeService(),
+      calendarController,
+      NotificationPlanner(stockholm),
+      scheduler,
+      _FakeReminderPreferences(defaultReminderOffsets),
+      currentMemberController: currentMemberController,
+    );
+
+    await service.sync();
+
+    expect(currentMemberController.member!.displayName, 'Existing');
+    expect(currentMemberController.member!.availableInstruments, ['Horn']);
+  });
 
   test('sync supports a configurable number of reminders', () async {
     final calendarController = CalendarController(_FakeCalendarService());
@@ -203,9 +256,11 @@ class _FailingMeService implements MeService {
 }
 
 class _FakeMeService implements MeService {
-  _FakeMeService();
+  _FakeMeService({this.availableInstruments = const []});
 
   static const bool isBallet = false;
+
+  final List<String> availableInstruments;
 
   @override
   Future<Me> getMe() async {
@@ -213,7 +268,7 @@ class _FakeMeService implements MeService {
       displayName: 'Test',
       isMember: true,
       isBallet: isBallet,
-      availableInstruments: const [],
+      availableInstruments: availableInstruments,
     );
   }
 }

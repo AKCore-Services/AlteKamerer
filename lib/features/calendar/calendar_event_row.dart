@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_localizations.dart';
+import '../fika/fika_section.dart';
 import '../settings/calendar_display_preferences.dart';
 import 'calendar_display_formatter.dart';
 import 'calendar_event.dart';
@@ -23,13 +24,16 @@ class CalendarEventRow extends StatelessWidget {
     super.key,
     required this.event,
     required this.displaySettings,
+    this.memberFikaSections = const {},
     required this.onTap,
   });
 
   final CalendarEvent event;
   final CalendarDisplaySettings displaySettings;
+  final Set<FikaSection> memberFikaSections;
   final VoidCallback onTap;
 
+  static const fikaColumnWidth = 40.0;
   static const _formatter = CalendarDisplayFormatter();
 
   @override
@@ -49,6 +53,21 @@ class CalendarEventRow extends StatelessWidget {
       settings: displaySettings,
     );
     final useStackedLayout = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    final showFikaColumn =
+        displaySettings.fikaVisibility != FikaVisibility.dontShow;
+    final assignedFikaSections = parseFikaCollection(event.fikaCollection);
+    final visibleFikaSections = switch (displaySettings.fikaVisibility) {
+      FikaVisibility.dontShow => const <FikaSection>{},
+      FikaVisibility.mySection => {
+        for (final section in assignedFikaSections)
+          if (memberFikaSections.contains(section)) section,
+      },
+      FikaVisibility.all => assignedFikaSections,
+    };
+    final fikaText = visibleFikaSections
+        .map(displaySettings.fikaEmojiFor)
+        .join();
+
     final dateWidth = switch (displaySettings.dateFormat) {
       CalendarDateFormat.compact => displaySettings.showWeekday ? 82.0 : 54.0,
       CalendarDateFormat.numeric => displaySettings.showWeekday ? 108.0 : 82.0,
@@ -81,7 +100,25 @@ class CalendarEventRow extends StatelessWidget {
                       value: event.place,
                     ),
                   const SizedBox(height: 8),
-                  _RegistrationIndicator(event: event),
+                  Row(
+                    children: [
+                      if (showFikaColumn) ...[
+                        SizedBox(
+                          width: fikaColumnWidth,
+                          child: Text(
+                            fikaText,
+                            key: ValueKey('calendar-fika-${event.id}'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyMedium,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      _RegistrationIndicator(event: event),
+                    ],
+                  ),
                 ],
               )
             : Row(
@@ -100,25 +137,38 @@ class CalendarEventRow extends StatelessWidget {
                     width: 54,
                     child: Text(formattedTime, style: textTheme.bodyMedium),
                   ),
-                  SizedBox(
-                    width: 92,
+                  Expanded(
+                    flex: 2,
                     child: Text(
                       event.type,
                       style: textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w500,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Expanded(
+                    flex: 3,
                     child: Text(
                       event.place,
                       style: textTheme.bodyMedium,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (showFikaColumn)
+                    SizedBox(
+                      width: fikaColumnWidth,
+                      child: Text(
+                        fikaText,
+                        key: ValueKey('calendar-fika-${event.id}'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodyMedium,
+                      ),
+                    ),
                   const SizedBox(width: 8),
                   _RegistrationIndicator(event: event),
                 ],
