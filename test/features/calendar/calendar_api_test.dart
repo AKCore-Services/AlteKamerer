@@ -30,6 +30,7 @@ void main() {
                 'place': 'Kårhuset',
                 'description': 'Beskrivning',
                 'internalDescription': 'Intern information',
+                'fikaCollection': 'Flöjt,Sax',
                 'date': '2026-09-15',
                 'halanTime': '18:00',
                 'thereTime': '18:30',
@@ -65,6 +66,7 @@ void main() {
     expect(event.place, 'Kårhuset');
     expect(event.description, 'Beskrivning');
     expect(event.internalDescription, 'Intern information');
+    expect(event.fikaCollection, 'Flöjt,Sax');
     expect(event.date, '2026-09-15');
     expect(event.halanTime, '18:00');
     expect(event.thereTime, '18:30');

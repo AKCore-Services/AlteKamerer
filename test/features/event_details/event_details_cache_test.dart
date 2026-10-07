@@ -32,6 +32,7 @@ void main() {
 
     expect(restored.id, event.id);
     expect(restored.name, event.name);
+    expect(restored.fikaCollection, event.fikaCollection);
     expect(restored.signupState, event.signupState);
     expect(restored.registration.where, event.registration.where);
     expect(
@@ -112,6 +113,7 @@ EventDetails _event({int id = 42, String name = 'Tisdagsrep'}) {
     place: 'Kårhuset',
     description: 'Ordinarie repetition',
     internalDescription: 'Intern information',
+    fikaCollection: 'Flöjt,Sax',
     date: '2026-09-15',
     halanTime: '18:00',
     thereTime: '18:30',

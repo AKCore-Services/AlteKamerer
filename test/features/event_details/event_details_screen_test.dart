@@ -84,6 +84,36 @@ void main() {
     expect(find.text('12 kommer · 3 kommer inte'), findsNothing);
   });
 
+  testWidgets('shows full textual fika assignment', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventDetailsController(
+      FakeEventDetailsService(
+        event: _event(fikaCollection: 'Sax,Flöjt,Unknown,Sax'),
+      ),
+    );
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pump();
+
+    expect(find.text('Fika och städning'), findsOneWidget);
+    expect(find.text('Flöjt, Sax'), findsOneWidget);
+    expect(find.text('🎷'), findsNothing);
+  });
+
+  testWidgets('hides fika assignment when collection is empty', (
+    WidgetTester tester,
+  ) async {
+    final controller = EventDetailsController(
+      FakeEventDetailsService(event: _event()),
+    );
+
+    await tester.pumpWidget(_TestApp(controller: controller));
+    await tester.pump();
+
+    expect(find.text('Fika och städning'), findsNothing);
+  });
+
   testWidgets('shows attendees grouped like the AKCore event page', (
     WidgetTester tester,
   ) async {
@@ -399,6 +429,7 @@ EventDetails _event({
   String type = 'Kårhusrep',
   String? signupState,
   String internalDescription = '',
+  String fikaCollection = '',
   String halanTime = '18:00',
   String thereTime = '18:30',
   String stand = '',
@@ -413,6 +444,7 @@ EventDetails _event({
     place: 'Kårhuset',
     description: 'Ordinarie repetition',
     internalDescription: internalDescription,
+    fikaCollection: fikaCollection,
     date: '2026-09-15',
     halanTime: '18:00',
     thereTime: '18:30',

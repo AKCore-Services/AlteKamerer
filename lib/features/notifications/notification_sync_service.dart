@@ -11,6 +11,7 @@
 import '../../core/diagnostics/diagnostic_error_details.dart';
 import '../../core/diagnostics/diagnostics_service.dart';
 import '../calendar/calendar_controller.dart';
+import '../me/current_member_controller.dart';
 import '../me/me_api.dart';
 import '../settings/reminder_preferences.dart';
 import 'local_notification_service.dart';
@@ -36,6 +37,7 @@ class NotificationSyncService implements NotificationSync {
     this._reminderPreferences, {
     DateTime Function()? now,
     this._diagnostics,
+    this._currentMemberController,
   }) : _now = now ?? (() => DateTime.now().toUtc());
 
   final MeService _meService;
@@ -45,6 +47,7 @@ class NotificationSyncService implements NotificationSync {
   final ReminderPreferences _reminderPreferences;
   final DateTime Function() _now;
   final DiagnosticsService? _diagnostics;
+  final CurrentMemberController? _currentMemberController;
 
   @override
   /// Refreshes scheduled reminders from current calendar data.
@@ -61,6 +64,7 @@ class NotificationSyncService implements NotificationSync {
 
     try {
       final me = await _meService.getMe();
+      _currentMemberController?.update(me);
 
       final reminderOffsets = await _reminderPreferences.getReminderOffsets();
 

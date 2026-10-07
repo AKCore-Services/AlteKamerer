@@ -20,6 +20,7 @@ import '../../core/diagnostics/diagnostics_service.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
+import '../fika/fika_section.dart';
 import '../notifications/notification_sync_service.dart';
 import 'calendar_display_controller.dart';
 import 'calendar_display_preferences.dart';
@@ -88,6 +89,7 @@ class ReminderSettingsScreen extends StatefulWidget {
 
 class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   final List<_ReminderEditor> _reminders = [];
+  final Map<FikaSection, TextEditingController> _fikaEmojiControllers = {};
 
   bool _languageExpanded = true;
   bool _calendarDisplayExpanded = true;
@@ -109,16 +111,48 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   @override
   void initState() {
     super.initState();
+
+    for (final section in FikaSection.values) {
+      _fikaEmojiControllers[section] = TextEditingController(
+        text: widget.calendarDisplayController.settings.fikaEmojiFor(section),
+      );
+    }
+
     _load();
   }
 
   @override
   void dispose() {
+    for (final controller in _fikaEmojiControllers.values) {
+      controller.dispose();
+    }
+
     for (final reminder in _reminders) {
       reminder.dispose();
     }
 
     super.dispose();
+  }
+
+  void _setFikaEmojiField(FikaSection section, String value) {
+    final controller = _fikaEmojiControllers[section]!;
+
+    if (controller.text == value) {
+      return;
+    }
+
+    controller.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+  }
+
+  void _syncAllFikaEmojiFields() {
+    final settings = widget.calendarDisplayController.settings;
+
+    for (final section in FikaSection.values) {
+      _setFikaEmojiField(section, settings.fikaEmojiFor(section));
+    }
   }
 
   Future<String> _loadAppVersion() async {
@@ -530,6 +564,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       }
 
       _replaceReminders(offsets.map(_ReminderEditor.fromDuration).toList());
+      _syncAllFikaEmojiFields();
 
       setState(() {
         _isBackupBusy = false;
@@ -723,6 +758,83 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
                     subtitle: Text(l10n.calendarShowWeekdayDescription),
                     value: settings.showWeekday,
                     onChanged: widget.calendarDisplayController.setShowWeekday,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.calendarFikaAssignments,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.calendarFikaAssignmentsDescription,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<FikaVisibility>(
+                    key: ValueKey(
+                      'fika-visibility-${settings.fikaVisibility.name}',
+                    ),
+                    initialValue: settings.fikaVisibility,
+                    decoration: InputDecoration(
+                      labelText: l10n.calendarFikaVisibility,
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: FikaVisibility.dontShow,
+                        child: Text(l10n.calendarFikaVisibilityDontShow),
+                      ),
+                      DropdownMenuItem(
+                        value: FikaVisibility.mySection,
+                        child: Text(l10n.calendarFikaVisibilityMySection),
+                      ),
+                      DropdownMenuItem(
+                        value: FikaVisibility.all,
+                        child: Text(l10n.calendarFikaVisibilityAll),
+                      ),
+                    ],
+                    onChanged: (visibility) async {
+                      if (visibility == null) {
+                        return;
+                      }
+
+                      await widget.calendarDisplayController.setFikaVisibility(
+                        visibility,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.calendarFikaEmojiDescription,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  for (final section in FikaSection.values) ...[
+                    TextFormField(
+                      key: ValueKey('fika-emoji-${section.name}'),
+                      controller: _fikaEmojiControllers[section],
+                      decoration: InputDecoration(
+                        labelText: section.backendValue,
+                      ),
+                      inputFormatters: [LengthLimitingTextInputFormatter(1)],
+                      onChanged: (value) async {
+                        await widget.calendarDisplayController.setFikaEmoji(
+                          section,
+                          value,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await widget.calendarDisplayController.resetFikaEmojis();
+
+                      if (mounted) {
+                        _syncAllFikaEmojiFields();
+                      }
+                    },
+                    icon: const Icon(Icons.restart_alt),
+                    label: Text(l10n.calendarFikaResetEmojis),
                   ),
                 ],
               ),

@@ -1,4 +1,5 @@
 import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
+import 'package:altekamerer/features/fika/fika_section.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
 import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
@@ -102,6 +103,100 @@ void main() {
     expect(calendarController.settings.showWeekday, isTrue);
     expect(calendarPreferences.settings.showWeekday, isTrue);
     expect(calendarPreferences.setCount, 3);
+  });
+
+  testWidgets('fika display settings update and reset immediately', (
+    WidgetTester tester,
+  ) async {
+    final preferences = _FakeReminderPreferences([]);
+    final calendarPreferences = _FakeCalendarDisplayPreferences(
+      const CalendarDisplaySettings(),
+    );
+    final calendarController = CalendarDisplayController(calendarPreferences);
+    await calendarController.load();
+
+    await _pumpScreen(
+      tester,
+      preferences: preferences,
+      calendarDisplayController: calendarController,
+    );
+
+    final visibilitySelector = tester
+        .widget<DropdownButtonFormField<FikaVisibility>>(
+          find.byType(DropdownButtonFormField<FikaVisibility>),
+        );
+
+    visibilitySelector.onChanged!(FikaVisibility.mySection);
+    await tester.pumpAndSettle();
+
+    expect(
+      calendarController.settings.fikaVisibility,
+      FikaVisibility.mySection,
+    );
+    expect(
+      calendarPreferences.settings.fikaVisibility,
+      FikaVisibility.mySection,
+    );
+
+    final saxField = find.byKey(const ValueKey('fika-emoji-sax'));
+
+    await tester.scrollUntilVisible(
+      saxField,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.enterText(saxField, '⭐');
+    await tester.pumpAndSettle();
+
+    expect(calendarController.settings.fikaEmojiFor(FikaSection.sax), '⭐');
+
+    await tester.enterText(saxField, '');
+    await tester.pumpAndSettle();
+
+    await tester.enterText(saxField, 'AB');
+    await tester.pumpAndSettle();
+
+    expect(calendarController.settings.fikaEmojiFor(FikaSection.sax), 'A');
+
+    await tester.enterText(saxField, '');
+    await tester.pumpAndSettle();
+
+    expect(
+      calendarController.settings.fikaEmojiFor(FikaSection.sax),
+      defaultFikaEmojis[FikaSection.sax],
+    );
+
+    var visibleSaxField = tester.widget<TextField>(
+      find.descendant(of: saxField, matching: find.byType(TextField)),
+    );
+    expect(visibleSaxField.controller?.text, isEmpty);
+
+    await tester.enterText(saxField, '⭐');
+    await tester.pumpAndSettle();
+
+    final resetButton = find.text('Återställ fikasymboler');
+
+    await tester.scrollUntilVisible(
+      resetButton,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(resetButton);
+    await tester.pumpAndSettle();
+
+    expect(calendarController.settings.fikaEmojis, defaultFikaEmojis);
+    expect(
+      calendarController.settings.fikaVisibility,
+      FikaVisibility.mySection,
+    );
+
+    visibleSaxField = tester.widget<TextField>(
+      find.descendant(of: saxField, matching: find.byType(TextField)),
+    );
+    expect(
+      visibleSaxField.controller?.text,
+      defaultFikaEmojis[FikaSection.sax],
+    );
   });
 
   testWidgets('settings sections can be collapsed and expanded', (
@@ -303,10 +398,16 @@ void main() {
 
     expect(find.text('AlteKamerer · Version 9.8.7'), findsNothing);
 
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -1000));
+    final aboutHeader = find.text('Om');
+
+    await tester.scrollUntilVisible(
+      aboutHeader,
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(aboutHeader);
     await tester.pumpAndSettle();
 
-    final aboutHeader = find.text('Om');
     expect(aboutHeader, findsOneWidget);
 
     final saveCenter = tester.getCenter(find.text('Spara inställningar'));
@@ -335,12 +436,17 @@ void main() {
       },
     );
 
+    final aboutHeader = find.text('Om');
+
     await tester.scrollUntilVisible(
-      find.text('Om'),
+      aboutHeader,
       300,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.tap(find.text('Om'));
+    await tester.ensureVisible(aboutHeader);
+    await tester.pumpAndSettle();
+
+    await tester.tap(aboutHeader);
     await tester.pumpAndSettle();
 
     expect(
@@ -680,7 +786,11 @@ void main() {
     "calendarDisplay": {
       "dateFormat": "written",
       "timeFormat": "12-hour",
-      "showWeekday": true
+      "showWeekday": true,
+        "fikaVisibility": "all",
+        "fikaEmojis": {
+          "sax": "S"
+        }
     }
   }
 }
@@ -711,6 +821,26 @@ void main() {
       CalendarTimeFormat.twelveHour,
     );
     expect(calendarController.settings.showWeekday, isTrue);
+    expect(calendarController.settings.fikaVisibility, FikaVisibility.all);
+    expect(calendarController.settings.fikaEmojiFor(FikaSection.sax), 'S');
+
+    final calendarDisplayHeader = find.text('Kalendervisning');
+    await tester.scrollUntilVisible(
+      calendarDisplayHeader,
+      -300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(calendarDisplayHeader);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('fika-visibility-all')), findsOneWidget);
+
+    final saxField = find.byKey(const ValueKey('fika-emoji-sax'));
+    final visibleSaxField = tester.widget<TextField>(
+      find.descendant(of: saxField, matching: find.byType(TextField)),
+    );
+    expect(visibleSaxField.controller?.text, 'S');
+
     expect(await preferences.getReminderOffsets(), [
       const Duration(minutes: 30),
     ]);

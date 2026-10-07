@@ -31,6 +31,7 @@ import 'features/calendar/calendar_controller.dart';
 import 'features/event_details/event_details_api.dart';
 import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
+import 'features/me/current_member_controller.dart';
 import 'features/me/me_api.dart';
 import 'features/notifications/local_notification_service.dart';
 import 'features/navigation/akcore_link_parser.dart';
@@ -133,6 +134,7 @@ Future<void> main() async {
     diagnostics: diagnosticsService,
   );
   final meApi = MeApi(apiClient);
+  final currentMemberController = CurrentMemberController();
   final eventDetailsApi = EventDetailsApi(apiClient);
   final eventDetailsCache = SecureEventDetailsCache();
   final eventRegistrationApi = EventRegistrationApi(apiClient);
@@ -172,6 +174,7 @@ Future<void> main() async {
     localNotificationService,
     reminderPreferences,
     diagnostics: diagnosticsService,
+    currentMemberController: currentMemberController,
   );
 
   final authController = AuthController(
@@ -195,6 +198,7 @@ Future<void> main() async {
       reminderPreferences: reminderPreferences,
       localeController: localeController,
       calendarDisplayController: calendarDisplayController,
+      currentMemberController: currentMemberController,
       settingsBackupService: settingsBackupService,
       settingsBackupFileService: settingsBackupFileService,
       diagnosticsService: diagnosticsService,

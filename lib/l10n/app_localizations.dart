@@ -1574,6 +1574,12 @@ abstract class AppLocalizations {
   /// **'Performance type'**
   String get eventPerformanceType;
 
+  /// No description provided for @eventFikaAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Fika and cleaning'**
+  String get eventFikaAssignment;
+
   /// No description provided for @information.
   ///
   /// In en, this message translates to:
@@ -1765,6 +1771,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show the localized weekday abbreviation before the date.'**
   String get calendarShowWeekdayDescription;
+
+  /// No description provided for @calendarFikaAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Fika assignments'**
+  String get calendarFikaAssignments;
+
+  /// No description provided for @calendarFikaAssignmentsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose which fika assignments are shown in the calendar.'**
+  String get calendarFikaAssignmentsDescription;
+
+  /// No description provided for @calendarFikaVisibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fika assignments'**
+  String get calendarFikaVisibility;
+
+  /// No description provided for @calendarFikaVisibilityDontShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t show'**
+  String get calendarFikaVisibilityDontShow;
+
+  /// No description provided for @calendarFikaVisibilityMySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Show my section'**
+  String get calendarFikaVisibilityMySection;
+
+  /// No description provided for @calendarFikaVisibilityAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get calendarFikaVisibilityAll;
+
+  /// No description provided for @calendarFikaEmojiDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose one symbol for each section. Clear a field to restore its default.'**
+  String get calendarFikaEmojiDescription;
+
+  /// No description provided for @calendarFikaResetEmojis.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset fika symbols'**
+  String get calendarFikaResetEmojis;
 
   /// No description provided for @reminders.
   ///

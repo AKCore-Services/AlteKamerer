@@ -37,6 +37,7 @@ void main() {
     expect(restored.place, event.place);
     expect(restored.description, event.description);
     expect(restored.internalDescription, event.internalDescription);
+    expect(restored.fikaCollection, event.fikaCollection);
     expect(restored.date, event.date);
     expect(restored.halanTime, event.halanTime);
     expect(restored.thereTime, event.thereTime);
@@ -131,6 +132,7 @@ CalendarEvent _event() {
     place: 'AF-borgen',
     description: 'Description',
     internalDescription: 'Internal description',
+    fikaCollection: 'Flöjt,Sax',
     date: '2026-10-05',
     halanTime: '18:00',
     thereTime: '18:30',

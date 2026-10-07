@@ -28,6 +28,7 @@ void main() {
             'place': 'Kårhuset',
             'description': 'Ordinarie repetition',
             'internalDescription': '',
+            'fikaCollection': 'Flöjt,Sax',
             'date': '2026-09-15',
             'halanTime': '18:00',
             'thereTime': '18:30',
@@ -75,6 +76,7 @@ void main() {
     expect(event.name, 'Tisdagsrep');
     expect(event.place, 'Kårhuset');
     expect(event.description, 'Ordinarie repetition');
+    expect(event.fikaCollection, 'Flöjt,Sax');
     expect(event.date, '2026-09-15');
     expect(event.halanTime, '18:00');
     expect(event.thereTime, '18:30');

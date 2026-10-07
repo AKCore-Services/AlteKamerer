@@ -20,6 +20,7 @@ import '../calendar/calendar_controller.dart';
 import '../event_details/event_details_api.dart';
 import '../event_details/event_details_cache.dart';
 import '../event_registration/event_registration_api.dart';
+import '../me/current_member_controller.dart';
 import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
@@ -49,6 +50,7 @@ class AuthGate extends StatefulWidget {
     required this.reminderPreferences,
     required this.localeController,
     required this.calendarDisplayController,
+    this.currentMemberController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
@@ -65,6 +67,7 @@ class AuthGate extends StatefulWidget {
   final ReminderPreferences reminderPreferences;
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
+  final CurrentMemberController? currentMemberController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
@@ -107,6 +110,8 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _clearSessionData() async {
+    widget.currentMemberController?.clear();
+
     try {
       await widget.calendarController.clearSessionData();
     } catch (_) {
@@ -152,6 +157,7 @@ class _AuthGateState extends State<AuthGate> {
             reminderPreferences: widget.reminderPreferences,
             localeController: widget.localeController,
             calendarDisplayController: widget.calendarDisplayController,
+            currentMemberController: widget.currentMemberController,
             settingsBackupService: widget.settingsBackupService,
             settingsBackupFileService: widget.settingsBackupFileService,
             diagnosticsService: widget.diagnosticsService,

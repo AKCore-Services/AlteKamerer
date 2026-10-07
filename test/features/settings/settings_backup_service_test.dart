@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:altekamerer/features/fika/fika_section.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
 import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
 import 'package:altekamerer/features/settings/locale_controller.dart';
@@ -24,10 +25,12 @@ void main() {
       Duration(hours: 1),
     ]);
     calendarPreferences = _FakeCalendarDisplayPreferences(
-      const CalendarDisplaySettings(
+      CalendarDisplaySettings(
         dateFormat: CalendarDateFormat.numeric,
         timeFormat: CalendarTimeFormat.twelveHour,
         showWeekday: true,
+        fikaVisibility: FikaVisibility.mySection,
+        fikaEmojis: {...defaultFikaEmojis, FikaSection.sax: '⭐'},
       ),
     );
 
@@ -57,6 +60,17 @@ void main() {
       'dateFormat': 'numeric',
       'timeFormat': '12-hour',
       'showWeekday': true,
+      'fikaVisibility': 'my-section',
+      'fikaEmojis': {
+        'balett': '🩰',
+        'flojt': '🪈',
+        'klarinett': '🎼',
+        'komp': '🥁',
+        'sax': '⭐',
+        'horn': '📯',
+        'grovbrass': '🎶',
+        'trumpet': '🎺',
+      },
     });
   });
 
@@ -88,6 +102,8 @@ void main() {
     expect(calendar.dateFormat, CalendarDateFormat.numeric);
     expect(calendar.timeFormat, CalendarTimeFormat.twelveHour);
     expect(calendar.showWeekday, isFalse);
+    expect(calendar.fikaVisibility, FikaVisibility.mySection);
+    expect(calendar.fikaEmojiFor(FikaSection.sax), '⭐');
   });
 
   test('successful import refreshes running controllers', () async {
@@ -105,7 +121,11 @@ void main() {
     "calendarDisplay": {
       "dateFormat": "written",
       "timeFormat": "24-hour",
-      "showWeekday": false
+      "showWeekday": false,
+      "fikaVisibility": "all",
+      "fikaEmojis": {
+        "sax": "S"
+      }
     }
   }
 }
@@ -120,6 +140,47 @@ void main() {
       CalendarTimeFormat.twentyFourHour,
     );
     expect(calendarController.settings.showWeekday, isFalse);
+    expect(calendarController.settings.fikaVisibility, FikaVisibility.all);
+    expect(calendarController.settings.fikaEmojiFor(FikaSection.sax), 'S');
+    expect(
+      calendarController.settings.fikaEmojiFor(FikaSection.trumpet),
+      defaultFikaEmojis[FikaSection.trumpet],
+    );
+  });
+
+  test('rejects fika symbols longer than one grapheme cluster', () {
+    expect(
+      () => service.validateImport(r'''
+{
+  "schemaVersion": 1,
+  "settings": {
+    "calendarDisplay": {
+      "fikaEmojis": {
+        "sax": "AB"
+      }
+    }
+  }
+}
+'''),
+      throwsA(isA<SettingsBackupFormatException>()),
+    );
+  });
+
+  test('accepts one multi-code-point emoji grapheme cluster', () {
+    final backup = service.validateImport(r'''
+{
+  "schemaVersion": 1,
+  "settings": {
+    "calendarDisplay": {
+      "fikaEmojis": {
+        "sax": "👨‍👩‍👧‍👦"
+      }
+    }
+  }
+}
+''');
+
+    expect(backup.calendarDisplay?.fikaEmojis?[FikaSection.sax], '👨‍👩‍👧‍👦');
   });
 
   test('invalid source is rejected before any settings are written', () {
@@ -152,6 +213,8 @@ void main() {
         dateFormat: CalendarDateFormat.written,
         timeFormat: CalendarTimeFormat.twentyFourHour,
         showWeekday: false,
+        fikaVisibility: FikaVisibility.all,
+        fikaEmojis: {FikaSection.sax: 'S'},
       ),
     );
 
@@ -173,6 +236,8 @@ void main() {
     expect(calendar.dateFormat, CalendarDateFormat.numeric);
     expect(calendar.timeFormat, CalendarTimeFormat.twelveHour);
     expect(calendar.showWeekday, isTrue);
+    expect(calendar.fikaVisibility, FikaVisibility.mySection);
+    expect(calendar.fikaEmojiFor(FikaSection.sax), '⭐');
 
     expect(localePreferences.writeCount, 2);
     expect(reminderPreferences.writeCount, 2);

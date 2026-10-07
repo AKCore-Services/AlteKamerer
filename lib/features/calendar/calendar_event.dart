@@ -19,6 +19,7 @@ class CalendarEvent {
     required this.place,
     required this.description,
     required this.internalDescription,
+    this.fikaCollection = '',
     required this.date,
     required this.halanTime,
     required this.thereTime,
@@ -39,6 +40,7 @@ class CalendarEvent {
       place: json['place'] as String? ?? '',
       description: json['description'] as String? ?? '',
       internalDescription: json['internalDescription'] as String? ?? '',
+      fikaCollection: json['fikaCollection'] as String? ?? '',
       date: json['date'] as String,
       halanTime: json['halanTime'] as String? ?? '',
       thereTime: json['thereTime'] as String? ?? '',
@@ -61,6 +63,7 @@ class CalendarEvent {
       'place': place,
       'description': description,
       'internalDescription': internalDescription,
+      'fikaCollection': fikaCollection,
       'date': date,
       'halanTime': halanTime,
       'thereTime': thereTime,
@@ -80,6 +83,7 @@ class CalendarEvent {
   final String place;
   final String description;
   final String internalDescription;
+  final String fikaCollection;
   final String date;
   final String halanTime;
   final String thereTime;

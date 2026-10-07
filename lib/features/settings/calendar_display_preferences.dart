@@ -10,6 +10,8 @@
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../fika/fika_section.dart';
+
 /// Supported calendar date formats.
 ///
 /// Unrecognized stored values fall back to [CalendarDateFormat.compact].
@@ -51,6 +53,37 @@ enum CalendarTimeFormat {
   }
 }
 
+/// Controls which fika assignments are shown in the calendar.
+enum FikaVisibility {
+  dontShow('dont-show'),
+  mySection('my-section'),
+  all('all');
+
+  const FikaVisibility(this.storageValue);
+
+  final String storageValue;
+
+  static FikaVisibility fromStorage(String? value) {
+    return switch (value) {
+      'my-section' => FikaVisibility.mySection,
+      'all' => FikaVisibility.all,
+      _ => FikaVisibility.dontShow,
+    };
+  }
+}
+
+/// Default compact symbols for each AKCore fika section.
+const defaultFikaEmojis = <FikaSection, String>{
+  FikaSection.balett: '🩰',
+  FikaSection.flojt: '🪈',
+  FikaSection.klarinett: '🎼',
+  FikaSection.komp: '🥁',
+  FikaSection.sax: '🎷',
+  FikaSection.horn: '📯',
+  FikaSection.grovbrass: '🎶',
+  FikaSection.trumpet: '🎺',
+};
+
 /// Groups the member's preferred calendar display options.
 ///
 /// Defaults to compact dates, a 24-hour clock, and hidden weekday names.
@@ -59,21 +92,34 @@ class CalendarDisplaySettings {
     this.dateFormat = CalendarDateFormat.compact,
     this.timeFormat = CalendarTimeFormat.twentyFourHour,
     this.showWeekday = false,
+    this.fikaVisibility = FikaVisibility.dontShow,
+    this.fikaEmojis = defaultFikaEmojis,
   });
 
   final CalendarDateFormat dateFormat;
   final CalendarTimeFormat timeFormat;
   final bool showWeekday;
+  final FikaVisibility fikaVisibility;
+  final Map<FikaSection, String> fikaEmojis;
+
+  String fikaEmojiFor(FikaSection section) {
+    final value = fikaEmojis[section]?.trim() ?? '';
+    return value.isEmpty ? defaultFikaEmojis[section]! : value;
+  }
 
   CalendarDisplaySettings copyWith({
     CalendarDateFormat? dateFormat,
     CalendarTimeFormat? timeFormat,
     bool? showWeekday,
+    FikaVisibility? fikaVisibility,
+    Map<FikaSection, String>? fikaEmojis,
   }) {
     return CalendarDisplaySettings(
       dateFormat: dateFormat ?? this.dateFormat,
       timeFormat: timeFormat ?? this.timeFormat,
       showWeekday: showWeekday ?? this.showWeekday,
+      fikaVisibility: fikaVisibility ?? this.fikaVisibility,
+      fikaEmojis: fikaEmojis ?? this.fikaEmojis,
     );
   }
 }
@@ -96,8 +142,14 @@ class SharedPreferencesCalendarDisplayPreferences
   static const _dateFormatKey = 'calendar_date_format';
   static const _timeFormatKey = 'calendar_time_format';
   static const _showWeekdayKey = 'calendar_show_weekday';
+  static const _fikaVisibilityKey = 'calendar_fika_visibility';
+  static const _fikaEmojiKeyPrefix = 'calendar_fika_emoji_';
 
   final SharedPreferences _preferences;
+
+  static String _fikaEmojiKey(FikaSection section) {
+    return '$_fikaEmojiKeyPrefix${section.name}';
+  }
 
   @override
   Future<CalendarDisplaySettings> getSettings() async {
@@ -109,7 +161,24 @@ class SharedPreferencesCalendarDisplayPreferences
         _preferences.getString(_timeFormatKey),
       ),
       showWeekday: _preferences.getBool(_showWeekdayKey) ?? false,
+      fikaVisibility: FikaVisibility.fromStorage(
+        _preferences.getString(_fikaVisibilityKey),
+      ),
+      fikaEmojis: {
+        for (final section in FikaSection.values)
+          section: _storedFikaEmoji(section),
+      },
     );
+  }
+
+  String _storedFikaEmoji(FikaSection section) {
+    final stored = _preferences.getString(_fikaEmojiKey(section))?.trim() ?? '';
+
+    if (stored.isEmpty) {
+      return defaultFikaEmojis[section]!;
+    }
+
+    return stored;
   }
 
   @override
@@ -123,5 +192,17 @@ class SharedPreferencesCalendarDisplayPreferences
       settings.timeFormat.storageValue,
     );
     await _preferences.setBool(_showWeekdayKey, settings.showWeekday);
+
+    await _preferences.setString(
+      _fikaVisibilityKey,
+      settings.fikaVisibility.storageValue,
+    );
+
+    for (final section in FikaSection.values) {
+      await _preferences.setString(
+        _fikaEmojiKey(section),
+        settings.fikaEmojiFor(section),
+      );
+    }
   }
 }
