@@ -63,13 +63,17 @@ jobs:
       - name: Build release APK
         run: flutter build apk --release
 
-      - name: Prepare release APK
+      - name: Prepare release APKs
         run: |
           VERSION="${GITHUB_REF_NAME#altekamerer-v}"
 
           cp \
             build/app/outputs/flutter-apk/app-release.apk \
             "AlteKamerer-${VERSION}.apk"
+
+          cp \
+            build/app/outputs/flutter-apk/app-release.apk \
+            AlteKamerer-latest.apk
 
       - name: Upload APK to GitHub release
         uses: softprops/action-gh-release@v3
