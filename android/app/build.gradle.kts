@@ -14,6 +14,9 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
+// Build a separately installable release-mode test application.
+val isTestBuild = System.getenv("ALTEKAMERER_TEST_BUILD") == "1"
+
 android {
     namespace = "org.altekamereren.altekamerer"
     compileSdk = 37
@@ -28,7 +31,15 @@ android {
     defaultConfig {
         // Keep the released application ID stable: changing it creates a
         // different Android application rather than upgrading existing installs.
-        applicationId = "org.altekamereren.altekamerer"
+        applicationId =
+            if (isTestBuild) {
+                "org.altekamereren.altekamerer.test"
+            } else {
+                "org.altekamereren.altekamerer"
+            }
+
+        manifestPlaceholders["appLabel"] =
+            if (isTestBuild) "AlteKamerer Test" else "AlteKamerer"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
@@ -56,10 +67,10 @@ android {
             // CI supplies key.properties for signed releases. Local builds
             // without that file fall back to debug signing.
             signingConfig =
-                if (keystorePropertiesFile.exists()) {
-                    signingConfigs.getByName("release")
-                } else {
+                if (isTestBuild || !keystorePropertiesFile.exists()) {
                     signingConfigs.getByName("debug")
+                } else {
+                    signingConfigs.getByName("release")
                 }
         }
     }
