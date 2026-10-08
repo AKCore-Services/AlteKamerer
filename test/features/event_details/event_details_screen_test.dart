@@ -172,8 +172,10 @@ void main() {
     expect(find.text('Kommer'), findsOneWidget);
     expect(find.text('Kommer inte'), findsOneWidget);
 
-    expect(find.text('Altsax · 2'), findsOneWidget);
-    expect(find.text('Balett · 1'), findsOneWidget);
+    expect(find.text('Altsax'), findsWidgets);
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('Balett'), findsWidgets);
+    expect(find.text('1'), findsOneWidget);
 
     expect(find.text('Anna Altsax'), findsOneWidget);
     expect(find.text('Direkt'), findsOneWidget);
