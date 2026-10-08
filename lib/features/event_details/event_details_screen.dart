@@ -387,14 +387,22 @@ class _AttendeeCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            l10n.eventAttendees,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.registrationCounts(event.coming, event.notComing),
-            style: Theme.of(context).textTheme.bodySmall,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                l10n.eventAttendees,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  l10n.registrationCounts(event.coming, event.notComing),
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ],
           ),
           if (attending.isNotEmpty) ...[
             const SizedBox(height: 20),
@@ -419,8 +427,8 @@ class _AttendeeCard extends StatelessWidget {
               _AttendeeRow(
                 attendee: notAttending[index],
                 showArrivalDetails: false,
+                alternate: index.isOdd,
               ),
-              if (index != notAttending.length - 1) const Divider(height: 24),
             ],
           ],
         ],
@@ -445,14 +453,30 @@ class _AttendeeGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$label · ${attendees.length}',
-          style: Theme.of(context).textTheme.labelLarge,
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+              ),
+              Text(
+                '${attendees.length}',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 8),
         for (var index = 0; index < attendees.length; index++) ...[
-          _AttendeeRow(attendee: attendees[index], showArrivalDetails: true),
-          if (index != attendees.length - 1) const Divider(height: 24),
+          _AttendeeRow(
+            attendee: attendees[index],
+            showArrivalDetails: true,
+            alternate: index.isOdd,
+          ),
+          if (index != attendees.length - 1) const SizedBox(height: 4),
         ],
       ],
     );
@@ -463,35 +487,52 @@ class _AttendeeRow extends StatelessWidget {
   const _AttendeeRow({
     required this.attendee,
     required this.showArrivalDetails,
+    this.alternate = false,
   });
 
   final EventAttendee attendee;
   final bool showArrivalDetails;
+  final bool alternate;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final instrument = _instrumentLabel(l10n, attendee.instrumentName);
     final practicalDetails = _attendeeDetails(l10n, attendee);
+    final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          attendee.personName.replaceAll("\\", ""),
-          style: Theme.of(context).textTheme.bodyLarge,
+    return ColoredBox(
+      color: alternate ? const Color(0xFF210600) : const Color(0xFF430800),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    attendee.personName.replaceAll("\\", ""),
+                    style: textTheme.bodyMedium,
+                  ),
+                ),
+                if (showArrivalDetails) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 4,
+                    child: Text(practicalDetails, style: textTheme.bodySmall),
+                  ),
+                ],
+              ],
+            ),
+            if (attendee.comment.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(attendee.comment, style: textTheme.bodySmall),
+            ],
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(instrument, style: Theme.of(context).textTheme.bodyMedium),
-        if (showArrivalDetails && practicalDetails.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(practicalDetails, style: Theme.of(context).textTheme.bodyMedium),
-        ],
-        if (attendee.comment.isNotEmpty) ...[
-          const SizedBox(height: 6),
-          Text(attendee.comment, style: Theme.of(context).textTheme.bodySmall),
-        ],
-      ],
+      ),
     );
   }
 }
