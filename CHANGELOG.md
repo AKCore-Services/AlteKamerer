@@ -2,6 +2,40 @@
 
 Alla betydande AlteKamerer-releaser dokumenteras här.
 
+## 1.2.1
+
+En funktions- och kvalitetsuppdatering med utökad aktivitetsinformation,
+fikauppgifter, fler kalenderinställningar och förbättrad deltagarvisning.
+
+### Kalender
+
+- Fikauppgifter kan visas direkt i kalendern.
+- Inställningar för att visa den egna sektionen eller samtliga sektioner.
+- Anpassningsbara symboler för sektionsvisning.
+- Kalenderns kompakta layout har behållits.
+
+### Aktivitetsdetaljer
+
+- Utökad information om deltagare och deras anmälningar.
+- Deltagare grupperas efter instrument eller sektion.
+- Kompaktare deltagarlista med namn och anmälningsinformation på samma rad.
+- Kommentarer visas under respektive deltagare.
+- Växlande mörkröda radbakgrunder förbättrar läsbarheten.
+- Fikauppgifter visas i aktivitetsdetaljer.
+
+### Gränssnitt
+
+- Maskotillustration på felvyer.
+
+### Android och utveckling
+
+- Stöd för en separat testapp som byggs i release-läge.
+- Testappen har ett eget Android-paket och kan installeras parallellt
+  med den ordinarie appen.
+- Testbyggen använder lokal debug-signering utan att påverka
+  produktionsappens signeringsflöde.
+- README innehåller instruktioner för att bygga och verifiera testappen.
+
 ## 1.2.0
 
 En uppdatering med bättre stöd för användning utan nätverk, förbättrad

@@ -21,7 +21,7 @@ AKCore-databasen
 ## Aktuell version
 
 ```text
-1.2.0
+1.2.1
 ```
 
 Versionshistoriken finns i [CHANGELOG.md](CHANGELOG.md).
@@ -211,6 +211,45 @@ build/app/outputs/flutter-apk/app-debug.apk
 
 Byggresultat versionshanteras inte.
 
+## Test-APK
+
+För funktionstestning på en Android-enhet kan AlteKamerer byggas i
+release-läge med en separat applikationsidentitet.
+
+Bygg testappen:
+
+    ALTEKAMERER_TEST_BUILD=1 flutter build apk --release
+
+Testbygget har följande egenskaper:
+
+- Applikationsnamn: `AlteKamerer Test`.
+- Android-paket: `org.altekamereren.altekamerer.test`.
+- Byggläge: release, utan Flutters debug-runtime.
+- Signering: lokal debug-nyckel, även om en release-nyckel finns.
+
+Testappen kan installeras parallellt med den ordinarie AlteKamerer-appen.
+Installationerna har separata lokala data och inloggade sessioner.
+
+APK-filen skapas i:
+
+    build/app/outputs/flutter-apk/app-release.apk
+
+Verifiera paketidentiteten före installation:
+
+    AAPT="$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n 1)"
+    "$AAPT" dump badging build/app/outputs/flutter-apk/app-release.apk
+
+Kontrollera att paketnamnet slutar med `.test` och att applikationsnamnet
+är `AlteKamerer Test`.
+
+För ett ordinarie releasebygge används:
+
+    flutter build apk --release
+
+Miljövariabeln `ALTEKAMERER_TEST_BUILD` ska då inte vara satt till `1`.
+Produktionsbyggen använder det ordinarie Android-paketet och befintlig
+release-signering enligt konfigurationen nedan.
+
 ## Release-APK
 
 Bygg en release-APK med:
@@ -270,7 +309,7 @@ altekamerer-vX.Y.Z
 Exempel:
 
 ```text
-altekamerer-v1.2.0
+altekamerer-v1.2.1
 ```
 
 Releaseflödet:
@@ -281,10 +320,10 @@ Releaseflödet:
 4. döper om den till `AlteKamerer-X.Y.Z.apk`;
 5. laddar upp APK-filen till motsvarande GitHub Release.
 
-För version 1.2.0 blir filnamnet:
+För version 1.2.1 blir filnamnet:
 
 ```text
-AlteKamerer-1.2.0.apk
+AlteKamerer-1.2.1.apk
 ```
 
 Releasebygget är separat från den vanliga valideringen på `main`.
