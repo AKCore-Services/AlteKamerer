@@ -16,6 +16,7 @@ import 'dart:ui';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'app.dart';
 import 'core/config/app_config.dart';
@@ -33,6 +34,9 @@ import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
 import 'features/me/current_member_controller.dart';
 import 'features/me/me_api.dart';
+import 'features/me/member_profile_api.dart';
+import 'features/me/member_profile_controller.dart';
+import 'features/me/member_profile_preview_service.dart';
 import 'features/notifications/local_notification_service.dart';
 import 'features/navigation/akcore_link_parser.dart';
 import 'features/navigation/app_navigation_controller.dart';
@@ -135,6 +139,17 @@ Future<void> main() async {
   );
   final meApi = MeApi(apiClient);
   final currentMemberController = CurrentMemberController();
+
+  // Only the separately installed Test APK may use profile placeholders.
+  final packageInfo = await PackageInfo.fromPlatform();
+  final isTestBuild =
+      packageInfo.packageName == 'org.altekamereren.altekamerer.test';
+
+  final memberProfileService = MemberProfilePreviewService(
+    MemberProfileApi(apiClient),
+    allowPreview: isTestBuild,
+  );
+  final memberProfileController = MemberProfileController(memberProfileService);
   final eventDetailsApi = EventDetailsApi(apiClient);
   final eventDetailsCache = SecureEventDetailsCache();
   final eventRegistrationApi = EventRegistrationApi(apiClient);
@@ -199,6 +214,7 @@ Future<void> main() async {
       localeController: localeController,
       calendarDisplayController: calendarDisplayController,
       currentMemberController: currentMemberController,
+      memberProfileController: memberProfileController,
       settingsBackupService: settingsBackupService,
       settingsBackupFileService: settingsBackupFileService,
       diagnosticsService: diagnosticsService,

@@ -116,6 +116,84 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @me.
+  ///
+  /// In en, this message translates to:
+  /// **'Me'**
+  String get me;
+
+  /// No description provided for @profileSampleData.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample profile data — not your actual information'**
+  String get profileSampleData;
+
+  /// No description provided for @profileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile information is unavailable.'**
+  String get profileUnavailable;
+
+  /// No description provided for @profileStatisticsRegistrationOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'AKCore registration statistics, not verified attendance.'**
+  String get profileStatisticsRegistrationOnly;
+
+  /// No description provided for @profileStatsPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 12 months'**
+  String get profileStatsPeriod;
+
+  /// No description provided for @profileStatsChoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration choices'**
+  String get profileStatsChoices;
+
+  /// No description provided for @profileStatsHalan.
+  ///
+  /// In en, this message translates to:
+  /// **'Via Hålan'**
+  String get profileStatsHalan;
+
+  /// No description provided for @profileStatsDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct'**
+  String get profileStatsDirect;
+
+  /// No description provided for @profileStatsCantCome.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t come'**
+  String get profileStatsCantCome;
+
+  /// No description provided for @profileStatsDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional registration details'**
+  String get profileStatsDetails;
+
+  /// No description provided for @profileStatsCar.
+  ///
+  /// In en, this message translates to:
+  /// **'Driving'**
+  String get profileStatsCar;
+
+  /// No description provided for @profileStatsInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Own instrument'**
+  String get profileStatsInstrument;
+
+  /// No description provided for @profileStatsComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Comment'**
+  String get profileStatsComment;
+
   /// No description provided for @logOut.
   ///
   /// In en, this message translates to:

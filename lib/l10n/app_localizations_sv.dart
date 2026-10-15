@@ -19,6 +19,47 @@ class AppLocalizationsSv extends AppLocalizations {
   String get settings => 'Inställningar';
 
   @override
+  String get me => 'Jag';
+
+  @override
+  String get profileSampleData =>
+      'Testdata — inte dina verkliga profiluppgifter';
+
+  @override
+  String get profileUnavailable => 'Profilinformationen är inte tillgänglig.';
+
+  @override
+  String get profileStatisticsRegistrationOnly =>
+      'Registreringsstatistik från AKCore, inte faktisk närvaro.';
+
+  @override
+  String get profileStatsPeriod => 'Senaste 12 månaderna';
+
+  @override
+  String get profileStatsChoices => 'Anmälningsval';
+
+  @override
+  String get profileStatsHalan => 'Via Hålan';
+
+  @override
+  String get profileStatsDirect => 'Direkt';
+
+  @override
+  String get profileStatsCantCome => 'Kan inte komma';
+
+  @override
+  String get profileStatsDetails => 'Övriga anmälningsuppgifter';
+
+  @override
+  String get profileStatsCar => 'Bil';
+
+  @override
+  String get profileStatsInstrument => 'Eget instrument';
+
+  @override
+  String get profileStatsComment => 'Kommentar';
+
+  @override
   String get logOut => 'Logga ut';
 
   @override

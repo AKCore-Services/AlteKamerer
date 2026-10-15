@@ -29,6 +29,8 @@ import '../event_registration/event_registration_api.dart';
 import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
 import '../me/current_member_controller.dart';
+import '../me/member_profile_controller.dart';
+import '../me/member_profile_screen.dart';
 import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
@@ -57,6 +59,7 @@ class AppShell extends StatefulWidget {
     required this.localeController,
     required this.calendarDisplayController,
     this.currentMemberController,
+    this.memberProfileController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
@@ -75,6 +78,7 @@ class AppShell extends StatefulWidget {
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
   final CurrentMemberController? currentMemberController;
+  final MemberProfileController? memberProfileController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
@@ -85,7 +89,7 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-enum _ShellPage { calendar, settings }
+enum _ShellPage { calendar, me, settings }
 
 class _ActiveEventDetailsRoute {
   const _ActiveEventDetailsRoute({
@@ -216,6 +220,17 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
                   },
                 ),
                 ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(l10n.me),
+                  selected: _currentPage == _ShellPage.me,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    setState(() {
+                      _currentPage = _ShellPage.me;
+                    });
+                  },
+                ),
+                ListTile(
                   leading: const Icon(Icons.settings),
                   title: Text(l10n.settings),
                   selected: _currentPage == _ShellPage.settings,
@@ -283,6 +298,7 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
   String _pageTitle(AppLocalizations l10n) {
     return switch (_currentPage) {
       _ShellPage.calendar => l10n.calendar,
+      _ShellPage.me => l10n.me,
       _ShellPage.settings => l10n.settings,
     };
   }
@@ -296,6 +312,12 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         onOpenEvent: _openEvent,
         onRefresh: widget.notificationSync.sync,
       ),
+      _ShellPage.me =>
+        widget.memberProfileController == null
+            ? Center(
+                child: Text(AppLocalizations.of(context).profileUnavailable),
+              )
+            : MemberProfileScreen(controller: widget.memberProfileController!),
       _ShellPage.settings => ReminderSettingsScreen(
         reminderPreferences: widget.reminderPreferences,
         notificationSync: widget.notificationSync,
