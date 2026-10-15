@@ -19,6 +19,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get me => 'Me';
+
+  @override
+  String get profileSampleData =>
+      'Sample profile data — not your actual information';
+
+  @override
+  String get profileUnavailable => 'Profile information is unavailable.';
+
+  @override
+  String get profileStatisticsRegistrationOnly =>
+      'AKCore registration statistics, not verified attendance.';
+
+  @override
+  String get profileStatsPeriod => 'Last 12 months';
+
+  @override
+  String get profileStatsChoices => 'Registration choices';
+
+  @override
+  String get profileStatsHalan => 'Via Hålan';
+
+  @override
+  String get profileStatsDirect => 'Direct';
+
+  @override
+  String get profileStatsCantCome => 'Can\'t come';
+
+  @override
+  String get profileStatsDetails => 'Additional registration details';
+
+  @override
+  String get profileStatsCar => 'Driving';
+
+  @override
+  String get profileStatsInstrument => 'Own instrument';
+
+  @override
+  String get profileStatsComment => 'Comment';
+
+  @override
   String get logOut => 'Log out';
 
   @override

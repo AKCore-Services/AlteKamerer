@@ -22,6 +22,7 @@ import 'features/event_details/event_details_api.dart';
 import 'features/event_details/event_details_cache.dart';
 import 'features/event_registration/event_registration_api.dart';
 import 'features/me/current_member_controller.dart';
+import 'features/me/member_profile_controller.dart';
 import 'features/navigation/app_navigation_controller.dart';
 import 'features/notifications/notification_sync_service.dart';
 import 'features/settings/calendar_display_controller.dart';
@@ -50,6 +51,7 @@ class AlteKamererApp extends StatelessWidget {
     required this.localeController,
     required this.calendarDisplayController,
     this.currentMemberController,
+    required this.memberProfileController,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
@@ -67,6 +69,7 @@ class AlteKamererApp extends StatelessWidget {
   final LocaleController localeController;
   final CalendarDisplayController calendarDisplayController;
   final CurrentMemberController? currentMemberController;
+  final MemberProfileController memberProfileController;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
@@ -103,6 +106,7 @@ class AlteKamererApp extends StatelessWidget {
             localeController: localeController,
             calendarDisplayController: calendarDisplayController,
             currentMemberController: currentMemberController,
+            memberProfileController: memberProfileController,
             settingsBackupService: settingsBackupService,
             settingsBackupFileService: settingsBackupFileService,
             diagnosticsService: diagnosticsService,

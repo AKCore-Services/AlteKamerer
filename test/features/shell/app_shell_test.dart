@@ -11,6 +11,9 @@ import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_details/event_details_screen.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
 import 'package:altekamerer/features/event_registration/event_registration_screen.dart';
+import 'package:altekamerer/features/me/member_profile.dart';
+import 'package:altekamerer/features/me/member_profile_api.dart';
+import 'package:altekamerer/features/me/member_profile_controller.dart';
 import 'package:altekamerer/features/navigation/app_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
@@ -606,10 +609,13 @@ void main() {
     expect(find.text('Språk'), findsNothing);
   });
 
-  testWidgets('drawer switches between calendar and settings', (
+  testWidgets('drawer switches between calendar, Me and settings', (
     WidgetTester tester,
   ) async {
     final calendarController = CalendarController(_FakeCalendarService());
+    final profileController = MemberProfileController(
+      _FakeMemberProfileService(),
+    );
 
     await tester.pumpWidget(
       MaterialApp(
@@ -623,6 +629,7 @@ void main() {
             AccessTokenStore(),
           ),
           calendarController: calendarController,
+          memberProfileController: profileController,
           calendarDisplayController: _createCalendarDisplayController(),
           eventDetailsService: _FakeEventDetailsService(),
           eventRegistrationService: _FakeEventRegistrationService(),
@@ -644,6 +651,15 @@ void main() {
     await tester.tap(find.byIcon(Icons.menu));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.text('Jag'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Test Testsson'), findsOneWidget);
+    expect(find.text('Kårhusrep'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.menu));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.text('Inställningar'));
     await tester.pumpAndSettle();
 
@@ -659,6 +675,38 @@ void main() {
     expect(find.text('Kårhusrep'), findsOneWidget);
     expect(find.text('Språk'), findsNothing);
   });
+}
+
+class _FakeMemberProfileService implements MemberProfileService {
+  @override
+  Future<MemberProfile> getProfile() async {
+    return const MemberProfile(
+      userName: 'testmedlem',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'Testsson',
+      phone: '',
+      instrument: 'Trumpet',
+      otherInstruments: [],
+      roles: ['Medlem'],
+      posts: [],
+      medal: '',
+      givenMedal: '',
+    );
+  }
+
+  @override
+  Future<MemberProfileStatistics> getStatistics() async {
+    return const MemberProfileStatistics(
+      totalGigs: 0,
+      halan: 0,
+      direct: 0,
+      cantCome: 0,
+      car: 0,
+      instrument: 0,
+      comment: 0,
+    );
+  }
 }
 
 class _FakeCalendarService implements CalendarService {

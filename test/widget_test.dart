@@ -13,6 +13,9 @@ import 'package:altekamerer/features/event_details/event_details.dart';
 import 'package:altekamerer/features/event_details/event_details_api.dart';
 import 'package:altekamerer/features/event_details/event_details_cache.dart';
 import 'package:altekamerer/features/event_registration/event_registration_api.dart';
+import 'package:altekamerer/features/me/member_profile.dart';
+import 'package:altekamerer/features/me/member_profile_api.dart';
+import 'package:altekamerer/features/me/member_profile_controller.dart';
 import 'package:altekamerer/features/navigation/app_navigation_controller.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
@@ -39,6 +42,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: authController,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -71,6 +77,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: authController,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -103,6 +112,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: authController,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -145,6 +157,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: authController,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -182,6 +197,9 @@ void main() {
 
       await tester.pumpWidget(
         AlteKamererApp(
+          memberProfileController: MemberProfileController(
+            _FakeMemberProfileService(),
+          ),
           authController: authController,
           calendarController: _createCalendarController(),
           calendarDisplayController: _createCalendarDisplayController(),
@@ -210,6 +228,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -238,6 +259,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -271,6 +295,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -308,6 +335,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: authController,
         calendarController: calendarController,
         calendarDisplayController: _createCalendarDisplayController(),
@@ -354,6 +384,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: authController,
         calendarController: calendarController,
         calendarDisplayController: _createCalendarDisplayController(),
@@ -391,6 +424,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -436,6 +472,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -481,6 +520,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -521,8 +563,18 @@ void main() {
 
     await controller.restoreSession();
 
+    final memberProfileController = MemberProfileController(
+      _FakeMemberProfileService(),
+    );
+
+    await memberProfileController.load();
+
+    expect(memberProfileController.status, MemberProfileStatus.loaded);
+    expect(memberProfileController.profile, isNotNull);
+
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: memberProfileController,
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -554,6 +606,11 @@ void main() {
     expect(find.byType(LoginScreen), findsOneWidget);
     expect(find.byType(AppShell), findsNothing);
     expect(eventDetailsCache.clearCount, 1);
+    // Logout must remove personal information from application memory.
+    expect(controller.status, AuthStatus.unauthenticated);
+    expect(memberProfileController.status, MemberProfileStatus.idle);
+    expect(memberProfileController.profile, isNull);
+    expect(memberProfileController.statistics, isNull);
   });
 
   testWidgets('failed session refresh clears scheduled notifications', (
@@ -578,6 +635,9 @@ void main() {
 
     await tester.pumpWidget(
       AlteKamererApp(
+        memberProfileController: MemberProfileController(
+          _FakeMemberProfileService(),
+        ),
         authController: controller,
         calendarController: _createCalendarController(),
         calendarDisplayController: _createCalendarDisplayController(),
@@ -634,6 +694,9 @@ void main() {
 
       await tester.pumpWidget(
         AlteKamererApp(
+          memberProfileController: MemberProfileController(
+            _FakeMemberProfileService(),
+          ),
           authController: controller,
           calendarController: _createCalendarController(),
           calendarDisplayController: _createCalendarDisplayController(),
@@ -683,6 +746,9 @@ void main() {
 
       await tester.pumpWidget(
         AlteKamererApp(
+          memberProfileController: MemberProfileController(
+            _FakeMemberProfileService(),
+          ),
           authController: controller,
           calendarController: _createCalendarController(),
           calendarDisplayController: _createCalendarDisplayController(),
@@ -753,6 +819,38 @@ AuthController _createController({
         FakeAuthService(loginResult: loginResult, refreshResult: refreshResult),
     AccessTokenStore(),
   );
+}
+
+class _FakeMemberProfileService implements MemberProfileService {
+  @override
+  Future<MemberProfile> getProfile() async {
+    return const MemberProfile(
+      userName: 'testmember',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'Testsson',
+      phone: '',
+      instrument: 'Trumpet',
+      otherInstruments: [],
+      roles: ['Medlem'],
+      posts: [],
+      medal: '',
+      givenMedal: '',
+    );
+  }
+
+  @override
+  Future<MemberProfileStatistics> getStatistics() async {
+    return const MemberProfileStatistics(
+      totalGigs: 0,
+      halan: 0,
+      direct: 0,
+      cantCome: 0,
+      car: 0,
+      instrument: 0,
+      comment: 0,
+    );
+  }
 }
 
 class FakeCredentialStore implements CredentialStore {
