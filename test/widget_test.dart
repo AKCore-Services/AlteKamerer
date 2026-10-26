@@ -823,6 +823,15 @@ AuthController _createController({
 
 class _FakeMemberProfileService implements MemberProfileService {
   @override
+  Future<MemberProfile> updateProfile(
+    MemberProfileUpdateRequest request,
+  ) async {
+    throw UnimplementedError(
+      'Profile editing is not configured in this test fake.',
+    );
+  }
+
+  @override
   Future<MemberProfile> getProfile() async {
     return const MemberProfile(
       userName: 'testmember',

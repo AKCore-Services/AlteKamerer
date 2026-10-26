@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:altekamerer/core/config/app_config.dart';
 import 'package:altekamerer/core/network/access_token_store.dart';
 import 'package:altekamerer/core/network/api_client.dart';
+import 'package:altekamerer/core/network/api_exception.dart';
 import 'package:altekamerer/features/me/member_profile.dart';
 import 'package:altekamerer/features/me/member_profile_api.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -138,4 +139,101 @@ void main() {
       expect(paths, ['/api/v1/profile', '/api/v1/profile/statistics']);
     },
   );
+
+  test(
+    'updates only editable profile fields and decodes saved profile',
+    () async {
+      final tokenStore = AccessTokenStore()..set('access-token');
+
+      final client = ApiClient(
+        AppConfig(apiBaseUrl: Uri.parse('https://example.test')),
+        tokenStore,
+        httpClient: MockClient((request) async {
+          expect(request.method, 'PUT');
+          expect(request.url.path, '/api/v1/profile');
+          expect(request.headers['Authorization'], 'Bearer access-token');
+
+          expect(jsonDecode(request.body), {
+            'firstName': 'Updated',
+            'lastName': 'Member',
+            'email': 'updated@example.com',
+            'phone': '0709876543',
+            'instrument': 'Klarinett',
+            'otherInstruments': ['Flöjt', 'Trumpet'],
+          });
+
+          return http.Response(
+            jsonEncode({
+              ...profileJson,
+              'firstName': 'Updated',
+              'lastName': 'Member',
+              'email': 'updated@example.com',
+              'phone': '0709876543',
+              'instrument': 'Klarinett',
+              'otherInstruments': ['Flöjt', 'Trumpet'],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+
+      final api = MemberProfileApi(client);
+
+      final profile = await api.updateProfile(
+        const MemberProfileUpdateRequest(
+          firstName: 'Updated',
+          lastName: 'Member',
+          email: 'updated@example.com',
+          phone: '0709876543',
+          instrument: 'Klarinett',
+          otherInstruments: ['Flöjt', 'Trumpet'],
+        ),
+      );
+
+      expect(profile.displayName, 'Updated Member');
+      expect(profile.email, 'updated@example.com');
+      expect(profile.instrument, 'Klarinett');
+      expect(profile.otherInstruments, ['Flöjt', 'Trumpet']);
+
+      expect(profile.userName, 'testmember');
+      expect(profile.roles, ['Medlem']);
+      expect(profile.medal, 'Silver');
+    },
+  );
+
+  test('propagates rejected profile updates', () async {
+    final tokenStore = AccessTokenStore()..set('access-token');
+
+    final client = ApiClient(
+      AppConfig(apiBaseUrl: Uri.parse('https://example.test')),
+      tokenStore,
+      httpClient: MockClient((request) async {
+        expect(request.method, 'PUT');
+        expect(request.url.path, '/api/v1/profile');
+
+        return http.Response(
+          jsonEncode({'error': 'DuplicateInstrument'}),
+          400,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    final api = MemberProfileApi(client);
+
+    await expectLater(
+      api.updateProfile(
+        const MemberProfileUpdateRequest(
+          firstName: 'Test',
+          lastName: 'Testsson',
+          email: 'test@example.com',
+          phone: '0701234567',
+          instrument: 'Trumpet',
+          otherInstruments: ['Trumpet'],
+        ),
+      ),
+      throwsA(isA<ApiException>()),
+    );
+  });
 }

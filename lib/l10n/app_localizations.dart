@@ -542,6 +542,72 @@ abstract class AppLocalizations {
   /// **'Update profile'**
   String get akProfileUpdateProfile;
 
+  /// No description provided for @profileEditSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get profileEditSave;
+
+  /// No description provided for @profileEditSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get profileEditSaving;
+
+  /// No description provided for @profileEditOtherInstrumentsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate instruments with commas'**
+  String get profileEditOtherInstrumentsHint;
+
+  /// No description provided for @profileEditCustomInstrumentWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This is not a standard AKCore instrument. You can still save it, but automatic translation may not be available.'**
+  String get profileEditCustomInstrumentWarning;
+
+  /// No description provided for @profileEditDuplicateInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'The primary instrument cannot also be listed as another instrument.'**
+  String get profileEditDuplicateInstrument;
+
+  /// No description provided for @profileEditDuplicateOtherInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'The same instrument cannot be listed more than once among additional instruments.'**
+  String get profileEditDuplicateOtherInstrument;
+
+  /// No description provided for @profileEditSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update your profile. Please try again.'**
+  String get profileEditSaveFailed;
+
+  /// No description provided for @profileEditInvalidData.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the profile information and try again.'**
+  String get profileEditInvalidData;
+
+  /// No description provided for @profileEditInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get profileEditInvalidEmail;
+
+  /// No description provided for @profileEditEmailUnknownDomain.
+  ///
+  /// In en, this message translates to:
+  /// **'This email domain is not among common providers. Check the spelling; you can still save.'**
+  String get profileEditEmailUnknownDomain;
+
+  /// No description provided for @profileEditEmailDidYouMean.
+  ///
+  /// In en, this message translates to:
+  /// **'Did you mean {domain}? You can still save this address.'**
+  String profileEditEmailDidYouMean(String domain);
+
   /// No description provided for @akProfileChangePassword.
   ///
   /// In en, this message translates to:

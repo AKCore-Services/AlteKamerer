@@ -29,6 +29,15 @@ void main() {
     comment: 0,
   );
 
+  const updateRequest = MemberProfileUpdateRequest(
+    firstName: 'Updated',
+    lastName: 'Member',
+    email: 'updated@example.com',
+    phone: '',
+    instrument: 'Flöjt',
+    otherInstruments: [],
+  );
+
   test('uses real profile data when the API succeeds', () async {
     final service = MemberProfilePreviewService(
       _FakeService(profile: actualProfile),
@@ -181,20 +190,113 @@ void main() {
 
     expect(service.statisticsArePreview, isFalse);
   });
+
+  test('forwards genuine profile updates', () async {
+    var updateCalls = 0;
+
+    final service = MemberProfilePreviewService(
+      _FakeService(
+        profile: actualProfile,
+        updatedProfile: actualProfile,
+        onUpdate: (_) {
+          updateCalls++;
+        },
+      ),
+      allowPreview: true,
+    );
+
+    await service.getProfile();
+
+    final saved = await service.updateProfile(updateRequest);
+
+    expect(saved, same(actualProfile));
+    expect(updateCalls, 1);
+    expect(service.profileIsPreview, isFalse);
+  });
+
+  test('never submits changes to fictional preview profiles', () async {
+    var updateCalls = 0;
+
+    final service = MemberProfilePreviewService(
+      _FakeService(
+        profileError: const ApiException(
+          statusCode: 404,
+          message: 'Profile endpoint unavailable',
+        ),
+        onUpdate: (_) {
+          updateCalls++;
+        },
+      ),
+      allowPreview: true,
+    );
+
+    final profile = await service.getProfile();
+
+    expect(profile, same(MemberProfilePreviewData.profile));
+    expect(service.profileIsPreview, isTrue);
+
+    await expectLater(
+      service.updateProfile(updateRequest),
+      throwsA(isA<StateError>()),
+    );
+
+    expect(updateCalls, 0);
+  });
+
+  test('update failures never fall back to fictional data', () async {
+    final service = MemberProfilePreviewService(
+      _FakeService(
+        profile: actualProfile,
+        updateError: const ApiException(
+          statusCode: 404,
+          message: 'Update endpoint unavailable',
+        ),
+      ),
+      allowPreview: true,
+    );
+
+    await service.getProfile();
+
+    await expectLater(
+      service.updateProfile(updateRequest),
+      throwsA(isA<ApiException>()),
+    );
+
+    expect(service.profileIsPreview, isFalse);
+  });
 }
 
 class _FakeService implements MemberProfileService {
+  @override
+  Future<MemberProfile> updateProfile(
+    MemberProfileUpdateRequest request,
+  ) async {
+    onUpdate?.call(request);
+
+    if (updateError != null) {
+      throw updateError!;
+    }
+
+    return updatedProfile ?? profile!;
+  }
+
   const _FakeService({
     this.profile,
     this.statistics,
     this.profileError,
     this.statisticsError,
+    this.updatedProfile,
+    this.updateError,
+    this.onUpdate,
   });
 
   final MemberProfile? profile;
   final MemberProfileStatistics? statistics;
   final Object? profileError;
   final Object? statisticsError;
+  final MemberProfile? updatedProfile;
+  final Object? updateError;
+  final void Function(MemberProfileUpdateRequest)? onUpdate;
 
   @override
   Future<MemberProfile> getProfile() async {

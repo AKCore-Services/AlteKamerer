@@ -74,6 +74,22 @@
   "akProfileSelectInstrument": "Välj instrument",
   "akProfileOtherInstruments": "Övriga instrument",
   "akProfileUpdateProfile": "Uppdatera profil",
+  "profileEditSave": "Spara ändringar",
+  "profileEditSaving": "Sparar…",
+  "profileEditOtherInstrumentsHint": "Separera instrument med kommatecken",
+  "profileEditCustomInstrumentWarning": "Detta är inte ett standardinstrument i AKCore. Du kan fortfarande spara det, men automatisk översättning kanske inte fungerar.",
+  "profileEditDuplicateInstrument": "Huvudinstrumentet kan inte även finnas bland övriga instrument.",
+  "profileEditDuplicateOtherInstrument": "Samma instrument kan inte anges flera gånger bland övriga instrument.",
+  "profileEditSaveFailed": "Det gick inte att uppdatera din profil. Försök igen.",
+  "profileEditInvalidData": "Kontrollera profiluppgifterna och försök igen.",
+  "profileEditInvalidEmail": "Ange en giltig e-postadress.",
+  "profileEditEmailUnknownDomain": "E-postdomänen finns inte bland vanliga leverantörer. Kontrollera stavningen; du kan fortfarande spara.",
+  "profileEditEmailDidYouMean": "Menade du {domain}? Du kan fortfarande spara adressen.",
+  "@profileEditEmailDidYouMean": {
+    "placeholders": {
+      "domain": {"type": "String"}
+    }
+  },
   "akProfileChangePassword": "Ändra lösenord",
   "akProfilePasswordUpdated": "Lösenord uppdaterat",
   "akProfileNewPassword": "Nytt lösenord",

@@ -87,6 +87,37 @@ class MemberProfile {
   }
 }
 
+/// The personal fields a member may update through AKCore's profile API.
+///
+/// Administrative fields and credentials are intentionally excluded. AKCore
+/// remains responsible for validating and applying the submitted values.
+class MemberProfileUpdateRequest {
+  const MemberProfileUpdateRequest({
+    required this.firstName,
+    required this.lastName,
+    required this.email,
+    required this.phone,
+    required this.instrument,
+    required this.otherInstruments,
+  });
+
+  final String firstName;
+  final String lastName;
+  final String email;
+  final String phone;
+  final String instrument;
+  final List<String> otherInstruments;
+
+  Map<String, dynamic> toJson() => {
+    'firstName': firstName,
+    'lastName': lastName,
+    'email': email,
+    'phone': phone,
+    'instrument': instrument,
+    'otherInstruments': otherInstruments,
+  };
+}
+
 /// Existing AKCore registration statistics for the requested period.
 ///
 /// These counters describe registrations, not verified attendance or medal

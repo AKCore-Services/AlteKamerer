@@ -74,6 +74,22 @@
   "akProfileSelectInstrument": "Select instrument",
   "akProfileOtherInstruments": "Other instruments",
   "akProfileUpdateProfile": "Update profile",
+  "profileEditSave": "Save changes",
+  "profileEditSaving": "Saving…",
+  "profileEditOtherInstrumentsHint": "Separate instruments with commas",
+  "profileEditCustomInstrumentWarning": "This is not a standard AKCore instrument. You can still save it, but automatic translation may not be available.",
+  "profileEditDuplicateInstrument": "The primary instrument cannot also be listed as another instrument.",
+  "profileEditDuplicateOtherInstrument": "The same instrument cannot be listed more than once among additional instruments.",
+  "profileEditSaveFailed": "Could not update your profile. Please try again.",
+  "profileEditInvalidData": "Check the profile information and try again.",
+  "profileEditInvalidEmail": "Enter a valid email address.",
+  "profileEditEmailUnknownDomain": "This email domain is not among common providers. Check the spelling; you can still save.",
+  "profileEditEmailDidYouMean": "Did you mean {domain}? You can still save this address.",
+  "@profileEditEmailDidYouMean": {
+    "placeholders": {
+      "domain": {"type": "String"}
+    }
+  },
   "akProfileChangePassword": "Change password",
   "akProfilePasswordUpdated": "Password updated",
   "akProfileNewPassword": "New password",
