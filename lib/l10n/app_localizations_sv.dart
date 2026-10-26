@@ -236,6 +236,48 @@ class AppLocalizationsSv extends AppLocalizations {
   String get akProfileUpdateProfile => 'Uppdatera profil';
 
   @override
+  String get profileEditSave => 'Spara ändringar';
+
+  @override
+  String get profileEditSaving => 'Sparar…';
+
+  @override
+  String get profileEditOtherInstrumentsHint =>
+      'Separera instrument med kommatecken';
+
+  @override
+  String get profileEditCustomInstrumentWarning =>
+      'Detta är inte ett standardinstrument i AKCore. Du kan fortfarande spara det, men automatisk översättning kanske inte fungerar.';
+
+  @override
+  String get profileEditDuplicateInstrument =>
+      'Huvudinstrumentet kan inte även finnas bland övriga instrument.';
+
+  @override
+  String get profileEditDuplicateOtherInstrument =>
+      'Samma instrument kan inte anges flera gånger bland övriga instrument.';
+
+  @override
+  String get profileEditSaveFailed =>
+      'Det gick inte att uppdatera din profil. Försök igen.';
+
+  @override
+  String get profileEditInvalidData =>
+      'Kontrollera profiluppgifterna och försök igen.';
+
+  @override
+  String get profileEditInvalidEmail => 'Ange en giltig e-postadress.';
+
+  @override
+  String get profileEditEmailUnknownDomain =>
+      'E-postdomänen finns inte bland vanliga leverantörer. Kontrollera stavningen; du kan fortfarande spara.';
+
+  @override
+  String profileEditEmailDidYouMean(String domain) {
+    return 'Menade du $domain? Du kan fortfarande spara adressen.';
+  }
+
+  @override
   String get akProfileChangePassword => 'Ändra lösenord';
 
   @override

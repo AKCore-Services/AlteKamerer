@@ -153,7 +153,6 @@ class ApiClient {
     String? body,
   }) async {
     final abortCompleter = Completer<void>();
-    final timeoutTimer = Timer(_requestTimeout, abortCompleter.complete);
 
     final request = http.AbortableRequest(
       method,
@@ -166,8 +165,24 @@ class ApiClient {
     }
 
     try {
-      final streamedResponse = await _httpClient.send(request);
-      return await http.Response.fromStream(streamedResponse);
+      // Bound both the HTTP send and response-body consumption. An abort
+      // signal alone cannot guarantee that a transport will finish.
+      return await (() async {
+        final streamedResponse = await _httpClient.send(request);
+        return http.Response.fromStream(streamedResponse);
+      })().timeout(
+        _requestTimeout,
+        onTimeout: () {
+          if (!abortCompleter.isCompleted) {
+            abortCompleter.complete();
+          }
+
+          throw const ApiException(
+            statusCode: 408,
+            message: 'Request timed out.',
+          );
+        },
+      );
     } on http.RequestAbortedException {
       throw const ApiException(statusCode: 408, message: 'Request timed out.');
     } on http.ClientException {
@@ -175,8 +190,6 @@ class ApiClient {
         statusCode: 503,
         message: 'Network request failed.',
       );
-    } finally {
-      timeoutTimer.cancel();
     }
   }
 

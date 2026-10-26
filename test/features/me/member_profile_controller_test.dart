@@ -30,6 +30,29 @@ void main() {
     comment: 0,
   );
 
+  const updateRequest = MemberProfileUpdateRequest(
+    firstName: 'Updated',
+    lastName: 'Testsson',
+    email: 'updated@example.com',
+    phone: '0701234567',
+    instrument: 'Trumpet',
+    otherInstruments: [],
+  );
+
+  final updatedProfile = MemberProfile(
+    userName: profile.userName,
+    email: 'updated@example.com',
+    firstName: 'Updated',
+    lastName: profile.lastName,
+    phone: '0701234567',
+    instrument: profile.instrument,
+    otherInstruments: profile.otherInstruments,
+    roles: profile.roles,
+    posts: profile.posts,
+    medal: profile.medal,
+    givenMedal: profile.givenMedal,
+  );
+
   test('loads the authenticated profile', () async {
     final controller = MemberProfileController(
       _FakeProfileService(profile: profile, statistics: statistics),
@@ -152,9 +175,170 @@ void main() {
       expect(controller.profile, isNull);
     },
   );
+
+  test('saves and displays the server-confirmed profile', () async {
+    final pending = Completer<MemberProfile>();
+    MemberProfileUpdateRequest? submitted;
+
+    final controller = MemberProfileController(
+      _FakeProfileService(
+        profile: profile,
+        statistics: statistics,
+        updateFuture: pending.future,
+        onUpdate: (request) => submitted = request,
+      ),
+    );
+
+    await controller.load();
+
+    final saving = controller.saveProfile(updateRequest);
+
+    expect(controller.isSaving, isTrue);
+    expect(controller.profile, same(profile));
+    expect(controller.saveError, isNull);
+    expect(submitted, same(updateRequest));
+
+    pending.complete(updatedProfile);
+
+    expect(await saving, isTrue);
+    expect(controller.isSaving, isFalse);
+    expect(controller.profile, same(updatedProfile));
+    expect(controller.status, MemberProfileStatus.loaded);
+    expect(controller.saveError, isNull);
+  });
+
+  test('failed saves preserve the existing profile', () async {
+    final failure = StateError('Update rejected');
+
+    final controller = MemberProfileController(
+      _FakeProfileService(
+        profile: profile,
+        statistics: statistics,
+        updateError: failure,
+      ),
+    );
+
+    await controller.load();
+
+    expect(await controller.saveProfile(updateRequest), isFalse);
+    expect(controller.profile, same(profile));
+    expect(controller.status, MemberProfileStatus.loaded);
+    expect(controller.isSaving, isFalse);
+    expect(controller.saveError, same(failure));
+    expect(controller.error, isNull);
+  });
+
+  test('prevents duplicate profile submissions', () async {
+    final pending = Completer<MemberProfile>();
+    var updateCalls = 0;
+
+    final controller = MemberProfileController(
+      _FakeProfileService(
+        profile: profile,
+        statistics: statistics,
+        updateFuture: pending.future,
+        onUpdate: (_) {
+          updateCalls++;
+        },
+      ),
+    );
+
+    await controller.load();
+
+    final firstSave = controller.saveProfile(updateRequest);
+
+    expect(await controller.saveProfile(updateRequest), isFalse);
+    expect(updateCalls, 1);
+
+    pending.complete(updatedProfile);
+
+    expect(await firstSave, isTrue);
+    expect(updateCalls, 1);
+  });
+
+  test('cannot save before a profile has loaded', () async {
+    var updateCalls = 0;
+
+    final controller = MemberProfileController(
+      _FakeProfileService(
+        profile: profile,
+        statistics: statistics,
+        onUpdate: (_) {
+          updateCalls++;
+        },
+      ),
+    );
+
+    expect(await controller.saveProfile(updateRequest), isFalse);
+    expect(updateCalls, 0);
+    expect(controller.profile, isNull);
+  });
+
+  test('ignores a saved profile returned after logout', () async {
+    final pending = Completer<MemberProfile>();
+
+    final controller = MemberProfileController(
+      _FakeProfileService(
+        profile: profile,
+        statistics: statistics,
+        updateFuture: pending.future,
+      ),
+    );
+
+    await controller.load();
+
+    final saving = controller.saveProfile(updateRequest);
+
+    controller.clear();
+    pending.complete(updatedProfile);
+
+    expect(await saving, isFalse);
+    expect(controller.status, MemberProfileStatus.idle);
+    expect(controller.profile, isNull);
+    expect(controller.isSaving, isFalse);
+    expect(controller.saveError, isNull);
+  });
+
+  test('older saves cannot overwrite a newer profile load', () async {
+    final pending = Completer<MemberProfile>();
+
+    final controller = MemberProfileController(
+      _FakeProfileService(
+        profile: profile,
+        statistics: statistics,
+        updateFuture: pending.future,
+      ),
+    );
+
+    await controller.load();
+
+    final saving = controller.saveProfile(updateRequest);
+
+    await controller.load();
+
+    pending.complete(updatedProfile);
+
+    expect(await saving, isFalse);
+    expect(controller.profile, same(profile));
+    expect(controller.status, MemberProfileStatus.loaded);
+    expect(controller.isSaving, isFalse);
+  });
 }
 
 class _FakeProfileService implements MemberProfileService {
+  @override
+  Future<MemberProfile> updateProfile(
+    MemberProfileUpdateRequest request,
+  ) async {
+    onUpdate?.call(request);
+
+    if (updateError != null) {
+      throw updateError!;
+    }
+
+    return updateFuture ?? profile;
+  }
+
   const _FakeProfileService({
     required this.profile,
     required this.statistics,
@@ -162,6 +346,9 @@ class _FakeProfileService implements MemberProfileService {
     this.statisticsError,
     this.profileFuture,
     this.statisticsFuture,
+    this.updateError,
+    this.updateFuture,
+    this.onUpdate,
   });
 
   final MemberProfile profile;
@@ -170,6 +357,9 @@ class _FakeProfileService implements MemberProfileService {
   final Object? statisticsError;
   final Future<MemberProfile>? profileFuture;
   final Future<MemberProfileStatistics>? statisticsFuture;
+  final Object? updateError;
+  final Future<MemberProfile>? updateFuture;
+  final void Function(MemberProfileUpdateRequest)? onUpdate;
 
   @override
   Future<MemberProfile> getProfile() async {

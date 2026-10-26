@@ -3,8 +3,8 @@
 // -----------------------------------------------------------------------------
 //
 // Purpose:
-//   Displays the authenticated member's AKCore profile and registration
-//   statistics, distinguishing sample data from real account information.
+//   Displays the authenticated member's AKCore profile, provides access to
+//   profile editing, and distinguishes sample data from real information.
 //
 // -----------------------------------------------------------------------------
 
@@ -15,8 +15,12 @@ import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
 import 'member_profile.dart';
 import 'member_profile_controller.dart';
+import 'member_profile_edit_screen.dart';
 
-/// Read-only profile destination for the authenticated member.
+/// Displays the authenticated member's profile and related actions.
+///
+/// Personal information is edited on a separate screen. Administrative
+/// membership information remains read-only.
 class MemberProfileScreen extends StatefulWidget {
   const MemberProfileScreen({super.key, required this.controller});
 
@@ -99,6 +103,14 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              if (!widget.controller.isProfilePreview) ...[
+                OutlinedButton.icon(
+                  onPressed: () => _editProfile(profile),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(l10n.akProfileUpdateProfile),
+                ),
+                const SizedBox(height: 16),
+              ],
               _ProfileSection(
                 title: l10n.akProfileRoles,
                 fields: [
@@ -128,6 +140,27 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _editProfile(MemberProfile profile) async {
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => MemberProfileEditScreen(
+          controller: widget.controller,
+          profile: profile,
+        ),
+      ),
+    );
+
+    if (!mounted || saved != true) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).akProfileProfileUpdated),
+      ),
     );
   }
 

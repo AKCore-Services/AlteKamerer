@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:altekamerer/core/config/app_config.dart';
@@ -209,6 +210,46 @@ void main() {
     );
   });
 
+  test('timeout completes when the HTTP client ignores abort', () async {
+    final client = ApiClient(
+      AppConfig(apiBaseUrl: Uri.parse('https://akcore.example')),
+      AccessTokenStore(),
+      httpClient: _AbortIgnoringClient(),
+      requestTimeout: const Duration(milliseconds: 30),
+    );
+
+    await expectLater(
+      client.getJson('/api/v1/example').timeout(const Duration(seconds: 2)),
+      throwsA(
+        isA<ApiException>().having(
+          (exception) => exception.statusCode,
+          'statusCode',
+          408,
+        ),
+      ),
+    );
+  });
+
+  test('timeout includes reading the response body', () async {
+    final client = ApiClient(
+      AppConfig(apiBaseUrl: Uri.parse('https://akcore.example')),
+      AccessTokenStore(),
+      httpClient: _StalledResponseBodyClient(),
+      requestTimeout: const Duration(milliseconds: 30),
+    );
+
+    await expectLater(
+      client.getJson('/api/v1/example').timeout(const Duration(seconds: 2)),
+      throwsA(
+        isA<ApiException>().having(
+          (exception) => exception.statusCode,
+          'statusCode',
+          408,
+        ),
+      ),
+    );
+  });
+
   test('authenticated PUT refreshes once and retries with new token', () async {
     final requests = <http.Request>[];
     final accessTokens = AccessTokenStore()..set('expired-access');
@@ -272,5 +313,24 @@ class _AbortAwareClient extends http.BaseClient {
 
     await request.abortTrigger;
     throw http.RequestAbortedException(request.url);
+  }
+}
+
+// Simulates a transport that never completes despite an abort signal.
+class _AbortIgnoringClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    return Completer<http.StreamedResponse>().future;
+  }
+}
+
+// Simulates a server that responds but never finishes sending its body.
+class _StalledResponseBodyClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    return http.StreamedResponse(
+      Stream<List<int>>.fromFuture(Completer<List<int>>().future),
+      200,
+    );
   }
 }

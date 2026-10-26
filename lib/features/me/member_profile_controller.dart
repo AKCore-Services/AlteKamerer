@@ -3,7 +3,7 @@
 // -----------------------------------------------------------------------------
 //
 // Purpose:
-//   Manages authenticated profile retrieval and session-scoped profile data.
+//   Manages authenticated profile retrieval, editing, and session-scoped data.
 //
 // -----------------------------------------------------------------------------
 
@@ -28,12 +28,16 @@ class MemberProfileController extends ChangeNotifier {
   MemberProfile? _profile;
   MemberProfileStatistics? _statistics;
   Object? _error;
+  Object? _saveError;
+  bool _isSaving = false;
   int _generation = 0;
 
   MemberProfileStatus get status => _status;
   MemberProfile? get profile => _profile;
   MemberProfileStatistics? get statistics => _statistics;
   Object? get error => _error;
+  Object? get saveError => _saveError;
+  bool get isSaving => _isSaving;
 
   bool get isProfilePreview =>
       _service is MemberProfilePreviewService && _service.profileIsPreview;
@@ -51,6 +55,8 @@ class MemberProfileController extends ChangeNotifier {
     _profile = null;
     _statistics = null;
     _error = null;
+    _saveError = null;
+    _isSaving = false;
     notifyListeners();
 
     try {
@@ -71,6 +77,48 @@ class MemberProfileController extends ChangeNotifier {
       _error = error;
       _status = MemberProfileStatus.error;
       notifyListeners();
+    }
+  }
+
+  /// Saves the authenticated member's editable profile fields.
+  ///
+  /// Keeps the previous profile visible until AKCore confirms the update.
+  /// Returns false when saving is unavailable, fails, or becomes stale after
+  /// session cleanup or a newer profile load. Failures remain in [saveError].
+  Future<bool> saveProfile(MemberProfileUpdateRequest request) async {
+    if (_status != MemberProfileStatus.loaded ||
+        _profile == null ||
+        _isSaving ||
+        isProfilePreview) {
+      return false;
+    }
+
+    final generation = _generation;
+
+    _isSaving = true;
+    _saveError = null;
+    notifyListeners();
+
+    try {
+      final savedProfile = await _service.updateProfile(request);
+
+      if (generation != _generation) {
+        return false;
+      }
+
+      _profile = savedProfile;
+      _isSaving = false;
+      notifyListeners();
+      return true;
+    } catch (error) {
+      if (generation != _generation) {
+        return false;
+      }
+
+      _saveError = error;
+      _isSaving = false;
+      notifyListeners();
+      return false;
     }
   }
 
@@ -106,6 +154,8 @@ class MemberProfileController extends ChangeNotifier {
     _profile = null;
     _statistics = null;
     _error = null;
+    _saveError = null;
+    _isSaving = false;
     _status = MemberProfileStatus.idle;
     notifyListeners();
   }

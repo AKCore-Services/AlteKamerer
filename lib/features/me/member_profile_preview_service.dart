@@ -71,6 +71,18 @@ class MemberProfilePreviewService implements MemberProfileService {
     }
   }
 
+  /// Forwards genuine updates but never saves fictional preview data.
+  @override
+  Future<MemberProfile> updateProfile(
+    MemberProfileUpdateRequest request,
+  ) async {
+    if (_profileIsPreview) {
+      throw StateError('Preview profile data cannot be saved.');
+    }
+
+    return _service.updateProfile(request);
+  }
+
   @override
   Future<MemberProfileStatistics> getStatistics() async {
     _statisticsArePreview = false;
