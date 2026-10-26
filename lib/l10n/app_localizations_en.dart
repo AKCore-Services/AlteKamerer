@@ -280,6 +280,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get akProfileChangePassword => 'Change password';
 
   @override
+  String get credentialsChangeUsername => 'Change username';
+
+  @override
+  String get credentialsNewUsername => 'New username';
+
+  @override
+  String get credentialsCurrentPassword => 'Current password';
+
+  @override
+  String get credentialsUpdateUsername => 'Update username';
+
+  @override
+  String get credentialsUsernameUpdated => 'Username updated';
+
+  @override
+  String get credentialsUsernameRequired => 'Enter a username.';
+
+  @override
+  String get credentialsCurrentPasswordRequired =>
+      'Enter your current password.';
+
+  @override
+  String get credentialsUsernameRejected =>
+      'Check the username and current password, then try again.';
+
+  @override
+  String get credentialsChangeFailed =>
+      'Could not change your credentials. Please try again.';
+
+  @override
+  String get credentialsPasswordSessionNotice =>
+      'Changing your password ends your mobile sessions. You will need to sign in again.';
+
+  @override
+  String get credentialsPasswordTooShort => 'Use at least 6 characters.';
+
+  @override
+  String get credentialsPasswordMismatch => 'The passwords do not match.';
+
+  @override
+  String get credentialsPasswordRejected =>
+      'Check your current password and new password, then try again.';
+
+  @override
+  String get credentialsPasswordUpdatedSignIn =>
+      'Password updated. Sign in again to continue.';
+
+  @override
+  String get credentialsPasswordUnconfirmedSignIn =>
+      'The password-change result could not be confirmed. Sign in again; try the new password first, then the previous one.';
+
+  @override
   String get akProfilePasswordUpdated => 'Password updated';
 
   @override

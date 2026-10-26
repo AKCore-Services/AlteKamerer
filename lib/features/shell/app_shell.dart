@@ -30,6 +30,7 @@ import '../event_registration/event_registration_controller.dart';
 import '../event_registration/event_registration_screen.dart';
 import '../me/current_member_controller.dart';
 import '../me/member_profile_controller.dart';
+import '../me/member_credentials_api.dart';
 import '../me/member_profile_screen.dart';
 import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
@@ -60,6 +61,7 @@ class AppShell extends StatefulWidget {
     required this.calendarDisplayController,
     this.currentMemberController,
     this.memberProfileController,
+    this.memberCredentialsService,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
@@ -79,6 +81,7 @@ class AppShell extends StatefulWidget {
   final CalendarDisplayController calendarDisplayController;
   final CurrentMemberController? currentMemberController;
   final MemberProfileController? memberProfileController;
+  final MemberCredentialsService? memberCredentialsService;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
@@ -317,7 +320,11 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
             ? Center(
                 child: Text(AppLocalizations.of(context).profileUnavailable),
               )
-            : MemberProfileScreen(controller: widget.memberProfileController!),
+            : MemberProfileScreen(
+                controller: widget.memberProfileController!,
+                authController: widget.authController,
+                credentialsService: widget.memberCredentialsService,
+              ),
       _ShellPage.settings => ReminderSettingsScreen(
         reminderPreferences: widget.reminderPreferences,
         notificationSync: widget.notificationSync,

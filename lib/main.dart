@@ -35,6 +35,7 @@ import 'features/event_registration/event_registration_api.dart';
 import 'features/me/current_member_controller.dart';
 import 'features/me/me_api.dart';
 import 'features/me/member_profile_api.dart';
+import 'features/me/member_credentials_api.dart';
 import 'features/me/member_profile_controller.dart';
 import 'features/me/member_profile_preview_service.dart';
 import 'features/notifications/local_notification_service.dart';
@@ -150,6 +151,7 @@ Future<void> main() async {
     allowPreview: isTestBuild,
   );
   final memberProfileController = MemberProfileController(memberProfileService);
+  final memberCredentialsService = MemberCredentialsApi(apiClient);
   final eventDetailsApi = EventDetailsApi(apiClient);
   final eventDetailsCache = SecureEventDetailsCache();
   final eventRegistrationApi = EventRegistrationApi(apiClient);
@@ -215,6 +217,7 @@ Future<void> main() async {
       calendarDisplayController: calendarDisplayController,
       currentMemberController: currentMemberController,
       memberProfileController: memberProfileController,
+      memberCredentialsService: memberCredentialsService,
       settingsBackupService: settingsBackupService,
       settingsBackupFileService: settingsBackupFileService,
       diagnosticsService: diagnosticsService,

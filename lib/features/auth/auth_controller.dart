@@ -58,6 +58,8 @@ class AuthController extends ChangeNotifier {
   AuthStatus _status = AuthStatus.loading;
   String? _refreshToken;
   Future<bool>? _refreshInFlight;
+  int _sessionGeneration = 0;
+  Future<void> _credentialMutationTail = Future<void>.value();
 
   AuthStatus get status => _status;
 
@@ -75,6 +77,8 @@ class AuthController extends ChangeNotifier {
   /// Other failures enter [AuthStatus.restoreFailed] so restoration can be
   /// retried when connectivity returns.
   Future<void> restoreSession() async {
+    final generation = ++_sessionGeneration;
+    _refreshInFlight = null;
     _status = AuthStatus.loading;
     notifyListeners();
 
@@ -83,6 +87,10 @@ class AuthController extends ChangeNotifier {
     try {
       final refreshToken = await _credentialStore.readRefreshToken();
       lastOnlineAuthAt = await _credentialStore.readLastOnlineAuthAt();
+
+      if (generation != _sessionGeneration) {
+        return;
+      }
 
       if (refreshToken == null) {
         _clearMemorySession();
@@ -96,8 +104,11 @@ class AuthController extends ChangeNotifier {
       _refreshToken = refreshToken;
 
       final tokens = await _authService.refresh(refreshToken);
-      await _setSession(tokens);
+      await _setSession(tokens, generation);
     } on ApiException catch (exception, stackTrace) {
+      if (generation != _sessionGeneration) {
+        return;
+      }
       if (exception.statusCode == 401) {
         await _clearSession();
         return;
@@ -108,6 +119,9 @@ class AuthController extends ChangeNotifier {
         message: 'Session restore failed',
         error: diagnosticErrorDetails(exception, stackTrace),
       );
+      if (generation != _sessionGeneration) {
+        return;
+      }
 
       if (_isTemporaryRestoreFailure(exception) &&
           _isWithinOfflineGrace(lastOnlineAuthAt)) {
@@ -121,11 +135,17 @@ class AuthController extends ChangeNotifier {
       _status = AuthStatus.restoreFailed;
       notifyListeners();
     } catch (error, stackTrace) {
+      if (generation != _sessionGeneration) {
+        return;
+      }
       await _diagnostics?.recordError(
         subsystem: 'Authentication',
         message: 'Session restore failed',
         error: diagnosticErrorDetails(error, stackTrace),
       );
+      if (generation != _sessionGeneration) {
+        return;
+      }
       _clearMemorySession();
       _status = AuthStatus.restoreFailed;
       notifyListeners();
@@ -142,14 +162,19 @@ class AuthController extends ChangeNotifier {
     required String username,
     required String password,
   }) async {
+    final generation = ++_sessionGeneration;
+    _refreshInFlight = null;
     try {
       final tokens = await _authService.login(
         username: username,
         password: password,
       );
 
-      await _setSession(tokens);
+      await _setSession(tokens, generation);
     } on ApiException catch (exception, stackTrace) {
+      if (generation != _sessionGeneration) {
+        return;
+      }
       if (exception.statusCode != 401) {
         await _diagnostics?.recordError(
           subsystem: 'Authentication',
@@ -159,6 +184,9 @@ class AuthController extends ChangeNotifier {
       }
       rethrow;
     } catch (error, stackTrace) {
+      if (generation != _sessionGeneration) {
+        return;
+      }
       await _diagnostics?.recordError(
         subsystem: 'Authentication',
         message: 'Login failed',
@@ -175,7 +203,19 @@ class AuthController extends ChangeNotifier {
   /// the session cannot be renewed because its credentials are unavailable
   /// or rejected; other failures are propagated.
   Future<bool> refreshSession() {
-    return _refreshInFlight ??= _refreshSessionSingleFlight();
+    final pending = _refreshInFlight;
+    if (pending != null) {
+      return pending;
+    }
+
+    late final Future<bool> request;
+    request = _performRefreshSession().whenComplete(() {
+      if (identical(_refreshInFlight, request)) {
+        _refreshInFlight = null;
+      }
+    });
+    _refreshInFlight = request;
+    return request;
   }
 
   bool _isTemporaryRestoreFailure(ApiException exception) {
@@ -199,27 +239,21 @@ class AuthController extends ChangeNotifier {
     return now.difference(authenticatedAt) < _offlineGracePeriod;
   }
 
-  Future<bool> _refreshSessionSingleFlight() async {
-    try {
-      return await _performRefreshSession();
-    } finally {
-      _refreshInFlight = null;
-    }
-  }
-
   Future<bool> _performRefreshSession() async {
+    final generation = _sessionGeneration;
     final refreshToken = _refreshToken;
 
     if (refreshToken == null) {
-      await _clearSession();
       return false;
     }
 
     try {
       final tokens = await _authService.refresh(refreshToken);
-      await _setSession(tokens);
-      return true;
+      return await _setSession(tokens, generation);
     } on ApiException catch (exception, stackTrace) {
+      if (generation != _sessionGeneration) {
+        return false;
+      }
       if (exception.statusCode == 401) {
         await _clearSession();
         return false;
@@ -230,13 +264,22 @@ class AuthController extends ChangeNotifier {
         message: 'Session refresh failed',
         error: diagnosticErrorDetails(exception, stackTrace),
       );
+      if (generation != _sessionGeneration) {
+        return false;
+      }
       rethrow;
     } catch (error, stackTrace) {
+      if (generation != _sessionGeneration) {
+        return false;
+      }
       await _diagnostics?.recordError(
         subsystem: 'Authentication',
         message: 'Session refresh failed',
         error: diagnosticErrorDetails(error, stackTrace),
       );
+      if (generation != _sessionGeneration) {
+        return false;
+      }
       rethrow;
     }
   }
@@ -247,6 +290,7 @@ class AuthController extends ChangeNotifier {
   /// The server error is recorded and rethrown to the caller.
   Future<void> logout() async {
     final refreshToken = _refreshToken;
+    final clearing = invalidateLocalSession();
 
     try {
       if (refreshToken != null) {
@@ -260,26 +304,59 @@ class AuthController extends ChangeNotifier {
       );
       rethrow;
     } finally {
-      await _clearSession();
+      await clearing;
     }
   }
 
-  Future<void> _setSession(AuthTokens tokens) async {
-    await _credentialStore.writeRefreshToken(tokens.refreshToken);
-    await _credentialStore.writeLastOnlineAuthAt(_now().toUtc());
+  /// Clears local credentials without a redundant server logout request.
+  ///
+  /// AKCore already revoked all mobile sessions after a password change.
+  /// Late authentication responses cannot reactivate this session.
+  Future<void> invalidateLocalSession() {
+    _sessionGeneration++;
+    _refreshInFlight = null;
+    _clearMemorySession();
+    _status = AuthStatus.unauthenticated;
+    notifyListeners();
+    return _mutateCredentials(_credentialStore.clear);
+  }
 
+  Future<bool> _setSession(AuthTokens tokens, int generation) async {
+    if (generation != _sessionGeneration) {
+      return false;
+    }
+
+    // A late storage write must not undo session invalidation.
+    await _mutateCredentials(() async {
+      if (generation != _sessionGeneration) {
+        return;
+      }
+      await _credentialStore.writeRefreshToken(tokens.refreshToken);
+      if (generation != _sessionGeneration) {
+        return;
+      }
+      await _credentialStore.writeLastOnlineAuthAt(_now().toUtc());
+    });
+
+    if (generation != _sessionGeneration) {
+      return false;
+    }
     _accessTokenStore.set(tokens.accessToken);
     _refreshToken = tokens.refreshToken;
     _status = AuthStatus.authenticated;
     notifyListeners();
+    return true;
   }
 
-  Future<void> _clearSession() async {
-    await _credentialStore.clear();
+  Future<void> _clearSession() => invalidateLocalSession();
 
-    _clearMemorySession();
-    _status = AuthStatus.unauthenticated;
-    notifyListeners();
+  Future<void> _mutateCredentials(Future<void> Function() operation) {
+    final pending = _credentialMutationTail.then((_) => operation());
+    _credentialMutationTail = pending.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stackTrace) {},
+    );
+    return pending;
   }
 
   void _clearMemorySession() {
