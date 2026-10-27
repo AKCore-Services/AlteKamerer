@@ -20,7 +20,10 @@ import '../../core/diagnostics/diagnostics_service.dart';
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
+import '../auth/auth_controller.dart';
 import '../fika/fika_section.dart';
+import '../me/member_credentials_api.dart';
+import '../me/member_password_change_screen.dart';
 import '../notifications/notification_sync_service.dart';
 import 'calendar_display_controller.dart';
 import 'calendar_display_preferences.dart';
@@ -63,6 +66,8 @@ class ReminderSettingsScreen extends StatefulWidget {
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
+    this.authController,
+    this.credentialsService,
     this.apiServer,
     this.diagnosticsMetadataLoader,
     this.diagnosticClipboardWriter,
@@ -77,6 +82,8 @@ class ReminderSettingsScreen extends StatefulWidget {
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
+  final AuthController? authController;
+  final MemberCredentialsService? credentialsService;
   final String? apiServer;
   final DiagnosticsMetadataLoader? diagnosticsMetadataLoader;
   final DiagnosticClipboardWriter? diagnosticClipboardWriter;
@@ -91,9 +98,11 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
   final List<_ReminderEditor> _reminders = [];
   final Map<FikaSection, TextEditingController> _fikaEmojiControllers = {};
 
-  bool _languageExpanded = true;
-  bool _calendarDisplayExpanded = true;
-  bool _remindersExpanded = true;
+  bool _systemMenuOpen = false;
+  bool _passwordExpanded = false;
+  bool _languageExpanded = false;
+  bool _calendarDisplayExpanded = false;
+  bool _remindersExpanded = false;
   bool _backupExpanded = false;
   bool _diagnosticsExpanded = false;
   bool _aboutExpanded = false;
@@ -624,7 +633,7 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
       null => null,
     };
 
-    return ListView(
+    final mainSettings = ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _SettingsSection(
@@ -898,6 +907,27 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
           Semantics(liveRegion: true, child: Text(statusMessage)),
         ],
         const SizedBox(height: 16),
+        if (widget.authController != null &&
+            widget.credentialsService != null) ...[
+          _SettingsSection(
+            title: l10n.akProfileChangePassword,
+            expanded: _passwordExpanded,
+            onExpansionChanged: (expanded) {
+              setState(() {
+                _passwordExpanded = expanded;
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: MemberPasswordChangeScreen(
+                embedded: true,
+                authController: widget.authController,
+                credentialsService: widget.credentialsService!,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         FilledButton(
           onPressed: _isSaving ? null : _save,
           child: _isSaving
@@ -909,249 +939,298 @@ class _ReminderSettingsScreenState extends State<ReminderSettingsScreen> {
               : Text(l10n.saveSettings),
         ),
         const SizedBox(height: 16),
-        _SettingsSection(
-          title: l10n.settingsBackup,
-          expanded: _backupExpanded,
-          onExpansionChanged: (expanded) {
+        OutlinedButton.icon(
+          onPressed: () {
             setState(() {
-              _backupExpanded = expanded;
+              _systemMenuOpen = true;
             });
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
-              Text(
-                l10n.settingsBackupDescription,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: _isBackupBusy ? null : _exportSettings,
-                icon: const Icon(Icons.file_upload_outlined),
-                label: Text(l10n.exportSettings),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _isBackupBusy ? null : _importSettings,
-                icon: const Icon(Icons.file_download_outlined),
-                label: Text(l10n.importSettings),
-              ),
-              if (_isBackupBusy) ...[
-                const SizedBox(height: 16),
-                const Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+          icon: const Icon(Icons.settings_outlined),
+          label: Text(l10n.settingsSystem),
+        ),
+      ],
+    );
+
+    return PopScope(
+      canPop: !_systemMenuOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _systemMenuOpen) {
+          setState(() {
+            _systemMenuOpen = false;
+          });
+        }
+      },
+      child: _systemMenuOpen
+          ? ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _systemMenuOpen = false;
+                      });
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: Text(l10n.settingsSystem),
                   ),
                 ),
-              ],
-              if (backupStatusMessage != null) ...[
                 const SizedBox(height: 16),
-                Semantics(
-                  liveRegion: true,
-                  child: Text(
-                    backupStatusMessage,
-                    style: switch (_backupStatus) {
-                      _SettingsBackupStatus.exportFailed ||
-                      _SettingsBackupStatus.invalid ||
-                      _SettingsBackupStatus.unsupported ||
-                      _SettingsBackupStatus.readFailed ||
-                      _SettingsBackupStatus.importFailed => TextStyle(
-                        color: Theme.of(context).colorScheme.error,
+                _SettingsSection(
+                  title: l10n.about,
+                  expanded: _aboutExpanded,
+                  onExpansionChanged: _setAboutExpanded,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 8),
+                      FutureBuilder<String>(
+                        future: _appVersion,
+                        builder: (context, snapshot) {
+                          if (snapshot.hasData) {
+                            return Text(l10n.aboutVersion(snapshot.data!));
+                          }
+
+                          if (snapshot.hasError) {
+                            return Text(l10n.aboutVersionUnavailable);
+                          }
+
+                          return const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          );
+                        },
                       ),
-                      _ => null,
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.aboutArchitecture,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        l10n.aboutDevelopmentTitle,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.aboutDevelopmentDescription,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => _launchExternalUrl(
+                          Uri.parse('https://github.com/LudHag/AKCore'),
+                        ),
+                        icon: const Icon(Icons.open_in_new),
+                        label: Text(l10n.aboutAkCoreRepository),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => _launchExternalUrl(
+                          Uri.parse(
+                            'https://github.com/AKCore-Services/AlteKamerer',
+                          ),
+                        ),
+                        icon: const Icon(Icons.open_in_new),
+                        label: Text(l10n.aboutAlteKamererRepository),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _SettingsSection(
+                  title: l10n.diagnostics,
+                  expanded: _diagnosticsExpanded,
+                  onExpansionChanged: _setDiagnosticsExpanded,
+                  child: FutureBuilder<_DiagnosticsViewData>(
+                    future: _diagnostics,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(l10n.diagnosticsUnavailable),
+                        );
+                      }
+
+                      final data = snapshot.data;
+                      if (data == null) {
+                        return const Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                        );
+                      }
+
+                      final statusMessage = switch (_diagnosticsStatus) {
+                        _DiagnosticsStatus.copied => l10n.diagnosticsCopied,
+                        _DiagnosticsStatus.copyFailed =>
+                          l10n.diagnosticsCopyFailed,
+                        _DiagnosticsStatus.cleared => l10n.diagnosticsCleared,
+                        _DiagnosticsStatus.clearFailed =>
+                          l10n.diagnosticsClearFailed,
+                        null => null,
+                      };
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 8),
+                          _DiagnosticValue(
+                            label: l10n.diagnosticsVersion,
+                            value: data.metadata.version,
+                          ),
+                          const SizedBox(height: 12),
+                          _DiagnosticValue(
+                            label: l10n.diagnosticsBuild,
+                            value: data.metadata.buildNumber,
+                          ),
+                          const SizedBox(height: 12),
+                          _DiagnosticValue(
+                            label: l10n.diagnosticsPlatform,
+                            value: data.metadata.platform,
+                          ),
+                          const SizedBox(height: 12),
+                          _DiagnosticValue(
+                            label: l10n.diagnosticsApiServer,
+                            value:
+                                widget.apiServer ??
+                                l10n.diagnosticsUnavailableValue,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            l10n.diagnosticsRecentErrors,
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          if (data.entries.isEmpty)
+                            Text(l10n.diagnosticsNoErrors)
+                          else
+                            for (final entry in data.entries.reversed) ...[
+                              Text(
+                                '${entry.subsystem}: ${entry.message}',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              if (entry.details case final details?) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  details,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                              const SizedBox(height: 12),
+                            ],
+                          OutlinedButton.icon(
+                            onPressed: widget.diagnosticsService == null
+                                ? null
+                                : _copyDiagnostics,
+                            icon: const Icon(Icons.copy_outlined),
+                            label: Text(l10n.diagnosticsCopyReport),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: widget.diagnosticsService == null
+                                ? null
+                                : _clearDiagnostics,
+                            icon: const Icon(Icons.delete_outline),
+                            label: Text(l10n.diagnosticsClearLogs),
+                          ),
+                          if (statusMessage != null) ...[
+                            const SizedBox(height: 12),
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                statusMessage,
+                                style:
+                                    _diagnosticsStatus ==
+                                            _DiagnosticsStatus.copyFailed ||
+                                        _diagnosticsStatus ==
+                                            _DiagnosticsStatus.clearFailed
+                                    ? TextStyle(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .error,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
                     },
                   ),
                 ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SettingsSection(
-          title: l10n.diagnostics,
-          expanded: _diagnosticsExpanded,
-          onExpansionChanged: _setDiagnosticsExpanded,
-          child: FutureBuilder<_DiagnosticsViewData>(
-            future: _diagnostics,
-            builder: (context, snapshot) {
-              if (snapshot.hasError) {
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(l10n.diagnosticsUnavailable),
-                );
-              }
-
-              final data = snapshot.data;
-              if (data == null) {
-                return const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
-              }
-
-              final statusMessage = switch (_diagnosticsStatus) {
-                _DiagnosticsStatus.copied => l10n.diagnosticsCopied,
-                _DiagnosticsStatus.copyFailed => l10n.diagnosticsCopyFailed,
-                _DiagnosticsStatus.cleared => l10n.diagnosticsCleared,
-                _DiagnosticsStatus.clearFailed => l10n.diagnosticsClearFailed,
-                null => null,
-              };
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  _DiagnosticValue(
-                    label: l10n.diagnosticsVersion,
-                    value: data.metadata.version,
-                  ),
-                  const SizedBox(height: 12),
-                  _DiagnosticValue(
-                    label: l10n.diagnosticsBuild,
-                    value: data.metadata.buildNumber,
-                  ),
-                  const SizedBox(height: 12),
-                  _DiagnosticValue(
-                    label: l10n.diagnosticsPlatform,
-                    value: data.metadata.platform,
-                  ),
-                  const SizedBox(height: 12),
-                  _DiagnosticValue(
-                    label: l10n.diagnosticsApiServer,
-                    value: widget.apiServer ?? l10n.diagnosticsUnavailableValue,
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    l10n.diagnosticsRecentErrors,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  if (data.entries.isEmpty)
-                    Text(l10n.diagnosticsNoErrors)
-                  else
-                    for (final entry in data.entries.reversed) ...[
+                const SizedBox(height: 16),
+                _SettingsSection(
+                  title: l10n.settingsBackup,
+                  expanded: _backupExpanded,
+                  onExpansionChanged: (expanded) {
+                    setState(() {
+                      _backupExpanded = expanded;
+                    });
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 8),
                       Text(
-                        '${entry.subsystem}: ${entry.message}',
+                        l10n.settingsBackupDescription,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                      if (entry.details case final details?) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          details,
-                          style: Theme.of(context).textTheme.bodySmall,
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: _isBackupBusy ? null : _exportSettings,
+                        icon: const Icon(Icons.file_upload_outlined),
+                        label: Text(l10n.exportSettings),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _isBackupBusy ? null : _importSettings,
+                        icon: const Icon(Icons.file_download_outlined),
+                        label: Text(l10n.importSettings),
+                      ),
+                      if (_isBackupBusy) ...[
+                        const SizedBox(height: 16),
+                        const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
                       ],
-                      const SizedBox(height: 12),
-                    ],
-                  OutlinedButton.icon(
-                    onPressed: widget.diagnosticsService == null
-                        ? null
-                        : _copyDiagnostics,
-                    icon: const Icon(Icons.copy_outlined),
-                    label: Text(l10n.diagnosticsCopyReport),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: widget.diagnosticsService == null
-                        ? null
-                        : _clearDiagnostics,
-                    icon: const Icon(Icons.delete_outline),
-                    label: Text(l10n.diagnosticsClearLogs),
-                  ),
-                  if (statusMessage != null) ...[
-                    const SizedBox(height: 12),
-                    Semantics(
-                      liveRegion: true,
-                      child: Text(
-                        statusMessage,
-                        style:
-                            _diagnosticsStatus ==
-                                    _DiagnosticsStatus.copyFailed ||
-                                _diagnosticsStatus ==
-                                    _DiagnosticsStatus.clearFailed
-                            ? TextStyle(
+                      if (backupStatusMessage != null) ...[
+                        const SizedBox(height: 16),
+                        Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            backupStatusMessage,
+                            style: switch (_backupStatus) {
+                              _SettingsBackupStatus.exportFailed ||
+                              _SettingsBackupStatus.invalid ||
+                              _SettingsBackupStatus.unsupported ||
+                              _SettingsBackupStatus.readFailed ||
+                              _SettingsBackupStatus.importFailed => TextStyle(
                                 color: Theme.of(context).colorScheme.error,
-                              )
-                            : null,
-                      ),
-                    ),
-                  ],
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-        _SettingsSection(
-          title: l10n.about,
-          expanded: _aboutExpanded,
-          onExpansionChanged: _setAboutExpanded,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 8),
-              FutureBuilder<String>(
-                future: _appVersion,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Text(l10n.aboutVersion(snapshot.data!));
-                  }
-
-                  if (snapshot.hasError) {
-                    return Text(l10n.aboutVersionUnavailable);
-                  }
-
-                  return const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  );
-                },
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.aboutArchitecture,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.aboutDevelopmentTitle,
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.aboutDevelopmentDescription,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 8),
-              TextButton.icon(
-                onPressed: () => _launchExternalUrl(
-                  Uri.parse('https://github.com/LudHag/AKCore'),
+                              ),
+                              _ => null,
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-                icon: const Icon(Icons.open_in_new),
-                label: Text(l10n.aboutAkCoreRepository),
-              ),
-              TextButton.icon(
-                onPressed: () => _launchExternalUrl(
-                  Uri.parse('https://github.com/AKCore-Services/AlteKamerer'),
-                ),
-                icon: const Icon(Icons.open_in_new),
-                label: Text(l10n.aboutAlteKamererRepository),
-              ),
-            ],
-          ),
-        ),
-      ],
+                const SizedBox(height: 16),
+              ],
+            )
+          : mainSettings,
     );
   }
 }

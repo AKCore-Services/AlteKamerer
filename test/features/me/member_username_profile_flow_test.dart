@@ -32,7 +32,7 @@ void main() {
   }
 
   Future<void> openUsernameEditor(WidgetTester tester) async {
-    final button = find.widgetWithText(OutlinedButton, 'Ändra användarnamn');
+    final button = find.byTooltip('Ändra användarnamn');
 
     await tester.scrollUntilVisible(
       button,

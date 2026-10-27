@@ -116,6 +116,12 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @settingsSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settingsSystem;
+
   /// No description provided for @me.
   ///
   /// In en, this message translates to:
@@ -137,7 +143,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileStatisticsRegistrationOnly.
   ///
   /// In en, this message translates to:
-  /// **'AKCore registration statistics, not verified attendance.'**
+  /// **'Registration statistics, not verified attendance.'**
   String get profileStatisticsRegistrationOnly;
 
   /// No description provided for @profileStatsPeriod.

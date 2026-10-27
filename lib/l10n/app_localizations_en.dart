@@ -19,6 +19,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get settingsSystem => 'System';
+
+  @override
   String get me => 'Me';
 
   @override
@@ -30,7 +33,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileStatisticsRegistrationOnly =>
-      'AKCore registration statistics, not verified attendance.';
+      'Registration statistics, not verified attendance.';
 
   @override
   String get profileStatsPeriod => 'Last 12 months';
