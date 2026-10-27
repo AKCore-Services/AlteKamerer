@@ -19,6 +19,9 @@ class AppLocalizationsSv extends AppLocalizations {
   String get settings => 'Inställningar';
 
   @override
+  String get settingsSystem => 'System';
+
+  @override
   String get me => 'Jag';
 
   @override

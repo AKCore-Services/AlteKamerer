@@ -322,7 +322,6 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
               )
             : MemberProfileScreen(
                 controller: widget.memberProfileController!,
-                authController: widget.authController,
                 credentialsService: widget.memberCredentialsService,
               ),
       _ShellPage.settings => ReminderSettingsScreen(
@@ -333,6 +332,8 @@ class _AppShellState extends State<AppShell> with WidgetsBindingObserver {
         settingsBackupService: widget.settingsBackupService,
         settingsBackupFileService: widget.settingsBackupFileService,
         diagnosticsService: widget.diagnosticsService,
+        authController: widget.authController,
+        credentialsService: widget.memberCredentialsService,
         apiServer: widget.apiServer,
       ),
     };

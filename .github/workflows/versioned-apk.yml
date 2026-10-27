@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Existing release tag (e.g. altekamerer-v1.2.1)'
+        description: 'Existing release tag (e.g. altekamerer-v1.3.0)'
         required: true
-        default: 'altekamerer-v1.2.1'
+        default: 'altekamerer-v1.3.0'
         type: string
 
 permissions:

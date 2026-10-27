@@ -2,6 +2,48 @@
 
 Alla betydande AlteKamerer-releaser dokumenteras här.
 
+## 1.3.0
+
+En uppdatering med medlemsprofil, redigering av personliga
+uppgifter, säkrare kontohantering och förbättrad navigering i
+profil och inställningar.
+
+### Medlemsprofil
+
+- Ny profilvy med medlemsuppgifter.
+- Möjlighet att uppdatera de profiluppgifter som AKCore tillåter
+  medlemmen att ändra.
+- Roller och administrativ medlemsinformation förblir skrivskyddade.
+
+### Konto och inloggningsuppgifter
+
+- Användarnamnet kan ändras efter verifiering med nuvarande lösenord.
+- Lösenordet kan ändras efter verifiering med nuvarande lösenord.
+- Efter ett lyckat lösenordsbyte avslutas den lokala sessionen och
+  medlemmen behöver logga in igen.
+- Om resultatet av ett lösenordsbyte inte kan bekräftas, exempelvis
+  vid ett nätverksfel, avslutas den lokala sessionen av säkerhetsskäl.
+
+### Gränssnitt och inställningar
+
+- Användarnamnet kan ändras via redigeringsikonen intill
+  användarnamnet i profilinformationen.
+- Lösenord kan ändras via en egen utfällbar sektion under Inställningar.
+- Alla inställningssektioner är stängda som standard.
+- Ny undermeny System med sektionerna Om, Diagnostik och
+  Säkerhetskopiera och återställ.
+- Den förklarande texten i statistikvyn har förenklats och
+  nämner inte längre AKCore i den engelska versionen.
+
+### Säkerhet och kvalitet
+
+- Förbättrad hantering av fördröjda autentiseringssvar, tokenförnyelse
+  och lagring av inloggningsuppgifter.
+- Utökade tester för kontoändringar, profiluppdatering, sessionshantering
+  och autentisering.
+- Befintliga AKCore-konton och mobil-API används utan att ändra
+  webbplatsens inloggningsflöde.
+
 ## 1.2.1
 
 En funktions- och kvalitetsuppdatering med utökad aktivitetsinformation,

@@ -10,8 +10,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../auth/auth_controller.dart';
-
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
@@ -20,7 +18,6 @@ import 'member_profile_controller.dart';
 import 'member_credentials_api.dart';
 import 'member_profile_edit_screen.dart';
 import 'member_username_change_screen.dart';
-import 'member_password_change_screen.dart';
 
 /// Displays the authenticated member's profile and related actions.
 ///
@@ -30,12 +27,10 @@ class MemberProfileScreen extends StatefulWidget {
   const MemberProfileScreen({
     super.key,
     required this.controller,
-    this.authController,
     this.credentialsService,
   });
 
   final MemberProfileController controller;
-  final AuthController? authController;
   final MemberCredentialsService? credentialsService;
 
   @override
@@ -102,7 +97,16 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
               _ProfileSection(
                 title: l10n.akProfileUserInfo,
                 fields: [
-                  _ProfileField(l10n.akProfileUserName, profile.userName),
+                  _ProfileField(
+                    l10n.akProfileUserName,
+                    profile.userName,
+                    onEdit:
+                        !widget.controller.isProfilePreview &&
+                            widget.credentialsService != null
+                        ? () => _changeUsername(profile.userName)
+                        : null,
+                    editTooltip: l10n.credentialsChangeUsername,
+                  ),
                   _ProfileField(l10n.akProfileFirstName, profile.firstName),
                   _ProfileField(l10n.akProfileLastName, profile.lastName),
                   _ProfileField(l10n.akProfileEmail, profile.email),
@@ -122,22 +126,6 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                   label: Text(l10n.akProfileUpdateProfile),
                 ),
                 const SizedBox(height: 16),
-                if (widget.credentialsService != null) ...[
-                  OutlinedButton.icon(
-                    onPressed: () => _changeUsername(profile.userName),
-                    icon: const Icon(Icons.manage_accounts_outlined),
-                    label: Text(l10n.credentialsChangeUsername),
-                  ),
-                  const SizedBox(height: 16),
-                  if (widget.authController != null) ...[
-                    OutlinedButton.icon(
-                      onPressed: _changePassword,
-                      icon: const Icon(Icons.lock_reset_outlined),
-                      label: Text(l10n.akProfileChangePassword),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ],
               ],
               _ProfileSection(
                 title: l10n.akProfileRoles,
@@ -222,38 +210,6 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
         content: Text(AppLocalizations.of(context).credentialsUsernameUpdated),
       ),
     );
-  }
-
-  Future<void> _changePassword() async {
-    final service = widget.credentialsService;
-    final auth = widget.authController;
-
-    if (service == null || auth == null) {
-      return;
-    }
-
-    final outcome = await Navigator.of(context).push<PasswordChangeOutcome>(
-      MaterialPageRoute(
-        builder: (_) => MemberPasswordChangeScreen(credentialsService: service),
-      ),
-    );
-
-    if (!mounted || outcome == null) {
-      return;
-    }
-
-    final l10n = AppLocalizations.of(context);
-    final message = outcome == PasswordChangeOutcome.changed
-        ? l10n.credentialsPasswordUpdatedSignIn
-        : l10n.credentialsPasswordUnconfirmedSignIn;
-
-    // The root ScaffoldMessenger remains available when AuthGate switches
-    // from the authenticated shell to the login screen.
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(SnackBar(content: Text(message)));
-
-    await auth.invalidateLocalSession();
   }
 
   Future<void> _showStatistics() async {
@@ -467,10 +423,12 @@ class _PreviewNotice extends StatelessWidget {
 }
 
 class _ProfileField {
-  const _ProfileField(this.label, this.value);
+  const _ProfileField(this.label, this.value, {this.onEdit, this.editTooltip});
 
   final String label;
   final String value;
+  final VoidCallback? onEdit;
+  final String? editTooltip;
 }
 
 class _ProfileSection extends StatelessWidget {
@@ -492,9 +450,29 @@ class _ProfileSection extends StatelessWidget {
           for (final field in fields) ...[
             Text(field.label, style: textTheme.labelMedium),
             const SizedBox(height: 2),
-            Text(
-              field.value.isEmpty ? '—' : field.value,
-              style: textTheme.bodyLarge,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    field.value.isEmpty ? '—' : field.value,
+                    style: textTheme.bodyLarge,
+                  ),
+                ),
+                if (field.onEdit != null) ...[
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: field.editTooltip,
+                    onPressed: field.onEdit,
+                    icon: const Icon(Icons.edit_outlined),
+                    iconSize: 20,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 12),
           ],

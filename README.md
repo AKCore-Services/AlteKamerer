@@ -21,7 +21,7 @@ AKCore-databasen
 ## Aktuell version
 
 ```text
-1.2.1
+1.3.0
 ```
 
 Versionshistoriken finns i [CHANGELOG.md](CHANGELOG.md).
@@ -162,6 +162,26 @@ Det mobila API:t implementeras i det separata [AKCore-repot](https://github.com/
 API-funktionaliteten i 1.0 omfattar autentisering, information om aktuell medlem,
 kalenderdata, aktivitetsdetaljer, aktivitetsanmälan och registrering av mobila
 enheter.
+
+## Medlemsprofil och konto
+
+Från och med version 1.3.0 kan inloggade medlemmar använda
+profilvyn för att se sina medlemsuppgifter och uppdatera de
+personliga profilfält som AKCore tillåter.
+
+Användarnamnet kan ändras direkt från användarnamnsfältet i
+profilvyn genom att ange nuvarande lösenord.
+
+Under Inställningar finns en sektion för att ändra lösenord.
+
+Efter ett lösenordsbyte behöver medlemmen logga in igen.
+Om appen inte kan bekräfta resultatet av lösenordsändringen
+avslutas den lokala sessionen som en säkerhetsåtgärd.
+
+Alla kontoändringar utförs via AKCores autentiserade mobil-API.
+AKCore ansvarar för behörighetskontroll, validering och
+sessionsåterkallelse. Appen kan inte användas för att ändra
+andra medlemmars uppgifter eller administrativa medlemsfält.
 
 ## Köra applikationen
 
@@ -317,14 +337,22 @@ Releaseflödet:
 1. återställer release-signeringen från CI-hemligheter;
 2. verifierar att taggens version stämmer med `pubspec.yaml`;
 3. bygger Android-applikationens signerade release-APK;
-4. döper om den till `AlteKamerer-X.Y.Z.apk`;
+4. kopierar APK-filen till `AlteKamerer-latest.apk`;
 5. laddar upp APK-filen till motsvarande GitHub Release.
 
-För version 1.2.1 blir filnamnet:
+Den separata workflowen `.github/workflows/versioned-apk.yml` kan
+köras manuellt för en befintlig release-tagg. Den bygger APK-filen
+från samma tagg och publicerar en versionsmärkt APK.
+
+För version 1.3.0 används följande filnamn:
 
 ```text
-AlteKamerer-1.2.1.apk
+AlteKamerer-latest.apk
+AlteKamerer-v1.3.0.apk
 ```
+
+Den versionsmärkta APK-filen publiceras först när det separata
+arbetsflödet har körts.
 
 Releasebygget är separat från den vanliga valideringen på `main`.
 

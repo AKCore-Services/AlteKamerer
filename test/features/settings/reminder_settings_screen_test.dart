@@ -1,5 +1,8 @@
 import 'package:altekamerer/core/diagnostics/diagnostics_service.dart';
+import 'package:altekamerer/features/auth/auth_controller.dart';
 import 'package:altekamerer/features/fika/fika_section.dart';
+import 'package:altekamerer/features/me/member_credentials_api.dart';
+import 'package:altekamerer/features/me/member_password_change_screen.dart';
 import 'package:altekamerer/features/notifications/notification_sync_service.dart';
 import 'package:altekamerer/features/settings/calendar_display_controller.dart';
 import 'package:altekamerer/features/settings/calendar_display_preferences.dart';
@@ -19,6 +22,53 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  testWidgets('password section expands and collapses in Settings', (
+    tester,
+  ) async {
+    await _pumpScreen(
+      tester,
+      preferences: _FakeReminderPreferences([]),
+      authController: _PasswordAuthStub(),
+      credentialsService: _PasswordCredentialsStub(),
+    );
+
+    expect(find.text('Ändra lösenord'), findsOneWidget);
+    expect(find.byType(MemberPasswordChangeScreen), findsNothing);
+
+    await tester.tap(find.text('Ändra lösenord'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MemberPasswordChangeScreen), findsOneWidget);
+    expect(find.text('Nuvarande lösenord'), findsOneWidget);
+    expect(find.text('Nytt lösenord'), findsOneWidget);
+    expect(find.text('Bekräfta lösenord'), findsOneWidget);
+
+    await tester.tap(find.text('Ändra lösenord'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MemberPasswordChangeScreen), findsNothing);
+  });
+
+  testWidgets('System navigation returns to main Settings', (
+    WidgetTester tester,
+  ) async {
+    await _pumpScreen(tester, preferences: _FakeReminderPreferences([]));
+
+    expect(find.text('Språk'), findsOneWidget);
+    expect(find.text('Om'), findsNothing);
+
+    await _openSystemMenu(tester);
+
+    expect(find.text('Språk'), findsNothing);
+    expect(find.text('Spara inställningar'), findsNothing);
+
+    await tester.tap(find.widgetWithText(TextButton, 'System'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Språk'), findsOneWidget);
+    expect(find.text('Om'), findsNothing);
+  });
+
   testWidgets('changing language resynchronizes notifications', (
     WidgetTester tester,
   ) async {
@@ -34,6 +84,8 @@ void main() {
       notificationSync: notificationSync,
       localeController: localeController,
     );
+
+    await _openSettingsSection(tester, 'Språk');
 
     final languageSelector = tester
         .widget<DropdownButtonFormField<AppLocalePreference>>(
@@ -64,6 +116,7 @@ void main() {
     );
 
     expect(find.text('Kalendervisning'), findsOneWidget);
+    await _openSettingsSection(tester, 'Kalendervisning');
 
     final dateSelector = tester
         .widget<DropdownButtonFormField<CalendarDateFormat>>(
@@ -120,6 +173,8 @@ void main() {
       preferences: preferences,
       calendarDisplayController: calendarController,
     );
+
+    await _openSettingsSection(tester, 'Kalendervisning');
 
     final visibilitySelector = tester
         .widget<DropdownButtonFormField<FikaVisibility>>(
@@ -206,7 +261,7 @@ void main() {
 
     await _pumpScreen(tester, preferences: preferences);
 
-    expect(find.text('Språk'), findsNWidgets(2));
+    expect(find.text('Språk'), findsOneWidget);
 
     final languageHeader = find.ancestor(
       of: find.text('Språk').first,
@@ -218,12 +273,12 @@ void main() {
     await tester.tap(languageHeader);
     await tester.pumpAndSettle();
 
-    expect(find.text('Språk'), findsOneWidget);
+    expect(find.text('Språk'), findsNWidgets(2));
 
     await tester.tap(languageHeader);
     await tester.pumpAndSettle();
 
-    expect(find.text('Språk'), findsNWidgets(2));
+    expect(find.text('Språk'), findsOneWidget);
   });
 
   testWidgets(
@@ -250,6 +305,8 @@ void main() {
           platform: 'Android 16',
         ),
       );
+
+      await _openSystemMenu(tester);
 
       await tester.scrollUntilVisible(
         find.text('Diagnostik'),
@@ -303,6 +360,8 @@ void main() {
       },
     );
 
+    await _openSystemMenu(tester);
+
     await tester.scrollUntilVisible(
       find.text('Diagnostik'),
       300,
@@ -355,6 +414,8 @@ void main() {
       ),
     );
 
+    await _openSystemMenu(tester);
+
     await tester.scrollUntilVisible(
       find.text('Diagnostik'),
       300,
@@ -385,40 +446,48 @@ void main() {
     expect(find.text('Diagnostikloggarna rensades.'), findsOneWidget);
   });
 
-  testWidgets('About is last, collapsed by default, and shows app version', (
-    WidgetTester tester,
-  ) async {
-    final preferences = _FakeReminderPreferences([]);
+  testWidgets(
+    'About is first in System, collapsed by default, and shows app version',
+    (WidgetTester tester) async {
+      final preferences = _FakeReminderPreferences([]);
 
-    await _pumpScreen(
-      tester,
-      preferences: preferences,
-      appVersionLoader: () async => '9.8.7',
-    );
+      await _pumpScreen(
+        tester,
+        preferences: preferences,
+        appVersionLoader: () async => '9.8.7',
+      );
 
-    expect(find.text('AlteKamerer · Version 9.8.7'), findsNothing);
+      expect(find.text('AlteKamerer · Version 9.8.7'), findsNothing);
 
-    final aboutHeader = find.text('Om');
+      await _openSystemMenu(tester);
 
-    await tester.scrollUntilVisible(
-      aboutHeader,
-      300,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.ensureVisible(aboutHeader);
-    await tester.pumpAndSettle();
+      final aboutHeader = find.text('Om');
 
-    expect(aboutHeader, findsOneWidget);
+      await tester.scrollUntilVisible(
+        aboutHeader,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(aboutHeader);
+      await tester.pumpAndSettle();
 
-    final saveCenter = tester.getCenter(find.text('Spara inställningar'));
-    final aboutCenter = tester.getCenter(aboutHeader);
-    expect(aboutCenter.dy, greaterThan(saveCenter.dy));
+      expect(aboutHeader, findsOneWidget);
 
-    await tester.tap(aboutHeader);
-    await tester.pumpAndSettle();
+      final aboutCenter = tester.getCenter(aboutHeader);
+      final diagnosticsCenter = tester.getCenter(find.text('Diagnostik'));
+      final backupCenter = tester.getCenter(
+        find.text('Säkerhetskopiera och återställ'),
+      );
 
-    expect(find.text('AlteKamerer · Version 9.8.7'), findsOneWidget);
-  });
+      expect(aboutCenter.dy, lessThan(diagnosticsCenter.dy));
+      expect(diagnosticsCenter.dy, lessThan(backupCenter.dy));
+
+      await tester.tap(aboutHeader);
+      await tester.pumpAndSettle();
+
+      expect(find.text('AlteKamerer · Version 9.8.7'), findsOneWidget);
+    },
+  );
 
   testWidgets('About describes the app and launches repository URLs', (
     WidgetTester tester,
@@ -435,6 +504,8 @@ void main() {
         return true;
       },
     );
+
+    await _openSystemMenu(tester);
 
     final aboutHeader = find.text('Om');
 
@@ -489,6 +560,8 @@ void main() {
       appVersionLoader: () async => '1.1.1',
     );
 
+    await _openSystemMenu(tester);
+
     await tester.scrollUntilVisible(
       find.text('About'),
       300,
@@ -519,6 +592,8 @@ void main() {
       appVersionLoader: () async => '1.1.1',
       textScaler: const TextScaler.linear(2),
     );
+
+    await _openSystemMenu(tester);
 
     await tester.scrollUntilVisible(
       find.text('Om'),
@@ -824,14 +899,21 @@ void main() {
     expect(calendarController.settings.fikaVisibility, FikaVisibility.all);
     expect(calendarController.settings.fikaEmojiFor(FikaSection.sax), 'S');
 
-    final calendarDisplayHeader = find.text('Kalendervisning');
+    // Import completes inside System. Return to the main Settings view.
+    final systemBackButton = find.widgetWithText(TextButton, 'System');
+
     await tester.scrollUntilVisible(
-      calendarDisplayHeader,
+      systemBackButton,
       -300,
       scrollable: find.byType(Scrollable).first,
     );
-    await tester.ensureVisible(calendarDisplayHeader);
     await tester.pumpAndSettle();
+
+    await tester.tap(systemBackButton);
+    await tester.pumpAndSettle();
+
+    // Calendar display is collapsed by default.
+    await _openSettingsSection(tester, 'Kalendervisning');
 
     expect(find.byKey(const ValueKey('fika-visibility-all')), findsOneWidget);
 
@@ -1054,6 +1136,8 @@ Future<void> _pumpScreen(
   CalendarDisplayController? calendarDisplayController,
   Locale locale = const Locale('sv'),
   DiagnosticsService? diagnosticsService,
+  AuthController? authController,
+  MemberCredentialsService? credentialsService,
   String? apiServer,
   DiagnosticsMetadataLoader? diagnosticsMetadataLoader,
   DiagnosticClipboardWriter? diagnosticClipboardWriter,
@@ -1102,6 +1186,8 @@ Future<void> _pumpScreen(
           settingsBackupFileService:
               settingsBackupFileService ?? _FakeSettingsBackupFileService(),
           diagnosticsService: diagnosticsService,
+          authController: authController,
+          credentialsService: credentialsService,
           apiServer: apiServer,
           diagnosticsMetadataLoader: diagnosticsMetadataLoader,
           diagnosticClipboardWriter: diagnosticClipboardWriter,
@@ -1115,16 +1201,59 @@ Future<void> _pumpScreen(
   await tester.pumpAndSettle();
 }
 
-Future<void> _scrollToReminders(WidgetTester tester) async {
+Future<void> _openSettingsSection(WidgetTester tester, String title) async {
+  final header = find.text(title);
+
   await tester.scrollUntilVisible(
-    find.text('Påminnelser'),
+    header,
     300,
     scrollable: find.byType(Scrollable).first,
   );
   await tester.pumpAndSettle();
+
+  await tester.tap(header);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openSystemMenu(WidgetTester tester) async {
+  final systemButton = find.widgetWithText(OutlinedButton, 'System');
+
+  await tester.scrollUntilVisible(
+    systemButton,
+    300,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+
+  await tester.tap(systemButton);
+  await tester.pumpAndSettle();
+
+  final languageCode = Localizations.localeOf(
+    tester.element(find.byType(ReminderSettingsScreen)),
+  ).languageCode;
+
+  expect(find.text(languageCode == 'en' ? 'About' : 'Om'), findsOneWidget);
+
+  expect(
+    find.text(languageCode == 'en' ? 'Diagnostics' : 'Diagnostik'),
+    findsOneWidget,
+  );
+  expect(
+    find.text(
+      languageCode == 'en'
+          ? 'Backup and restore'
+          : 'Säkerhetskopiera och återställ',
+    ),
+    findsOneWidget,
+  );
+}
+
+Future<void> _scrollToReminders(WidgetTester tester) async {
+  await _openSettingsSection(tester, 'Påminnelser');
 }
 
 Future<void> _openBackupSection(WidgetTester tester) async {
+  await _openSystemMenu(tester);
   final scrollable = find.byType(Scrollable).first;
   final backupHeader = find.text('Säkerhetskopiera och återställ');
 
@@ -1238,3 +1367,8 @@ class _FakeNotificationSync implements NotificationSync {
     clearCount++;
   }
 }
+
+class _PasswordAuthStub extends Fake implements AuthController {}
+
+class _PasswordCredentialsStub extends Fake
+    implements MemberCredentialsService {}

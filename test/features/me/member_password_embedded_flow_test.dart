@@ -5,16 +5,13 @@ import 'package:altekamerer/features/auth/auth_api.dart';
 import 'package:altekamerer/features/auth/auth_controller.dart';
 import 'package:altekamerer/features/auth/login_screen.dart';
 import 'package:altekamerer/features/me/member_credentials_api.dart';
-import 'package:altekamerer/features/me/member_profile.dart';
-import 'package:altekamerer/features/me/member_profile_api.dart';
-import 'package:altekamerer/features/me/member_profile_controller.dart';
-import 'package:altekamerer/features/me/member_profile_screen.dart';
+import 'package:altekamerer/features/me/member_password_change_screen.dart';
 import 'package:altekamerer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  Future<_Fixture> showAuthenticatedProfile(
+  Future<_Fixture> showEmbeddedPasswordForm(
     WidgetTester tester, {
     Object? passwordChangeError,
   }) async {
@@ -30,8 +27,6 @@ void main() {
       passwordChangeError: passwordChangeError,
     );
 
-    final profileController = MemberProfileController(_ProfileService());
-
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('sv'),
@@ -45,10 +40,12 @@ void main() {
             }
 
             return Scaffold(
-              body: MemberProfileScreen(
-                controller: profileController,
-                credentialsService: credentials,
-                authController: auth,
+              body: SingleChildScrollView(
+                child: MemberPasswordChangeScreen(
+                  embedded: true,
+                  authController: auth,
+                  credentialsService: credentials,
+                ),
               ),
             );
           },
@@ -67,19 +64,6 @@ void main() {
     );
   }
 
-  Future<void> openPasswordEditor(WidgetTester tester) async {
-    final button = find.widgetWithText(OutlinedButton, 'Ändra lösenord');
-
-    await tester.scrollUntilVisible(
-      button,
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-
-    await tester.tap(button);
-    await tester.pumpAndSettle();
-  }
-
   Future<void> submitPasswordChange(WidgetTester tester) async {
     final fields = find.byType(TextFormField);
 
@@ -95,13 +79,12 @@ void main() {
   testWidgets('successful password change clears credentials and shows login', (
     tester,
   ) async {
-    final fixture = await showAuthenticatedProfile(tester);
+    final fixture = await showEmbeddedPasswordForm(tester);
 
     expect(fixture.auth.status, AuthStatus.authenticated);
     expect(fixture.store.refreshToken, 'refresh-token');
     expect(fixture.accessTokens.accessToken, 'access-token');
 
-    await openPasswordEditor(tester);
     await submitPasswordChange(tester);
 
     expect(fixture.credentials.passwordRequests, [
@@ -117,7 +100,7 @@ void main() {
     expect(fixture.authService.logoutCalls, isEmpty);
 
     expect(find.byType(LoginScreen), findsOneWidget);
-    expect(find.byType(MemberProfileScreen), findsNothing);
+    expect(find.byType(MemberPasswordChangeScreen), findsNothing);
     expect(
       find.text('Lösenordet har uppdaterats. Logga in igen för att fortsätta.'),
       findsOneWidget,
@@ -127,7 +110,7 @@ void main() {
   testWidgets('unconfirmed password change also clears credentials', (
     tester,
   ) async {
-    final fixture = await showAuthenticatedProfile(
+    final fixture = await showEmbeddedPasswordForm(
       tester,
       passwordChangeError: const ApiException(
         statusCode: 503,
@@ -135,7 +118,6 @@ void main() {
       ),
     );
 
-    await openPasswordEditor(tester);
     await submitPasswordChange(tester);
 
     expect(fixture.credentials.passwordRequests, hasLength(1));
@@ -155,7 +137,7 @@ void main() {
   testWidgets('rejected password change preserves the authenticated session', (
     tester,
   ) async {
-    final fixture = await showAuthenticatedProfile(
+    final fixture = await showEmbeddedPasswordForm(
       tester,
       passwordChangeError: const ApiException(
         statusCode: 400,
@@ -163,7 +145,6 @@ void main() {
       ),
     );
 
-    await openPasswordEditor(tester);
     await submitPasswordChange(tester);
 
     expect(fixture.credentials.passwordRequests, hasLength(1));
@@ -179,20 +160,20 @@ void main() {
     );
   });
 
-  testWidgets('cancelling password change preserves the session', (
+  testWidgets('leaving the embedded form preserves the session', (
     tester,
   ) async {
-    final fixture = await showAuthenticatedProfile(tester);
+    final fixture = await showEmbeddedPasswordForm(tester);
 
-    await openPasswordEditor(tester);
-    await tester.binding.handlePopRoute();
+    // Leaving Settings without submitting must not affect authentication.
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
 
     expect(fixture.credentials.passwordRequests, isEmpty);
     expect(fixture.auth.status, AuthStatus.authenticated);
     expect(fixture.store.refreshToken, 'refresh-token');
     expect(fixture.accessTokens.accessToken, 'access-token');
-    expect(find.byType(MemberProfileScreen), findsOneWidget);
+    expect(find.byType(MemberPasswordChangeScreen), findsNothing);
     expect(find.byType(LoginScreen), findsNothing);
   });
 }
@@ -292,44 +273,5 @@ class _CredentialsService implements MemberCredentialsService {
     required String currentPassword,
   }) async {
     throw UnsupportedError('Not used in password-change tests.');
-  }
-}
-
-class _ProfileService implements MemberProfileService {
-  @override
-  Future<MemberProfile> getProfile() async {
-    return const MemberProfile(
-      userName: 'old-member',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'Testsson',
-      phone: '',
-      instrument: 'Trumpet',
-      otherInstruments: [],
-      roles: ['Medlem'],
-      posts: [],
-      medal: '',
-      givenMedal: '',
-    );
-  }
-
-  @override
-  Future<MemberProfile> updateProfile(
-    MemberProfileUpdateRequest request,
-  ) async {
-    throw UnsupportedError('Not used in password-change tests.');
-  }
-
-  @override
-  Future<MemberProfileStatistics> getStatistics() async {
-    return const MemberProfileStatistics(
-      totalGigs: 0,
-      halan: 0,
-      direct: 0,
-      cantCome: 0,
-      car: 0,
-      instrument: 0,
-      comment: 0,
-    );
   }
 }

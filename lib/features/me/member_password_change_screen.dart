@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/network/api_exception.dart';
 import '../../l10n/app_localizations.dart';
+import '../auth/auth_controller.dart';
 import 'member_credentials_api.dart';
 
 /// Outcomes that require discarding the current mobile session.
@@ -29,9 +30,13 @@ class MemberPasswordChangeScreen extends StatefulWidget {
   const MemberPasswordChangeScreen({
     super.key,
     required this.credentialsService,
-  });
+    this.embedded = false,
+    this.authController,
+  }) : assert(!embedded || authController != null);
 
   final MemberCredentialsService credentialsService;
+  final bool embedded;
+  final AuthController? authController;
 
   @override
   State<MemberPasswordChangeScreen> createState() =>
@@ -46,7 +51,6 @@ class _MemberPasswordChangeScreenState
   final _confirmPasswordController = TextEditingController();
 
   bool _submitting = false;
-  bool _finishing = false;
   String? _errorMessage;
 
   @override
@@ -57,12 +61,34 @@ class _MemberPasswordChangeScreenState
     super.dispose();
   }
 
-  void _finish(PasswordChangeOutcome outcome) {
-    _finishing = true;
-    _currentPasswordController.clear();
-    _newPasswordController.clear();
-    _confirmPasswordController.clear();
-    Navigator.of(context).pop(outcome);
+  Future<void> _finish(
+    PasswordChangeOutcome outcome,
+    AuthController? embeddedAuth,
+  ) async {
+    if (mounted) {
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmPasswordController.clear();
+    }
+
+    if (embeddedAuth != null) {
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        final message = outcome == PasswordChangeOutcome.changed
+            ? l10n.credentialsPasswordUpdatedSignIn
+            : l10n.credentialsPasswordUnconfirmedSignIn;
+
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(content: Text(message)));
+      }
+
+      // Invalidate even if the settings page was closed while
+      // AKCore was processing the request.
+      await embeddedAuth.invalidateLocalSession();
+    } else if (mounted) {
+      Navigator.of(context).pop(outcome);
+    }
   }
 
   Future<void> _submit() async {
@@ -71,6 +97,12 @@ class _MemberPasswordChangeScreenState
     }
 
     final l10n = AppLocalizations.of(context);
+    final embeddedAuth = widget.embedded ? widget.authController : null;
+    final credentialsService = widget.credentialsService;
+    final currentPassword = _currentPasswordController.text;
+    final newPassword = _newPasswordController.text;
+
+    PasswordChangeOutcome? outcome;
 
     setState(() {
       _submitting = true;
@@ -78,39 +110,33 @@ class _MemberPasswordChangeScreenState
     });
 
     try {
-      await widget.credentialsService.changePassword(
-        currentPassword: _currentPasswordController.text,
-        newPassword: _newPasswordController.text,
+      await credentialsService.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
       );
-
-      if (mounted) {
-        _finish(PasswordChangeOutcome.changed);
-      }
+      outcome = PasswordChangeOutcome.changed;
     } on ApiException catch (error) {
-      if (!mounted) {
-        return;
-      }
-
       if (error.statusCode == 400) {
-        // AKCore confirmed that the submitted change was rejected.
-        setState(() {
-          _errorMessage = l10n.credentialsPasswordRejected;
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = l10n.credentialsPasswordRejected;
+          });
+        }
       } else {
-        // An expired session, timeout, or failed response can leave the
-        // outcome uncertain. Never continue with potentially revoked tokens.
-        _finish(PasswordChangeOutcome.unconfirmed);
+        outcome = PasswordChangeOutcome.unconfirmed;
       }
     } catch (_) {
-      if (mounted) {
-        _finish(PasswordChangeOutcome.unconfirmed);
-      }
+      outcome = PasswordChangeOutcome.unconfirmed;
     } finally {
-      if (mounted && !_finishing) {
+      if (outcome == null && mounted) {
         setState(() {
           _submitting = false;
         });
       }
+    }
+
+    if (outcome != null) {
+      await _finish(outcome, embeddedAuth);
     }
   }
 
@@ -118,6 +144,103 @@ class _MemberPasswordChangeScreenState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final textTheme = Theme.of(context).textTheme;
+
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.credentialsPasswordSessionNotice,
+            style: textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 24),
+          TextFormField(
+            controller: _currentPasswordController,
+            enabled: !_submitting,
+            obscureText: true,
+            autofillHints: const [AutofillHints.password],
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: l10n.credentialsCurrentPassword,
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.credentialsCurrentPasswordRequired;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _newPasswordController,
+            enabled: !_submitting,
+            obscureText: true,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(labelText: l10n.akProfileNewPassword),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.passwordRequired;
+              }
+              if (value.length < 6) {
+                return l10n.credentialsPasswordTooShort;
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _confirmPasswordController,
+            enabled: !_submitting,
+            obscureText: true,
+            autofillHints: const [AutofillHints.newPassword],
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              labelText: l10n.akProfileConfirmPassword,
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return l10n.passwordRequired;
+              }
+              if (value != _newPasswordController.text) {
+                return l10n.credentialsPasswordMismatch;
+              }
+              return null;
+            },
+            onFieldSubmitted: (_) => _submit(),
+          ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: 16),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                _errorMessage!,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: _submitting ? null : _submit,
+            icon: _submitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.lock_reset_outlined),
+            label: Text(l10n.akProfileUpdatePassword),
+          ),
+        ],
+      ),
+    );
+
+    if (widget.embedded) {
+      return form;
+    }
 
     return PopScope(
       canPop: !_submitting,
@@ -129,102 +252,7 @@ class _MemberPasswordChangeScreenState
               constraints: const BoxConstraints(maxWidth: 560),
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.credentialsPasswordSessionNotice,
-                        style: textTheme.bodyMedium,
-                      ),
-                      const SizedBox(height: 24),
-                      TextFormField(
-                        controller: _currentPasswordController,
-                        enabled: !_submitting,
-                        obscureText: true,
-                        autofillHints: const [AutofillHints.password],
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          labelText: l10n.credentialsCurrentPassword,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.credentialsCurrentPasswordRequired;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _newPasswordController,
-                        enabled: !_submitting,
-                        obscureText: true,
-                        autofillHints: const [AutofillHints.newPassword],
-                        textInputAction: TextInputAction.next,
-                        decoration: InputDecoration(
-                          labelText: l10n.akProfileNewPassword,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.passwordRequired;
-                          }
-                          if (value.length < 6) {
-                            return l10n.credentialsPasswordTooShort;
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        enabled: !_submitting,
-                        obscureText: true,
-                        autofillHints: const [AutofillHints.newPassword],
-                        textInputAction: TextInputAction.done,
-                        decoration: InputDecoration(
-                          labelText: l10n.akProfileConfirmPassword,
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.passwordRequired;
-                          }
-                          if (value != _newPasswordController.text) {
-                            return l10n.credentialsPasswordMismatch;
-                          }
-                          return null;
-                        },
-                        onFieldSubmitted: (_) => _submit(),
-                      ),
-                      if (_errorMessage != null) ...[
-                        const SizedBox(height: 16),
-                        Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            _errorMessage!,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 24),
-                      FilledButton.icon(
-                        onPressed: _submitting ? null : _submit,
-                        icon: _submitting
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.lock_reset_outlined),
-                        label: Text(l10n.akProfileUpdatePassword),
-                      ),
-                    ],
-                  ),
-                ),
+                child: form,
               ),
             ),
           ),
