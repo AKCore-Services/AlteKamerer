@@ -10,21 +10,33 @@
 
 import 'package:flutter/material.dart';
 
+import '../auth/auth_controller.dart';
+
 import '../../core/theme/ak_status_view.dart';
 import '../../core/theme/ak_surface_card.dart';
 import '../../l10n/app_localizations.dart';
 import 'member_profile.dart';
 import 'member_profile_controller.dart';
+import 'member_credentials_api.dart';
 import 'member_profile_edit_screen.dart';
+import 'member_username_change_screen.dart';
+import 'member_password_change_screen.dart';
 
 /// Displays the authenticated member's profile and related actions.
 ///
 /// Personal information is edited on a separate screen. Administrative
 /// membership information remains read-only.
 class MemberProfileScreen extends StatefulWidget {
-  const MemberProfileScreen({super.key, required this.controller});
+  const MemberProfileScreen({
+    super.key,
+    required this.controller,
+    this.authController,
+    this.credentialsService,
+  });
 
   final MemberProfileController controller;
+  final AuthController? authController;
+  final MemberCredentialsService? credentialsService;
 
   @override
   State<MemberProfileScreen> createState() => _MemberProfileScreenState();
@@ -110,6 +122,22 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
                   label: Text(l10n.akProfileUpdateProfile),
                 ),
                 const SizedBox(height: 16),
+                if (widget.credentialsService != null) ...[
+                  OutlinedButton.icon(
+                    onPressed: () => _changeUsername(profile.userName),
+                    icon: const Icon(Icons.manage_accounts_outlined),
+                    label: Text(l10n.credentialsChangeUsername),
+                  ),
+                  const SizedBox(height: 16),
+                  if (widget.authController != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: _changePassword,
+                      icon: const Icon(Icons.lock_reset_outlined),
+                      label: Text(l10n.akProfileChangePassword),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ],
               ],
               _ProfileSection(
                 title: l10n.akProfileRoles,
@@ -162,6 +190,70 @@ class _MemberProfileScreenState extends State<MemberProfileScreen> {
         content: Text(AppLocalizations.of(context).akProfileProfileUpdated),
       ),
     );
+  }
+
+  Future<void> _changeUsername(String currentUsername) async {
+    final service = widget.credentialsService;
+    if (service == null) {
+      return;
+    }
+
+    final confirmedUsername = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => MemberUsernameChangeScreen(
+          currentUsername: currentUsername,
+          credentialsService: service,
+        ),
+      ),
+    );
+
+    if (!mounted || confirmedUsername == null) {
+      return;
+    }
+
+    await widget.controller.load();
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context).credentialsUsernameUpdated),
+      ),
+    );
+  }
+
+  Future<void> _changePassword() async {
+    final service = widget.credentialsService;
+    final auth = widget.authController;
+
+    if (service == null || auth == null) {
+      return;
+    }
+
+    final outcome = await Navigator.of(context).push<PasswordChangeOutcome>(
+      MaterialPageRoute(
+        builder: (_) => MemberPasswordChangeScreen(credentialsService: service),
+      ),
+    );
+
+    if (!mounted || outcome == null) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context);
+    final message = outcome == PasswordChangeOutcome.changed
+        ? l10n.credentialsPasswordUpdatedSignIn
+        : l10n.credentialsPasswordUnconfirmedSignIn;
+
+    // The root ScaffoldMessenger remains available when AuthGate switches
+    // from the authenticated shell to the login screen.
+    ScaffoldMessenger.of(context)
+      ..clearSnackBars()
+      ..showSnackBar(SnackBar(content: Text(message)));
+
+    await auth.invalidateLocalSession();
   }
 
   Future<void> _showStatistics() async {

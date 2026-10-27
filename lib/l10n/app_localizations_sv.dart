@@ -281,6 +281,58 @@ class AppLocalizationsSv extends AppLocalizations {
   String get akProfileChangePassword => 'Ändra lösenord';
 
   @override
+  String get credentialsChangeUsername => 'Ändra användarnamn';
+
+  @override
+  String get credentialsNewUsername => 'Nytt användarnamn';
+
+  @override
+  String get credentialsCurrentPassword => 'Nuvarande lösenord';
+
+  @override
+  String get credentialsUpdateUsername => 'Uppdatera användarnamn';
+
+  @override
+  String get credentialsUsernameUpdated => 'Användarnamnet har uppdaterats';
+
+  @override
+  String get credentialsUsernameRequired => 'Ange ett användarnamn.';
+
+  @override
+  String get credentialsCurrentPasswordRequired =>
+      'Ange ditt nuvarande lösenord.';
+
+  @override
+  String get credentialsUsernameRejected =>
+      'Kontrollera användarnamnet och det nuvarande lösenordet och försök igen.';
+
+  @override
+  String get credentialsChangeFailed =>
+      'Det gick inte att ändra inloggningsuppgifterna. Försök igen.';
+
+  @override
+  String get credentialsPasswordSessionNotice =>
+      'När du ändrar lösenordet avslutas dina mobila sessioner. Du behöver logga in igen.';
+
+  @override
+  String get credentialsPasswordTooShort => 'Använd minst 6 tecken.';
+
+  @override
+  String get credentialsPasswordMismatch => 'Lösenorden stämmer inte överens.';
+
+  @override
+  String get credentialsPasswordRejected =>
+      'Kontrollera ditt nuvarande och nya lösenord och försök igen.';
+
+  @override
+  String get credentialsPasswordUpdatedSignIn =>
+      'Lösenordet har uppdaterats. Logga in igen för att fortsätta.';
+
+  @override
+  String get credentialsPasswordUnconfirmedSignIn =>
+      'Det gick inte att bekräfta lösenordsändringen. Logga in igen. Prova först det nya lösenordet och sedan det gamla.';
+
+  @override
   String get akProfilePasswordUpdated => 'Lösenord uppdaterat';
 
   @override

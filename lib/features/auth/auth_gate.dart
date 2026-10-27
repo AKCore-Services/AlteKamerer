@@ -22,6 +22,7 @@ import '../event_details/event_details_cache.dart';
 import '../event_registration/event_registration_api.dart';
 import '../me/current_member_controller.dart';
 import '../me/member_profile_controller.dart';
+import '../me/member_credentials_api.dart';
 import '../navigation/app_navigation_controller.dart';
 import '../notifications/notification_sync_service.dart';
 import '../settings/calendar_display_controller.dart';
@@ -53,6 +54,7 @@ class AuthGate extends StatefulWidget {
     required this.calendarDisplayController,
     this.currentMemberController,
     this.memberProfileController,
+    this.memberCredentialsService,
     required this.settingsBackupService,
     required this.settingsBackupFileService,
     this.diagnosticsService,
@@ -71,6 +73,7 @@ class AuthGate extends StatefulWidget {
   final CalendarDisplayController calendarDisplayController;
   final CurrentMemberController? currentMemberController;
   final MemberProfileController? memberProfileController;
+  final MemberCredentialsService? memberCredentialsService;
   final SettingsBackupService settingsBackupService;
   final SettingsBackupFileService settingsBackupFileService;
   final DiagnosticsService? diagnosticsService;
@@ -163,6 +166,7 @@ class _AuthGateState extends State<AuthGate> {
             calendarDisplayController: widget.calendarDisplayController,
             currentMemberController: widget.currentMemberController,
             memberProfileController: widget.memberProfileController,
+            memberCredentialsService: widget.memberCredentialsService,
             settingsBackupService: widget.settingsBackupService,
             settingsBackupFileService: widget.settingsBackupFileService,
             diagnosticsService: widget.diagnosticsService,

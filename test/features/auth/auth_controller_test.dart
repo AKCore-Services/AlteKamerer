@@ -315,6 +315,176 @@ void main() {
     expect(controller.status, AuthStatus.unauthenticated);
   });
 
+  test('local invalidation skips server logout', () async {
+    final store = FakeCredentialStore();
+    final service = FakeAuthService();
+    final tokens = AccessTokenStore();
+    final controller = AuthController(store, service, tokens);
+
+    await controller.login(username: 'member', password: 'password');
+    await controller.invalidateLocalSession();
+
+    expect(store.refreshToken, isNull);
+    expect(store.lastOnlineAuthAt, isNull);
+    expect(tokens.accessToken, isNull);
+    expect(service.logoutCalls, isEmpty);
+    expect(controller.status, AuthStatus.unauthenticated);
+  });
+
+  test('late refresh cannot restore an invalidated session', () async {
+    final pending = Completer<AuthTokens>();
+    final store = FakeCredentialStore();
+    final service = FakeAuthService(refreshCompleter: pending);
+    final tokens = AccessTokenStore();
+    final controller = AuthController(store, service, tokens);
+
+    await controller.login(username: 'member', password: 'password');
+    final refreshing = controller.refreshSession();
+    await controller.invalidateLocalSession();
+    pending.complete(
+      const AuthTokens(
+        accessToken: 'stale-access',
+        refreshToken: 'stale-refresh',
+      ),
+    );
+
+    expect(await refreshing, isFalse);
+    expect(store.refreshToken, isNull);
+    expect(tokens.accessToken, isNull);
+    expect(controller.status, AuthStatus.unauthenticated);
+  });
+
+  test('late restore cannot restore an invalidated session', () async {
+    final pending = Completer<AuthTokens>();
+    final store = FakeCredentialStore(refreshToken: 'persisted-refresh');
+    final service = FakeAuthService(refreshCompleter: pending);
+    final tokens = AccessTokenStore();
+    final controller = AuthController(store, service, tokens);
+
+    final restoring = controller.restoreSession();
+    await Future<void>.delayed(Duration.zero);
+    expect(service.refreshCalls, ['persisted-refresh']);
+
+    await controller.invalidateLocalSession();
+    pending.complete(
+      const AuthTokens(
+        accessToken: 'stale-access',
+        refreshToken: 'stale-refresh',
+      ),
+    );
+
+    await restoring;
+    expect(store.refreshToken, isNull);
+    expect(tokens.accessToken, isNull);
+    expect(controller.status, AuthStatus.unauthenticated);
+  });
+
+  test('delayed credential write cannot survive invalidation', () async {
+    final store = _PausedCredentialStore();
+    final tokens = AccessTokenStore();
+    final controller = AuthController(store, FakeAuthService(), tokens);
+
+    final loggingIn = controller.login(
+      username: 'member',
+      password: 'password',
+    );
+    await store.writeStarted.future;
+    final clearing = controller.invalidateLocalSession();
+    store.allowWrite.complete();
+
+    await Future.wait([loggingIn, clearing]);
+    expect(store.refreshToken, isNull);
+    expect(store.lastOnlineAuthAt, isNull);
+    expect(tokens.accessToken, isNull);
+    expect(controller.status, AuthStatus.unauthenticated);
+  });
+
+  test('late login cannot restore an invalidated session', () async {
+    final pending = Completer<AuthTokens>();
+    final store = FakeCredentialStore();
+    final auth = FakeAuthService(loginCompleter: pending);
+    final accessTokens = AccessTokenStore();
+    final controller = AuthController(store, auth, accessTokens);
+
+    final login = controller.login(username: 'member', password: 'password');
+
+    await controller.invalidateLocalSession();
+
+    pending.complete(
+      const AuthTokens(
+        accessToken: 'stale-access',
+        refreshToken: 'stale-refresh',
+      ),
+    );
+
+    await login;
+
+    expect(controller.status, AuthStatus.unauthenticated);
+    expect(store.refreshToken, isNull);
+    expect(store.lastOnlineAuthAt, isNull);
+    expect(accessTokens.accessToken, isNull);
+    expect(auth.logoutCalls, isEmpty);
+  });
+
+  test('new login does not reuse a previous pending refresh', () async {
+    final pending = Completer<AuthTokens>();
+    final store = FakeCredentialStore();
+    final auth = FakeAuthService(refreshCompleter: pending);
+    final accessTokens = AccessTokenStore();
+    final controller = AuthController(store, auth, accessTokens);
+
+    await controller.login(username: 'member', password: 'password');
+
+    final oldRefresh = controller.refreshSession();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(auth.refreshCalls, ['refresh']);
+
+    await controller.login(username: 'member', password: 'password');
+
+    final newRefresh = controller.refreshSession();
+    await Future<void>.delayed(Duration.zero);
+
+    // The new session must use its own refresh operation.
+    expect(auth.refreshCalls, ['refresh', 'refresh']);
+
+    pending.complete(
+      const AuthTokens(accessToken: 'new-access', refreshToken: 'new-refresh'),
+    );
+
+    expect(await oldRefresh, isFalse);
+    expect(await newRefresh, isTrue);
+    expect(controller.status, AuthStatus.authenticated);
+    expect(store.refreshToken, 'new-refresh');
+    expect(accessTokens.accessToken, 'new-access');
+  });
+
+  test('stale refresh rejection cannot clear a newer login', () async {
+    final pending = Completer<AuthTokens>();
+    final store = FakeCredentialStore();
+    final auth = FakeAuthService(refreshCompleter: pending);
+    final accessTokens = AccessTokenStore();
+    final controller = AuthController(store, auth, accessTokens);
+
+    await controller.login(username: 'member', password: 'password');
+
+    final staleRefresh = controller.refreshSession();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(auth.refreshCalls, ['refresh']);
+
+    await controller.login(username: 'member', password: 'password');
+
+    pending.completeError(
+      const ApiException(statusCode: 401, message: 'Invalid refresh token.'),
+    );
+
+    expect(await staleRefresh, isFalse);
+    expect(controller.status, AuthStatus.authenticated);
+    expect(store.refreshToken, 'refresh');
+    expect(accessTokens.accessToken, 'access');
+  });
+
   test('logout clears local session even if server logout fails', () async {
     final store = FakeCredentialStore(refreshToken: 'refresh');
     final auth = FakeAuthService(
@@ -373,6 +543,7 @@ class FakeAuthService implements AuthService {
   FakeAuthService({
     this.loginResult,
     this.loginError,
+    this.loginCompleter,
     this.refreshResult,
     this.refreshError,
     this.refreshCompleter,
@@ -381,6 +552,7 @@ class FakeAuthService implements AuthService {
 
   final AuthTokens? loginResult;
   final Object? loginError;
+  final Completer<AuthTokens>? loginCompleter;
   final AuthTokens? refreshResult;
   final Object? refreshError;
   final Completer<AuthTokens>? refreshCompleter;
@@ -401,6 +573,10 @@ class FakeAuthService implements AuthService {
 
     if (loginError != null) {
       throw loginError!;
+    }
+
+    if (loginCompleter != null) {
+      return loginCompleter!.future;
     }
 
     return loginResult ??
@@ -430,5 +606,17 @@ class FakeAuthService implements AuthService {
     if (logoutError != null) {
       throw logoutError!;
     }
+  }
+}
+
+class _PausedCredentialStore extends FakeCredentialStore {
+  final writeStarted = Completer<void>();
+  final allowWrite = Completer<void>();
+
+  @override
+  Future<void> writeRefreshToken(String refreshToken) async {
+    await super.writeRefreshToken(refreshToken);
+    writeStarted.complete();
+    await allowWrite.future;
   }
 }

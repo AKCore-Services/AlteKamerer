@@ -614,6 +614,96 @@ abstract class AppLocalizations {
   /// **'Change password'**
   String get akProfileChangePassword;
 
+  /// No description provided for @credentialsChangeUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Change username'**
+  String get credentialsChangeUsername;
+
+  /// No description provided for @credentialsNewUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'New username'**
+  String get credentialsNewUsername;
+
+  /// No description provided for @credentialsCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get credentialsCurrentPassword;
+
+  /// No description provided for @credentialsUpdateUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Update username'**
+  String get credentialsUpdateUsername;
+
+  /// No description provided for @credentialsUsernameUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Username updated'**
+  String get credentialsUsernameUpdated;
+
+  /// No description provided for @credentialsUsernameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a username.'**
+  String get credentialsUsernameRequired;
+
+  /// No description provided for @credentialsCurrentPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your current password.'**
+  String get credentialsCurrentPasswordRequired;
+
+  /// No description provided for @credentialsUsernameRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the username and current password, then try again.'**
+  String get credentialsUsernameRejected;
+
+  /// No description provided for @credentialsChangeFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not change your credentials. Please try again.'**
+  String get credentialsChangeFailed;
+
+  /// No description provided for @credentialsPasswordSessionNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing your password ends your mobile sessions. You will need to sign in again.'**
+  String get credentialsPasswordSessionNotice;
+
+  /// No description provided for @credentialsPasswordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 6 characters.'**
+  String get credentialsPasswordTooShort;
+
+  /// No description provided for @credentialsPasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'The passwords do not match.'**
+  String get credentialsPasswordMismatch;
+
+  /// No description provided for @credentialsPasswordRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your current password and new password, then try again.'**
+  String get credentialsPasswordRejected;
+
+  /// No description provided for @credentialsPasswordUpdatedSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated. Sign in again to continue.'**
+  String get credentialsPasswordUpdatedSignIn;
+
+  /// No description provided for @credentialsPasswordUnconfirmedSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'The password-change result could not be confirmed. Sign in again; try the new password first, then the previous one.'**
+  String get credentialsPasswordUnconfirmedSignIn;
+
   /// No description provided for @akProfilePasswordUpdated.
   ///
   /// In en, this message translates to:
