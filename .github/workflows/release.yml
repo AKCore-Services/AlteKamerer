@@ -46,6 +46,9 @@ jobs:
           command -v flutter
           command -v java
           command -v base64
+          test -s "$ANDROID_SDK_ROOT/platforms/android-37.0/android.jar"
+          test -x "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+          test -x "$ANDROID_SDK_ROOT/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang"
 
       - name: Restore release keystore
         env:
@@ -98,3 +101,8 @@ jobs:
           overwrite_files: true
           fail_on_unmatched_files: true
           make_latest: ${{ github.event_name == 'push' && 'true' || 'legacy' }}
+
+      - name: Remove temporary signing files
+        if: always()
+        run: |
+          rm -f -- android/key.properties android/altekamerer-release.jks
