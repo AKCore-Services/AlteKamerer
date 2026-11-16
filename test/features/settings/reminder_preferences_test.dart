@@ -7,17 +7,20 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  test('returns five and one hour defaults when no preference exists', () async {
-    final preferences = await SharedPreferences.getInstance();
-    final reminderPreferences = SharedPreferencesReminderPreferences(
-      preferences,
-    );
+  test(
+    'returns five and one hour defaults when no preference exists',
+    () async {
+      final preferences = await SharedPreferences.getInstance();
+      final reminderPreferences = SharedPreferencesReminderPreferences(
+        preferences,
+      );
 
-    expect(await reminderPreferences.getReminderOffsets(), [
-      const Duration(hours: 5),
-      const Duration(hours: 1),
-    ]);
-  });
+      expect(await reminderPreferences.getReminderOffsets(), [
+        const Duration(hours: 5),
+        const Duration(hours: 1),
+      ]);
+    },
+  );
 
   test('persists configured reminder offsets', () async {
     final preferences = await SharedPreferences.getInstance();

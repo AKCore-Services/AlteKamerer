@@ -9,72 +9,70 @@ on:
 permissions:
   contents: read
 
+env:
+  ANDROID_HOME: /srv/ci/tools/android-sdk
+  ANDROID_SDK_ROOT: /srv/ci/tools/android-sdk
+  MISE_AUTO_INSTALL: "false"
+
 jobs:
-  validate:
-    name: Tests and analysis
-    runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/ubk8751/flutter-android-ci@sha256:00e8703d227d3cccbd927c327f652df4f76f867e1d18562def11ba327f164b00
-
+  formatting:
+    name: AlteKamerer / formatting and lint
+    runs-on: [self-hosted, Linux, X64, akcore-ci]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Restore Flutter and Gradle caches
-        uses: actions/cache@v4
+      - name: Activate shared toolchain
+        uses: jdx/mise-action@v2
         with:
-          path: |
-            /root/.pub-cache
-            /root/.gradle/caches
-            /root/.gradle/wrapper
-          key: mobile-${{ runner.os }}-${{ hashFiles('pubspec.lock', 'android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            mobile-${{ runner.os }}-
+          install: false
+          cache: false
+          reshim: true
 
-      # The shared validation script is also available for local runs.
-      - name: Validate AlteKamerer
-        run: ./scripts/validate-ci.sh
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
 
-  debug-apk:
-    name: Build debug APK
-    runs-on: ubuntu-latest
+      - name: Check Dart formatting
+        run: dart format --output=none --set-exit-if-changed lib test
 
-    container:
-      image: ghcr.io/ubk8751/flutter-android-ci@sha256:00e8703d227d3cccbd927c327f652df4f76f867e1d18562def11ba327f164b00
+      - name: Analyze Dart
+        run: flutter analyze
 
+  tests:
+    name: AlteKamerer / tests and debug APK
+    runs-on: [self-hosted, Linux, X64, akcore-ci]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Restore Flutter and Gradle caches
-        uses: actions/cache@v4
+      - name: Activate shared toolchain
+        uses: jdx/mise-action@v2
         with:
-          path: |
-            /root/.pub-cache
-            /root/.gradle/caches
-            /root/.gradle/wrapper
-          key: mobile-${{ runner.os }}-${{ hashFiles('pubspec.lock', 'android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            mobile-${{ runner.os }}-
+          install: false
+          cache: false
+          reshim: true
 
-      - name: Build Android APK
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Run Flutter tests
+        run: flutter test --reporter compact
+
+      - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Verify Android APK
+      - name: Verify debug APK
+        run: test -s build/app/outputs/flutter-apk/app-debug.apk
+
+  required:
+    name: AlteKamerer / required
+    needs: [formatting, tests]
+    if: always()
+    runs-on: [self-hosted, Linux, X64, akcore-ci]
+    steps:
+      - name: Require successful checks
+        env:
+          FORMATTING_RESULT: ${{ needs.formatting.result }}
+          TEST_RESULT: ${{ needs.tests.result }}
         run: |
-          APK="build/app/outputs/flutter-apk/app-debug.apk"
-
-          test -f "$APK" || {
-            echo "Debug APK was not produced." >&2
-            exit 1
-          }
-
-          ls -lh "$APK"
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: altekamerer-debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
-          if-no-files-found: error
+          printf 'Formatting: %s\nTests: %s\n' "$FORMATTING_RESULT" "$TEST_RESULT"
+          test "$FORMATTING_RESULT" = success
+          test "$TEST_RESULT" = success

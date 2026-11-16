@@ -15,13 +15,15 @@ on:
 permissions:
   contents: write
 
+env:
+  ANDROID_HOME: /srv/ci/tools/android-sdk
+  ANDROID_SDK_ROOT: /srv/ci/tools/android-sdk
+  MISE_AUTO_INSTALL: "false"
+
 jobs:
   apk:
     name: Build release APK
-    runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/ubk8751/flutter-android-ci@sha256:00e8703d227d3cccbd927c327f652df4f76f867e1d18562def11ba327f164b00
+    runs-on: [self-hosted, Linux, X64, akcore-ci]
 
     env:
       RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
@@ -41,11 +43,21 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
 
+      - name: Activate shared toolchain
+        uses: jdx/mise-action@v2
+        with:
+          install: false
+          cache: false
+          reshim: true
+
       - name: Verify release toolchain
         run: |
           command -v flutter
           command -v java
           command -v base64
+          test -s "$ANDROID_SDK_ROOT/platforms/android-37.0/android.jar"
+          test -x "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+          test -x "$ANDROID_SDK_ROOT/ndk/28.2.13676358/toolchains/llvm/prebuilt/linux-x86_64/bin/clang"
 
       - name: Restore release keystore
         env:
@@ -98,3 +110,8 @@ jobs:
           overwrite_files: true
           fail_on_unmatched_files: true
           make_latest: ${{ github.event_name == 'push' && 'true' || 'legacy' }}
+
+      - name: Remove temporary signing files
+        if: always()
+        run: |
+          rm -f -- android/key.properties android/altekamerer-release.jks
